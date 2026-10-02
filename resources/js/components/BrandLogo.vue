@@ -1,4 +1,3 @@
-```vue
 <script setup lang="ts">
 withDefaults(defineProps<{ size?: number }>(), { size: 40 });
 </script>
@@ -13,4 +12,3 @@ withDefaults(defineProps<{ size?: number }>(), { size: 40 });
         :style="{ width: `${size}px` }"
     />
 </template>
-```
