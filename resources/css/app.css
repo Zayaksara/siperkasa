@@ -9,9 +9,8 @@
 
 @theme inline {
     --font-sans:
-        Instrument Sans, ui-sans-serif, system-ui, sans-serif,
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-        'Noto Color Emoji';
+        DM Sans, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -59,6 +58,24 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    --color-brand-accent: var(--brand-accent);
+    --color-brand-accent-strong: var(--brand-accent-strong);
+
+    --color-status-pending: var(--status-pending);
+    --color-status-pending-bg: var(--status-pending-bg);
+    --color-status-assigned: var(--status-assigned);
+    --color-status-assigned-bg: var(--status-assigned-bg);
+    --color-status-in-progress: var(--status-in-progress);
+    --color-status-in-progress-bg: var(--status-in-progress-bg);
+    --color-status-on-hold: var(--status-on-hold);
+    --color-status-on-hold-bg: var(--status-on-hold-bg);
+    --color-status-closed: var(--status-closed);
+    --color-status-closed-bg: var(--status-closed-bg);
+    --color-status-rejected: var(--status-rejected);
+    --color-status-rejected-bg: var(--status-rejected-bg);
+    --color-status-cancelled: var(--status-cancelled);
+    --color-status-cancelled-bg: var(--status-cancelled-bg);
 }
 
 /*
@@ -83,83 +100,121 @@
     body,
     html {
         --font-sans:
-            'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
+            'DM Sans', ui-sans-serif, system-ui, sans-serif,
             'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
             'Noto Color Emoji';
     }
 }
 
 :root {
-    --background: hsl(0 0% 100%);
-    --foreground: hsl(0 0% 3.9%);
-    --card: hsl(0 0% 100%);
-    --card-foreground: hsl(0 0% 3.9%);
-    --popover: hsl(0 0% 100%);
-    --popover-foreground: hsl(0 0% 3.9%);
-    --primary: hsl(0 0% 9%);
-    --primary-foreground: hsl(0 0% 98%);
-    --secondary: hsl(0 0% 92.1%);
-    --secondary-foreground: hsl(0 0% 9%);
-    --muted: hsl(0 0% 96.1%);
-    --muted-foreground: hsl(0 0% 45.1%);
-    --accent: hsl(0 0% 96.1%);
-    --accent-foreground: hsl(0 0% 9%);
-    --destructive: hsl(0 84.2% 60.2%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 92.8%);
-    --input: hsl(0 0% 89.8%);
-    --ring: hsl(0 0% 3.9%);
-    --chart-1: hsl(12 76% 61%);
-    --chart-2: hsl(173 58% 39%);
-    --chart-3: hsl(197 37% 24%);
-    --chart-4: hsl(43 74% 66%);
-    --chart-5: hsl(27 87% 67%);
-    --radius: 0.5rem;
-    --sidebar-background: hsl(0 0% 98%);
-    --sidebar-foreground: hsl(240 5.3% 26.1%);
-    --sidebar-primary: hsl(0 0% 10%);
-    --sidebar-primary-foreground: hsl(0 0% 98%);
-    --sidebar-accent: hsl(0 0% 94%);
-    --sidebar-accent-foreground: hsl(0 0% 30%);
-    --sidebar-border: hsl(0 0% 91%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(0 0% 98%);
+    --background: #ffffff;
+    --foreground: #07110b;
+    --card: #ffffff;
+    --card-foreground: #07110b;
+    --popover: #ffffff;
+    --popover-foreground: #07110b;
+    --primary: #0a5e3d;
+    --primary-foreground: #ffffff;
+    --secondary: #eef2f0;
+    --secondary-foreground: #0f443e;
+    --muted: #f5f7f6;
+    --muted-foreground: #565c59;
+    --accent: #f6efe0;
+    --accent-foreground: #07110b;
+    --destructive: #b42318;
+    --destructive-foreground: #ffffff;
+    --border: #e6e8e7;
+    --input: #d5dad7;
+    --ring: #0a5e3d;
+    --chart-1: #0a5e3d;
+    --chart-2: #bb8f32;
+    --chart-3: #0f443e;
+    --chart-4: #8a5e3c;
+    --chart-5: #3b82a0;
+    --radius: 0.625rem;
+
+    --brand-accent: #bb8f32;
+    --brand-accent-strong: #8a5e3c;
+
+    --sidebar-background: #0f443e;
+    --sidebar-foreground: #e7efec;
+    --sidebar-primary: #bb8f32;
+    --sidebar-primary-foreground: #07110b;
+    --sidebar-accent: #16574f;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #1c5a52;
+    --sidebar-ring: #bb8f32;
+    --sidebar: #0f443e;
+
+    --status-pending: #565c59;
+    --status-pending-bg: #eceeed;
+    --status-assigned: #1d4e89;
+    --status-assigned-bg: #e3edf8;
+    --status-in-progress: #8a5e3c;
+    --status-in-progress-bg: #f6efe0;
+    --status-on-hold: #9a4a00;
+    --status-on-hold-bg: #fdebd7;
+    --status-closed: #0a5e3d;
+    --status-closed-bg: #dff1e8;
+    --status-rejected: #b42318;
+    --status-rejected-bg: #fde7e5;
+    --status-cancelled: #3f4542;
+    --status-cancelled-bg: #e2e5e3;
 }
 
 .dark {
-    --background: hsl(0 0% 3.9%);
-    --foreground: hsl(0 0% 98%);
-    --card: hsl(0 0% 3.9%);
-    --card-foreground: hsl(0 0% 98%);
-    --popover: hsl(0 0% 3.9%);
-    --popover-foreground: hsl(0 0% 98%);
-    --primary: hsl(0 0% 98%);
-    --primary-foreground: hsl(0 0% 9%);
-    --secondary: hsl(0 0% 14.9%);
-    --secondary-foreground: hsl(0 0% 98%);
-    --muted: hsl(0 0% 16.08%);
-    --muted-foreground: hsl(0 0% 63.9%);
-    --accent: hsl(0 0% 14.9%);
-    --accent-foreground: hsl(0 0% 98%);
-    --destructive: hsl(0 84% 60%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 14.9%);
-    --input: hsl(0 0% 14.9%);
-    --ring: hsl(0 0% 83.1%);
-    --chart-1: hsl(220 70% 50%);
-    --chart-2: hsl(160 60% 45%);
-    --chart-3: hsl(30 80% 55%);
-    --chart-4: hsl(280 65% 60%);
-    --chart-5: hsl(340 75% 55%);
-    --sidebar-background: hsl(0 0% 7%);
-    --sidebar-foreground: hsl(0 0% 95.9%);
-    --sidebar-primary: hsl(360, 100%, 100%);
-    --sidebar-primary-foreground: hsl(0 0% 100%);
-    --sidebar-accent: hsl(0 0% 15.9%);
-    --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-    --sidebar-border: hsl(0 0% 15.9%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(240 5.9% 10%);
+    --background: #0b1410;
+    --foreground: #e7eae9;
+    --card: #101c17;
+    --card-foreground: #e7eae9;
+    --popover: #101c17;
+    --popover-foreground: #e7eae9;
+    --primary: #3fb98a;
+    --primary-foreground: #04150e;
+    --secondary: #17261f;
+    --secondary-foreground: #e7eae9;
+    --muted: #17261f;
+    --muted-foreground: #a3adaa;
+    --accent: #1c3027;
+    --accent-foreground: #e7eae9;
+    --destructive: #f0786d;
+    --destructive-foreground: #1a0705;
+    --border: #25362f;
+    --input: #2d4037;
+    --ring: #3fb98a;
+    --chart-1: #3fb98a;
+    --chart-2: #d4a94a;
+    --chart-3: #5bb0a6;
+    --chart-4: #c08a62;
+    --chart-5: #6aa8c4;
+
+    --brand-accent: #d4a94a;
+    --brand-accent-strong: #e0b878;
+
+    --sidebar-background: #0a1f1b;
+    --sidebar-foreground: #d7e3df;
+    --sidebar-primary: #d4a94a;
+    --sidebar-primary-foreground: #07110b;
+    --sidebar-accent: #12332d;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #1a3b34;
+    --sidebar-ring: #d4a94a;
+    --sidebar: #0a1f1b;
+
+    --status-pending: #c4cbc8;
+    --status-pending-bg: #252c29;
+    --status-assigned: #8fb8ea;
+    --status-assigned-bg: #14263d;
+    --status-in-progress: #e0b878;
+    --status-in-progress-bg: #3a2d17;
+    --status-on-hold: #f0a867;
+    --status-on-hold-bg: #3a2410;
+    --status-closed: #6fd3a7;
+    --status-closed-bg: #0f3326;
+    --status-rejected: #f59a92;
+    --status-rejected-bg: #3d1511;
+    --status-cancelled: #aab1ae;
+    --status-cancelled-bg: #26302c;
 }
 
 @layer base {
