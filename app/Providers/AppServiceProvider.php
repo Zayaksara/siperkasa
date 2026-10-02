@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Fortify;
 
 class AppServiceProvider extends ServiceProvider
@@ -30,13 +31,21 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
 
         Fortify::authenticateUsing(function (Request $request) {
-            $user = User::where('email', $request->email)
-                ->orWhere('nim_nip', $request->email)
-                ->first();
+            $user = User::where('nim_nip', trim((string) $request->input('nim_nip')))->first();
 
-            if ($user && Hash::check($request->password, $user->password)) {
-                return $user;
+            // blank() guards passkey-only accounts: Hash::check() throws on an empty hash.
+            if (! $user || blank($user->password)
+                || ! Hash::check((string) $request->input('password'), $user->password)) {
+                return null;
             }
+
+            if (! $user->is_active) {
+                throw ValidationException::withMessages([
+                    'nim_nip' => 'Akun Anda nonaktif. Hubungi admin.',
+                ]);
+            }
+
+            return $user;
         });
     }
 

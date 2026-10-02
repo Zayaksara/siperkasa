@@ -1,9 +1,13 @@
+export type Role = 'user' | 'admin' | 'pic';
+
 export type User = {
     id: number;
+    nim_nip: string;
     name: string;
-    email: string;
+    email: string | null;
+    role: Role;
+    is_active: boolean;
     avatar?: string;
-    email_verified_at: string | null;
     two_factor_enabled?: boolean;
     created_at: string;
     updated_at: string;

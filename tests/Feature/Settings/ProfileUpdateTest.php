@@ -3,83 +3,53 @@
 use App\Models\User;
 
 test('profile page is displayed', function () {
-    $user = User::factory()->create();
-
-    $response = $this
-        ->actingAs($user)
-        ->get(route('profile.edit'));
-
-    $response->assertOk();
+    $this->actingAs(User::factory()->create())
+        ->get(route('profile.edit'))
+        ->assertOk();
 });
 
-test('profile information can be updated', function () {
+test('name and email can be updated', function () {
     $user = User::factory()->create();
 
-    $response = $this
-        ->actingAs($user)
-        ->patch(route('profile.update'), [
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
-
-    $response
+    $this->actingAs($user)
+        ->patch(route('profile.update'), ['name' => 'Test User', 'email' => 'test@example.com'])
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('profile.edit'));
 
-    $user->refresh();
-
-    expect($user->name)->toBe('Test User');
+    expect($user->refresh()->name)->toBe('Test User');
     expect($user->email)->toBe('test@example.com');
-    expect($user->email_verified_at)->toBeNull();
 });
 
-test('email verification status is unchanged when the email address is unchanged', function () {
+test('email is optional', function () {
     $user = User::factory()->create();
 
-    $response = $this
-        ->actingAs($user)
-        ->patch(route('profile.update'), [
-            'name' => 'Test User',
-            'email' => $user->email,
-        ]);
+    $this->actingAs($user)
+        ->patch(route('profile.update'), ['name' => 'Test User', 'email' => null])
+        ->assertSessionHasNoErrors();
 
-    $response
-        ->assertSessionHasNoErrors()
-        ->assertRedirect(route('profile.edit'));
-
-    expect($user->refresh()->email_verified_at)->not->toBeNull();
+    expect($user->refresh()->email)->toBeNull();
 });
 
-test('user can delete their account', function () {
-    $user = User::factory()->create();
+test('nim_nip and role can not be changed from the profile', function () {
+    $user = User::factory()->create(['nim_nip' => '111']);
 
-    $response = $this
-        ->actingAs($user)
-        ->delete(route('profile.destroy'), [
-            'password' => 'password',
-        ]);
+    $this->actingAs($user)->patch(route('profile.update'), [
+        'name' => 'Test User',
+        'email' => $user->email,
+        'nim_nip' => '999',
+        'role' => 'admin',
+    ]);
 
-    $response
-        ->assertSessionHasNoErrors()
-        ->assertRedirect(route('home'));
-
-    $this->assertGuest();
-    expect($user->fresh())->toBeNull();
+    expect($user->refresh()->nim_nip)->toBe('111');
+    expect($user->role->value)->toBe('user');
 });
 
-test('correct password must be provided to delete account', function () {
+test('there is no self-service account deletion', function () {
     $user = User::factory()->create();
 
-    $response = $this
-        ->actingAs($user)
-        ->from(route('profile.edit'))
-        ->delete(route('profile.destroy'), [
-            'password' => 'wrong-password',
-        ]);
-
-    $response
-        ->assertSessionHasErrors('password')
-        ->assertRedirect(route('profile.edit'));
+    $this->actingAs($user)
+        ->delete('/settings/profile', ['password' => 'password'])
+        ->assertStatus(405);
 
     expect($user->fresh())->not->toBeNull();
 });
