@@ -62,8 +62,9 @@ const reasonValid = computed(
                 <p class="text-xs text-muted-foreground">
                     Minimal {{ reasonMin }} karakter.
                 </p>
-                <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
             </div>
+
+            <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
 
             <DialogFooter class="gap-2">
                 <Button

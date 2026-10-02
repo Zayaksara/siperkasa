@@ -48,7 +48,6 @@ defineProps<{
                     id="nim_nip"
                     type="text"
                     name="nim_nip"
-                    inputmode="numeric"
                     required
                     v-focus
                     :tabindex="1"

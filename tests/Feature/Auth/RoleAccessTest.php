@@ -49,3 +49,11 @@ it('logs out an account that is deactivated mid-session', function () {
     $this->get(route('user.dashboard'))->assertRedirect(route('login'));
     $this->assertGuest();
 });
+
+it('blocks inactive users on fortify routes outside the role groups', function () {
+    $user = User::factory()->inactive()->create();
+
+    $this->actingAs($user)->get(route('password.confirm'))->assertRedirect(route('login'));
+
+    $this->assertGuest();
+});

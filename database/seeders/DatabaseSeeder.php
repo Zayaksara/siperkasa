@@ -5,17 +5,28 @@ namespace Database\Seeders;
 use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use RuntimeException;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        User::updateOrCreate(
+        $password = env('SUPER_ADMIN_PASSWORD');
+
+        if (blank($password)) {
+            if (! app()->environment(['local', 'testing'])) {
+                throw new RuntimeException('Set SUPER_ADMIN_PASSWORD before seeding outside local.');
+            }
+
+            $password = 'password';
+        }
+
+        User::firstOrCreate(
             ['nim_nip' => env('SUPER_ADMIN_NIP', 'admin')],
             [
                 'name' => 'Super Admin',
                 'email' => 'admin@siperkasa.local',
-                'password' => env('SUPER_ADMIN_PASSWORD', 'password'),
+                'password' => $password,
                 'role' => UserRole::Admin,
                 'is_active' => true,
             ],

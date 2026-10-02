@@ -28,7 +28,7 @@ const user = computed(() => page.props.auth.user);
         <Heading
             variant="small"
             title="Profil"
-            description="NIM/NIP dan peran diatur oleh admin. Anda bisa mengubah nama dan email."
+            description="Nama dan NIM/NIP diatur oleh admin. Anda bisa mengubah email."
         />
 
         <Form
@@ -43,15 +43,7 @@ const user = computed(() => page.props.auth.user);
 
             <div class="grid gap-2">
                 <Label for="name">Nama</Label>
-                <Input
-                    id="name"
-                    name="name"
-                    :default-value="user.name"
-                    required
-                    autocomplete="name"
-                    class="h-11"
-                />
-                <InputError :message="errors.name" />
+                <Input id="name" :model-value="user.name" disabled />
             </div>
 
             <div class="grid gap-2">
