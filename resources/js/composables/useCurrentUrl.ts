@@ -3,6 +3,7 @@ import { usePage } from '@inertiajs/vue3';
 import type { ComputedRef, DeepReadonly } from 'vue';
 import { computed, readonly } from 'vue';
 import { toUrl } from '@/lib/utils';
+import type { NavItem } from '@/types';
 
 export type UseCurrentUrlReturn = {
     currentUrl: DeepReadonly<ComputedRef<string>>;
@@ -20,6 +21,9 @@ export type UseCurrentUrlReturn = {
         ifTrue: T,
         ifFalse?: F,
     ) => T | F;
+    currentItem: <T extends { href: NonNullable<InertiaLinkProps['href']> }>(
+        items: T[],
+    ) => T | undefined;
 };
 
 const page = usePage();
@@ -73,10 +77,19 @@ export function useCurrentUrl(): UseCurrentUrlReturn {
         return isCurrentUrl(urlToCheck) ? ifTrue : ifFalse;
     }
 
+    function currentItem<T extends { href: NonNullable<InertiaLinkProps['href']> }>(
+        items: T[],
+    ): T | undefined {
+        return [...items]
+            .filter((item) => isCurrentOrParentUrl(item.href))
+            .sort((a, b) => toUrl(b.href).length - toUrl(a.href).length)[0];
+    }
+
     return {
         currentUrl: readonly(currentUrlReactive),
         isCurrentUrl,
         isCurrentOrParentUrl,
         whenCurrentUrl,
+        currentItem,
     };
 }

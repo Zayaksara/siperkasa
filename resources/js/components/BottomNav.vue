@@ -4,12 +4,11 @@ import { UserRound } from '@lucide/vue';
 import { computed } from 'vue';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { useRoleNav } from '@/composables/useRoleNav';
-import { toUrl } from '@/lib/utils';
 import { edit } from '@/routes/profile';
 import type { NavItem } from '@/types';
 
 const { items } = useRoleNav();
-const { isCurrentOrParentUrl } = useCurrentUrl();
+const { currentItem } = useCurrentUrl();
 
 const tabs = computed<NavItem[]>(() => [
     ...items.value.slice(0, 4),
@@ -17,12 +16,7 @@ const tabs = computed<NavItem[]>(() => [
 ]);
 
 // Only the most specific matching tab is current ("/reports/create" is not also "/reports").
-const currentTab = computed(
-    () =>
-        [...tabs.value]
-            .filter((tab) => isCurrentOrParentUrl(tab.href))
-            .sort((a, b) => toUrl(b.href).length - toUrl(a.href).length)[0],
-);
+const currentTab = computed(() => currentItem(tabs.value));
 </script>
 
 <template>

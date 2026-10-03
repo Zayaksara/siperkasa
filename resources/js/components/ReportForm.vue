@@ -256,7 +256,7 @@ function cancel() {
             <PhotoUploader
                 v-model="form.photos"
                 v-model:removed-ids="form.remove_photo_ids"
-                v-model:busy="compressing"
+                @update:busy="compressing = $event"
                 :existing="report?.damage_photos ?? []"
                 :error="photoError"
             />
