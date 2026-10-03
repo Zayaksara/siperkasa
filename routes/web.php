@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\AssetImportController;
 use App\Http\Controllers\Admin\BuildingController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\RoomController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\UserImportController;
 use App\Http\Controllers\AssetSearchController;
 use App\Http\Controllers\DashboardController;
 use App\Models\Asset;
@@ -32,6 +34,12 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::inertia('dashboard', 'admin/Dashboard')->name('dashboard');
+        Route::post('users/import', [UserImportController::class, 'store'])->name('users.import');
+        Route::get('users', [UserController::class, 'index'])->name('users.index');
+        Route::post('users', [UserController::class, 'store'])->name('users.store');
+        Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::patch('users/{user}/active', [UserController::class, 'active'])->name('users.active');
+        Route::put('users/{user}/password', [UserController::class, 'password'])->name('users.password');
         Route::get('assets', [AssetController::class, 'index'])->name('assets.index');
         Route::get('assets/{asset}', [AssetController::class, 'show'])->name('assets.show');
         Route::get('asset-imports', [AssetImportController::class, 'index'])->name('asset-imports.index');
