@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ReportStatus;
 use App\Http\Controllers\Admin\AssetController;
 use App\Http\Controllers\Admin\AssetImportController;
 use App\Http\Controllers\Admin\BuildingController;
@@ -17,8 +18,8 @@ Route::get('/', function () {
     return inertia('Welcome', [
         'stats' => [
             'total_reports' => Report::count(),
-            'total_completed' => Report::where('status', 'Closed')->count(),
-            'total_in_progress' => Report::whereIn('status', ['Assigned', 'In_Progress'])->count(),
+            'total_completed' => Report::where('status', ReportStatus::Closed)->count(),
+            'total_in_progress' => Report::whereIn('status', [ReportStatus::Assigned, ReportStatus::InProgress])->count(),
             'total_assets' => Asset::count(),
         ],
     ]);

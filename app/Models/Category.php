@@ -23,6 +23,11 @@ class Category extends Model
         return $this->hasMany(Asset::class);
     }
 
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class);
+    }
+
     public function defaultPic(): BelongsTo
     {
         return $this->belongsTo(User::class, 'default_pic_id');
@@ -31,6 +36,6 @@ class Category extends Model
     /** True when deleting this category would orphan data (extended in Plan 3 with reports). */
     public function isInUse(): bool
     {
-        return $this->assets()->exists();
+        return $this->assets()->exists() || $this->reports()->exists();
     }
 }

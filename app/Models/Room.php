@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
@@ -24,9 +25,14 @@ class Room extends Model
         return $this->belongsTo(Building::class);
     }
 
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class);
+    }
+
     /** Extended in Plan 3 with reports. */
     public function isInUse(): bool
     {
-        return false;
+        return $this->reports()->exists();
     }
 }

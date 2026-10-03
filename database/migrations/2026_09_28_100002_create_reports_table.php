@@ -6,52 +6,48 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('reports', function (Blueprint $table) {
             $table->id();
-            $table->string('ticket_number')->unique();    // Otomatis, Misal: REP-2609-001
+            $table->string('ticket_number')->unique();               // SPK-YYMM-NNNN
 
-            $table->foreignId('user_id')->nullable()->constrained('users')->cascadeOnDelete();
-            $table->foreignId('asset_id')->nullable()->constrained('assets')->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained('users')->restrictOnDelete();
+            $table->string('title', 120);
+            $table->foreignId('category_id')->constrained('categories')->restrictOnDelete();
+            $table->foreignId('room_id')->constrained('rooms')->restrictOnDelete();
+            $table->foreignId('asset_id')->nullable()->constrained('assets')->nullOnDelete();
+            $table->text('description');
+            $table->enum('user_priority', ['Low', 'Medium', 'High', 'Critical']);
+            $table->enum('status', ['Pending', 'Assigned', 'In_Progress', 'On_Hold', 'Closed', 'Rejected', 'Cancelled'])
+                ->default('Pending')->index();
 
-            // FASE 1: Input Pelapor
-            $table->text('description')->nullable();
-            $table->string('damage_photo')->nullable();   // URL/Path foto kerusakan
-            $table->enum('user_priority', ['Low', 'Medium', 'High', 'Critical'])->nullable();
-            $table->enum('status', [
-                'Pending',
-                'Assigned',
-                'In_Progress',
-                'On_Hold',
-                'Closed',
-                'Rejected',
-            ])->default('Pending');
-
-            // FASE 2: Validasi Admin
+            // Admin validation
             $table->foreignId('admin_id')->nullable()->constrained('users')->nullOnDelete();
             $table->enum('admin_priority', ['Low', 'Medium', 'High', 'Critical'])->nullable();
-            $table->dateTime('sla_date')->nullable();     // Target waktu penyelesaian
+            $table->dateTime('sla_date')->nullable()->index();
             $table->foreignId('assigned_pic_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->text('rejection_reason')->nullable(); // Alasan jika ditolak
+            $table->text('rejection_reason')->nullable();
 
-            // FASE 3: Eksekusi PIC
-            $table->text('hold_reason')->nullable();            // Alasan jika tertunda (On Hold)
-            $table->string('vendor_name')->nullable();          // Nama teknisi luar
-            $table->text('repair_action')->nullable();          // Tindakan perbaikan
-            $table->decimal('repair_cost', 15, 2)->nullable();  // Biaya ke vendor
-            $table->string('completion_photo')->nullable();     // URL/Path foto selesai
+            // PIC execution
+            $table->text('hold_reason')->nullable();                 // latest reason; history lives in the status log
+            $table->text('repair_action')->nullable();
+            $table->date('completed_on')->nullable();
+            $table->decimal('repair_cost', 15, 2)->nullable();
+            $table->string('vendor_name')->nullable();
 
+            $table->timestamp('validated_at')->nullable();
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('closed_at')->nullable();
+            $table->timestamp('cancelled_at')->nullable();
             $table->timestamps();
+
+            $table->index(['assigned_pic_id', 'status']);
+            $table->index(['user_id', 'status']);
+            $table->index('created_at');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('reports');
