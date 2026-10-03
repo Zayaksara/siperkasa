@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Reports\RejectReport;
 use App\Actions\Reports\ValidateReport;
 use App\Enums\Priority;
 use App\Enums\ReportStatus;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ApproveReportRequest;
+use App\Http\Requests\Admin\RejectReportRequest;
 use App\Models\Building;
 use App\Models\Category;
 use App\Models\Report;
@@ -97,6 +99,17 @@ class ReportController extends Controller
         );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => "Laporan {$report->ticket_number} divalidasi dan ditugaskan."]);
+
+        return to_route('admin.reports.show', $report);
+    }
+
+    public function reject(RejectReportRequest $request, Report $report, RejectReport $reject): RedirectResponse
+    {
+        Gate::authorize('reject', $report);
+
+        $reject->handle($report, $request->user(), $request->validated('rejection_reason'));
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => "Laporan {$report->ticket_number} ditolak."]);
 
         return to_route('admin.reports.show', $report);
     }

@@ -69,6 +69,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('reports', [AdminReportController::class, 'index'])->name('reports.index');
         Route::get('reports/{report}', [AdminReportController::class, 'show'])->name('reports.show');
         Route::post('reports/{report}/approve', [AdminReportController::class, 'approve'])->name('reports.approve');
+        Route::post('reports/{report}/reject', [AdminReportController::class, 'reject'])->name('reports.reject');
     });
 
     Route::middleware('role:pic')->prefix('pic')->name('pic.')->group(function () {
