@@ -4,6 +4,7 @@ import { computed, ref, watchEffect } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 import {
     InputOTP,
     InputOTPGroup,
@@ -18,18 +19,17 @@ const code = ref<string>('');
 const authConfigContent = computed<TwoFactorConfigContent>(() => {
     if (showRecoveryInput.value) {
         return {
-            title: 'Recovery code',
+            title: 'Kode pemulihan',
             description:
-                'Please confirm access to your account by entering one of your emergency recovery codes.',
-            buttonText: 'login using an authentication code',
+                'Masukkan salah satu kode pemulihan darurat untuk mengonfirmasi akses ke akun Anda.',
+            buttonText: 'masuk dengan kode autentikasi',
         };
     }
 
     return {
-        title: 'Authentication code',
-        description:
-            'Enter the authentication code provided by your authenticator application.',
-        buttonText: 'login using a recovery code',
+        title: 'Kode autentikasi',
+        description: 'Masukkan kode 6 digit dari aplikasi autentikator Anda.',
+        buttonText: 'masuk dengan kode pemulihan',
     };
 });
 
@@ -48,7 +48,7 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
 </script>
 
 <template>
-    <Head title="Two-factor authentication" />
+    <Head title="Verifikasi dua langkah" />
 
     <div class="space-y-6">
         <template v-if="!showRecoveryInput">
@@ -82,14 +82,20 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
                     </div>
                     <InputError :message="errors.code" />
                 </div>
-                <Button type="submit" class="w-full" :disabled="processing"
-                    >Continue</Button
+                <Button
+                    type="submit"
+                    class="h-12 w-full rounded-full text-base font-semibold transition-[background-color,scale] duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98] motion-reduce:transition-none"
+                    :disabled="processing"
+                    :aria-busy="processing"
                 >
+                    <Spinner v-if="processing" />
+                    Lanjutkan
+                </Button>
                 <div class="text-center text-sm text-muted-foreground">
-                    <span>or you can </span>
+                    <span>atau </span>
                     <button
                         type="button"
-                        class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                        class="inline-flex min-h-11 items-center rounded-md px-1 font-medium text-primary underline decoration-primary/40 underline-offset-4 transition-colors duration-150 hover:decoration-current focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:text-foreground motion-reduce:transition-none"
                         @click="() => toggleRecoveryMode(clearErrors)"
                     >
                         {{ authConfigContent.buttonText }}
@@ -108,20 +114,29 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
                 <Input
                     name="recovery_code"
                     type="text"
-                    placeholder="Enter recovery code"
+                    placeholder="Masukkan kode pemulihan"
+                    aria-label="Kode pemulihan"
+                    autocomplete="one-time-code"
+                    class="h-11 rounded-xl bg-background px-3.5 md:text-[15px]"
                     v-focus
                     required
                 />
                 <InputError :message="errors.recovery_code" />
-                <Button type="submit" class="w-full" :disabled="processing"
-                    >Continue</Button
+                <Button
+                    type="submit"
+                    class="h-12 w-full rounded-full text-base font-semibold transition-[background-color,scale] duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98] motion-reduce:transition-none"
+                    :disabled="processing"
+                    :aria-busy="processing"
                 >
+                    <Spinner v-if="processing" />
+                    Lanjutkan
+                </Button>
 
                 <div class="text-center text-sm text-muted-foreground">
-                    <span>or you can </span>
+                    <span>atau </span>
                     <button
                         type="button"
-                        class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                        class="inline-flex min-h-11 items-center rounded-md px-1 font-medium text-primary underline decoration-primary/40 underline-offset-4 transition-colors duration-150 hover:decoration-current focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:text-foreground motion-reduce:transition-none"
                         @click="() => toggleRecoveryMode(clearErrors)"
                     >
                         {{ authConfigContent.buttonText }}

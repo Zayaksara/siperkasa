@@ -14,24 +14,24 @@ import PasskeyVerify from '@/components/PasskeyVerify.vue';
 
 defineOptions({
     layout: {
-        title: 'Confirm password',
+        title: 'Konfirmasi password',
         description:
-            'This is a secure area of the application. Please confirm your password before continuing.',
+            'Bagian ini butuh keamanan tambahan. Masukkan password Anda sekali lagi untuk melanjutkan.',
     },
 });
 </script>
 
 <template>
-    <Head title="Confirm password" />
+    <Head title="Konfirmasi password" />
 
     <PasskeyVerify
         :routes="{
             options: confirmOptions(),
             submit: confirmStore(),
         }"
-        label="Confirm with passkey"
-        loading-label="Confirming..."
-        separator="Or confirm with password"
+        label="Konfirmasi dengan passkey"
+        loading-label="Mengonfirmasi..."
+        separator="Atau konfirmasi dengan password"
     />
 
     <Form
@@ -41,29 +41,32 @@ defineOptions({
     >
         <div class="space-y-6">
             <div class="grid gap-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" class="text-[15px]">Password</Label>
                 <PasswordInput
                     id="password"
                     name="password"
-                    class="mt-1 block w-full"
+                    class="block h-11 w-full rounded-xl bg-background px-3.5 pr-12 md:text-[15px]"
                     required
                     autocomplete="current-password"
+                    :aria-invalid="errors.password ? true : undefined"
+                    :aria-describedby="
+                        errors.password ? 'password-error' : undefined
+                    "
                     autofocus
                 />
 
-                <InputError :message="errors.password" />
+                <InputError id="password-error" :message="errors.password" />
             </div>
 
-            <div class="flex items-center">
-                <Button
-                    class="w-full"
-                    :disabled="processing"
-                    data-test="confirm-password-button"
-                >
-                    <Spinner v-if="processing" />
-                    Confirm password
-                </Button>
-            </div>
+            <Button
+                class="h-12 w-full rounded-full text-base font-semibold transition-[background-color,scale] duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98] motion-reduce:transition-none"
+                :disabled="processing"
+                :aria-busy="processing"
+                data-test="confirm-password-button"
+            >
+                <Spinner v-if="processing" />
+                Konfirmasi password
+            </Button>
         </div>
     </Form>
 </template>
