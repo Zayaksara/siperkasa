@@ -36,6 +36,7 @@ test('real date objects and ISO strings pass through', function () {
     expect(BmnValue::date(new DateTimeImmutable('2020-03-04 10:00:00')))->toBe('2020-03-04');
     expect(BmnValue::date('2020-03-04'))->toBe('2020-03-04');
     expect(BmnValue::date('not a date'))->toBeNull();
+    expect(BmnValue::date('2020-13-45'))->toBeNull();
 });
 
 test('decimals are normalised to two places', function () {

@@ -4,6 +4,7 @@ namespace App\Support\Bmn;
 
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
+use Throwable;
 
 final class BmnValue
 {
@@ -61,7 +62,11 @@ final class BmnValue
         }
 
         if (is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}/', trim($value)) === 1) {
-            return CarbonImmutable::parse(trim($value))->format('Y-m-d');
+            try {
+                return CarbonImmutable::parse(trim($value))->format('Y-m-d');
+            } catch (Throwable) {
+                return null;
+            }
         }
 
         return null;
