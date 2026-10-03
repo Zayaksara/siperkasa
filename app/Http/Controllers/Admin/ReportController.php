@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Reports\ReassignReport;
 use App\Actions\Reports\RejectReport;
 use App\Actions\Reports\ValidateReport;
 use App\Enums\Priority;
@@ -9,6 +10,7 @@ use App\Enums\ReportStatus;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ApproveReportRequest;
+use App\Http\Requests\Admin\ReassignReportRequest;
 use App\Http\Requests\Admin\RejectReportRequest;
 use App\Models\Building;
 use App\Models\Category;
@@ -110,6 +112,17 @@ class ReportController extends Controller
         $reject->handle($report, $request->user(), $request->validated('rejection_reason'));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => "Laporan {$report->ticket_number} ditolak."]);
+
+        return to_route('admin.reports.show', $report);
+    }
+
+    public function reassign(ReassignReportRequest $request, Report $report, ReassignReport $reassign): RedirectResponse
+    {
+        Gate::authorize('reassign', $report);
+
+        $reassign->handle($report, $request->user(), User::findOrFail($request->integer('assigned_pic_id')));
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'PIC dipindahkan.']);
 
         return to_route('admin.reports.show', $report);
     }

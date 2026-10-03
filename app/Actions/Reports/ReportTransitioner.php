@@ -6,6 +6,7 @@ use App\Enums\ReportStatus;
 use App\Models\Report;
 use App\Models\ReportStatusLog;
 use App\Models\User;
+use Closure;
 use Illuminate\Support\Facades\DB;
 
 /** The only place that changes a report's status. transition() opens its own DB transaction. */
@@ -30,6 +31,26 @@ final class ReportTransitioner
             $this->log($report, $from->value, $to->value, $actor, $note);
 
             return $report;
+        });
+    }
+
+    /**
+     * Runs $work in a transaction while the report row is locked and its status (re-read under the lock) is one of $allowed.
+     *
+     * @param  array<int, ReportStatus>  $allowed
+     *
+     * @throws InvalidTransition when the status is not allowed
+     */
+    public function guard(Report $report, array $allowed, Closure $work): mixed
+    {
+        return DB::transaction(function () use ($report, $allowed, $work) {
+            $status = $this->lockStatus($report);
+
+            if (! in_array($status, $allowed, true)) {
+                throw InvalidTransition::between($status, $status);
+            }
+
+            return $work();
         });
     }
 

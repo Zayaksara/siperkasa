@@ -70,6 +70,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('reports/{report}', [AdminReportController::class, 'show'])->name('reports.show');
         Route::post('reports/{report}/approve', [AdminReportController::class, 'approve'])->name('reports.approve');
         Route::post('reports/{report}/reject', [AdminReportController::class, 'reject'])->name('reports.reject');
+        Route::post('reports/{report}/reassign', [AdminReportController::class, 'reassign'])->name('reports.reassign');
     });
 
     Route::middleware('role:pic')->prefix('pic')->name('pic.')->group(function () {

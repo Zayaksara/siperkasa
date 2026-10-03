@@ -6,9 +6,7 @@ use App\Enums\AttachmentType;
 use App\Enums\ReportStatus;
 use App\Models\Report;
 use App\Models\User;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -24,7 +22,7 @@ final class UpdateReport
      * @param  array<int, UploadedFile>  $newPhotos
      * @param  array<int, int|string>  $removeIds
      *
-     * @throws AuthorizationException when the report is no longer pending
+     * @throws InvalidTransition when the report is no longer pending
      * @throws ValidationException when the final photo count is outside the allowed range
      */
     public function handle(Report $report, User $actor, array $data, array $newPhotos, array $removeIds): Report
@@ -34,13 +32,7 @@ final class UpdateReport
         $newPaths = $this->attachments->putFiles($report, AttachmentType::Damage, $newPhotos);
 
         try {
-            $oldPaths = DB::transaction(function () use ($report, $actor, $data, $newPaths, $removeIds) {
-                $current = Report::whereKey($report->id)->lockForUpdate()->value('status');
-
-                if ($current !== ReportStatus::Pending) {
-                    throw new AuthorizationException;
-                }
-
+            $oldPaths = $this->transitioner->guard($report, [ReportStatus::Pending], function () use ($report, $actor, $data, $newPaths, $removeIds) {
                 $this->assertPhotoCount($report, $removeIds, count($newPaths));
 
                 $report->update($data);
