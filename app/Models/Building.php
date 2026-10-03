@@ -17,6 +17,7 @@ class Building extends Model
 
     protected $fillable = ['code', 'name'];
 
+    /** @return HasMany<Room, $this> */
     public function rooms(): HasMany
     {
         return $this->hasMany(Room::class);

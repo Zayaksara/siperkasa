@@ -66,51 +66,61 @@ class Report extends Model
         ];
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return BelongsTo<Category, $this> */
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
     }
 
+    /** @return BelongsTo<Room, $this> */
     public function room(): BelongsTo
     {
         return $this->belongsTo(Room::class);
     }
 
+    /** @return BelongsTo<Asset, $this> */
     public function asset(): BelongsTo
     {
         return $this->belongsTo(Asset::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function admin(): BelongsTo
     {
         return $this->belongsTo(User::class, 'admin_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function assignedPic(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_pic_id');
     }
 
+    /** @return HasMany<ReportAttachment, $this> */
     public function attachments(): HasMany
     {
         return $this->hasMany(ReportAttachment::class);
     }
 
+    /** @return HasMany<ReportAttachment, $this> */
     public function damagePhotos(): HasMany
     {
         return $this->attachments()->where('type', AttachmentType::Damage)->orderBy('position');
     }
 
+    /** @return HasMany<ReportAttachment, $this> */
     public function completionPhotos(): HasMany
     {
         return $this->attachments()->where('type', AttachmentType::Completion)->orderBy('position');
     }
 
+    /** @return HasMany<ReportStatusLog, $this> */
     public function statusLogs(): HasMany
     {
         return $this->hasMany(ReportStatusLog::class)->orderBy('id');

@@ -9,7 +9,9 @@ use App\Http\Controllers\Admin\RoomController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserImportController;
 use App\Http\Controllers\AssetSearchController;
+use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\User\ReportController;
 use App\Models\Asset;
 use App\Models\Report;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +30,13 @@ Route::get('/', function () {
 Route::middleware(['auth', 'active'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::get('assets/search', AssetSearchController::class)->name('assets.search');
+    Route::get('attachments/{attachment}', AttachmentController::class)->name('attachments.show');
+
+    Route::middleware('role:user')->prefix('reports')->name('reports.')->group(function () {
+        Route::get('create', [ReportController::class, 'create'])->name('create');
+        Route::post('/', [ReportController::class, 'store'])->name('store');
+        Route::get('{report}', [ReportController::class, 'show'])->name('show');
+    });
 
     Route::middleware('role:user')->prefix('user')->name('user.')->group(function () {
         Route::inertia('dashboard', 'user/Dashboard')->name('dashboard');

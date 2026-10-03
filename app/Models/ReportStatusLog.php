@@ -21,11 +21,13 @@ class ReportStatusLog extends Model
 
     protected $fillable = ['report_id', 'from_status', 'to_status', 'actor_id', 'note'];
 
+    /** @return BelongsTo<Report, $this> */
     public function report(): BelongsTo
     {
         return $this->belongsTo(Report::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function actor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'actor_id');

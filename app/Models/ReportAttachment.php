@@ -25,6 +25,7 @@ class ReportAttachment extends Model
         return ['type' => AttachmentType::class];
     }
 
+    /** @return BelongsTo<Report, $this> */
     public function report(): BelongsTo
     {
         return $this->belongsTo(Report::class);
