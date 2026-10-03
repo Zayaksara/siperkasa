@@ -33,9 +33,13 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('attachments/{attachment}', AttachmentController::class)->name('attachments.show');
 
     Route::middleware('role:user')->prefix('reports')->name('reports.')->group(function () {
+        Route::get('/', [ReportController::class, 'index'])->name('index');
         Route::get('create', [ReportController::class, 'create'])->name('create');
         Route::post('/', [ReportController::class, 'store'])->name('store');
         Route::get('{report}', [ReportController::class, 'show'])->name('show');
+        Route::get('{report}/edit', [ReportController::class, 'edit'])->name('edit');
+        Route::put('{report}', [ReportController::class, 'update'])->name('update');
+        Route::post('{report}/cancel', [ReportController::class, 'cancel'])->name('cancel');
     });
 
     Route::middleware('role:user')->prefix('user')->name('user.')->group(function () {
