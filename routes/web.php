@@ -68,6 +68,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::delete('rooms/{room}', [RoomController::class, 'destroy'])->name('rooms.destroy');
         Route::get('reports', [AdminReportController::class, 'index'])->name('reports.index');
         Route::get('reports/{report}', [AdminReportController::class, 'show'])->name('reports.show');
+        Route::post('reports/{report}/approve', [AdminReportController::class, 'approve'])->name('reports.approve');
     });
 
     Route::middleware('role:pic')->prefix('pic')->name('pic.')->group(function () {

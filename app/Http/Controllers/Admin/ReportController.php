@@ -2,17 +2,21 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Reports\ValidateReport;
 use App\Enums\Priority;
 use App\Enums\ReportStatus;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\ApproveReportRequest;
 use App\Models\Building;
 use App\Models\Category;
 use App\Models\Report;
 use App\Models\User;
 use App\Support\ReportFilter;
 use App\Support\ReportPresenter;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -78,5 +82,22 @@ class ReportController extends Controller
                 fn (Priority $p) => [$p->value => now()->addDays($p->slaDays())->format('Y-m-d\TH:i')],
             ),
         ]);
+    }
+
+    public function approve(ApproveReportRequest $request, Report $report, ValidateReport $validate): RedirectResponse
+    {
+        Gate::authorize('validate', $report);
+
+        $validate->handle(
+            $report,
+            $request->user(),
+            Priority::from($request->validated('admin_priority')),
+            Date::parse($request->validated('sla_date')),
+            User::findOrFail($request->validated('assigned_pic_id')),
+        );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => "Laporan {$report->ticket_number} divalidasi dan ditugaskan."]);
+
+        return to_route('admin.reports.show', $report);
     }
 }
