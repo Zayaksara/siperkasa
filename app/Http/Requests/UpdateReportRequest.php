@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Report;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Validator;
 
@@ -23,11 +24,17 @@ class UpdateReportRequest extends StoreReportRequest
         ];
     }
 
+    /**
+     * Early feedback only; UpdateReport rechecks the count under the row lock.
+     *
+     * @return array<int, callable(Validator): void>
+     */
     public function after(): array
     {
         return [function (Validator $validator) {
+            /** @var Report $report */
             $report = $this->route('report');
-            $removed = collect($this->input('remove_photo_ids', []))->map(fn ($id) => (int) $id)->all();
+            $removed = array_map('intval', (array) $this->input('remove_photo_ids', []));
 
             $kept = $report->damagePhotos()->whereNotIn('id', $removed)->count();
             $total = $kept + count($this->file('photos', []));

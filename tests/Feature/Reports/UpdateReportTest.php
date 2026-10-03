@@ -5,10 +5,12 @@ use App\Enums\AttachmentType;
 use App\Models\Category;
 use App\Models\Report;
 use App\Models\ReportAttachment;
+use App\Models\ReportStatusLog;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Tests\Support\ReportInput;
 
 beforeEach(function () {
@@ -90,9 +92,102 @@ test('photo ids of another report can not be removed through this report', funct
         ...updatePayload(),
         'remove_photo_ids' => [$foreign->id],
         'photos' => [UploadedFile::fake()->image('b.jpg')],
-    ]);
+    ])->assertSessionHasNoErrors()->assertRedirect(route('reports.show', $this->report));
 
     expect(ReportAttachment::find($foreign->id))->not->toBeNull();
+    Storage::disk('local')->assertExists($foreign->path);
+    expect($this->report->damagePhotos()->count())->toBe(2);
+});
+
+test('added photos are stored under the report damage folder', function () {
+    $this->actingAs($this->owner)->post(route('reports.update', $this->report), [
+        ...updatePayload(),
+        'photos' => [UploadedFile::fake()->image('b.jpg')],
+    ])->assertSessionHasNoErrors();
+
+    $added = $this->report->damagePhotos()->get()->last();
+
+    expect($added->path)->toStartWith("reports/{$this->report->id}/damage/")
+        ->and($added->position)->toBe(2);
+    Storage::disk('local')->assertExists($added->path);
+});
+
+test('a photo-only edit still writes a log row', function () {
+    $this->actingAs($this->owner)->post(route('reports.update', $this->report), [
+        ...updatePayload([
+            'title' => $this->report->title,
+            'category_id' => $this->report->category_id,
+            'room_id' => $this->report->room_id,
+            'description' => $this->report->description,
+            'user_priority' => $this->report->user_priority->value,
+        ]),
+        'photos' => [UploadedFile::fake()->image('b.jpg')],
+    ])->assertSessionHasNoErrors();
+
+    expect($this->report->statusLogs()->count())->toBe(1)
+        ->and($this->report->statusLogs()->first()->note)->toBe('Laporan diubah');
+});
+
+test('with three photos, removing one and adding three is refused', function () {
+    $second = ReportAttachment::factory()->for($this->report)->create(['type' => AttachmentType::Damage, 'path' => 'reports/1/damage/dua.jpg']);
+    $third = ReportAttachment::factory()->for($this->report)->create(['type' => AttachmentType::Damage, 'path' => 'reports/1/damage/tiga.jpg']);
+    Storage::disk('local')->put($second->path, 'x');
+    Storage::disk('local')->put($third->path, 'x');
+
+    $this->actingAs($this->owner)->post(route('reports.update', $this->report), [
+        ...updatePayload(),
+        'remove_photo_ids' => [$this->photo->id],
+        'photos' => [UploadedFile::fake()->image('a.jpg'), UploadedFile::fake()->image('b.jpg'), UploadedFile::fake()->image('c.jpg')],
+    ])->assertSessionHasErrors(['photos' => 'Maksimal 3 foto.']);
+
+    expect($this->report->damagePhotos()->count())->toBe(3);
+    Storage::disk('local')->assertExists($this->photo->path);
+    expect(Storage::disk('local')->allFiles('reports'))->toEqualCanonicalizing([$this->photo->path, $second->path, $third->path]);
+});
+
+test('the action rechecks the photo count under the lock', function () {
+    $loaded = Report::findOrFail($this->report->id);
+
+    expect(fn () => app(UpdateReport::class)->handle($loaded, $this->owner, ['title' => 'Baru'], [], [$this->photo->id]))
+        ->toThrow(ValidationException::class, 'Minimal 1 foto kerusakan.');
+
+    $extra = [UploadedFile::fake()->image('a.jpg'), UploadedFile::fake()->image('b.jpg'), UploadedFile::fake()->image('c.jpg')];
+
+    expect(fn () => app(UpdateReport::class)->handle($loaded, $this->owner, ['title' => 'Baru'], $extra, []))
+        ->toThrow(ValidationException::class, 'Maksimal 3 foto.');
+
+    expect($this->report->fresh()->title)->toBe('Judul lama')
+        ->and($this->report->damagePhotos()->count())->toBe(1);
+    Storage::disk('local')->assertExists($this->photo->path);
+    expect(Storage::disk('local')->allFiles('reports'))->toBe([$this->photo->path]);
+});
+
+test('when saving the new photo row fails the old file stays and no new file is left', function () {
+    ReportAttachment::creating(fn () => throw new RuntimeException('db down'));
+
+    $loaded = Report::findOrFail($this->report->id);
+
+    expect(fn () => app(UpdateReport::class)->handle($loaded, $this->owner, ['title' => 'Baru'], [UploadedFile::fake()->image('b.jpg')], [$this->photo->id]))
+        ->toThrow(RuntimeException::class, 'db down');
+
+    expect($this->report->fresh()->title)->toBe('Judul lama')
+        ->and(ReportAttachment::find($this->photo->id))->not->toBeNull();
+    Storage::disk('local')->assertExists($this->photo->path);
+    expect(Storage::disk('local')->allFiles('reports'))->toBe([$this->photo->path]);
+});
+
+test('when writing the log fails the old file stays and no new file is left', function () {
+    ReportStatusLog::creating(fn () => throw new RuntimeException('log down'));
+
+    $loaded = Report::findOrFail($this->report->id);
+
+    expect(fn () => app(UpdateReport::class)->handle($loaded, $this->owner, ['title' => 'Baru'], [UploadedFile::fake()->image('b.jpg')], [$this->photo->id]))
+        ->toThrow(RuntimeException::class, 'log down');
+
+    expect($this->report->fresh()->title)->toBe('Judul lama')
+        ->and(ReportAttachment::find($this->photo->id))->not->toBeNull();
+    Storage::disk('local')->assertExists($this->photo->path);
+    expect(Storage::disk('local')->allFiles('reports'))->toBe([$this->photo->path]);
 });
 
 test('a stale form is refused once the report is no longer pending', function () {
