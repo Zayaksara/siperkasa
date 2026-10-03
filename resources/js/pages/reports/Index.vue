@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Plus } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import Pagination from '@/components/Pagination.vue';
@@ -37,6 +37,20 @@ defineOptions({
 });
 
 const q = ref(props.filters.q ?? '');
+
+watch(
+    () => props.filters.q,
+    (value) => {
+        q.value = value ?? '';
+    },
+);
+
+const hasFilters = computed(() => !!(props.filters.status || props.filters.q));
+
+function resetFilters() {
+    q.value = '';
+    router.get(index.url(), {}, { preserveState: true, replace: true });
+}
 
 function filter(status?: string) {
     router.get(
@@ -101,7 +115,17 @@ function filter(status?: string) {
         </div>
 
         <EmptyState
-            v-if="reports.data.length === 0"
+            v-if="reports.data.length === 0 && hasFilters"
+            title="Tidak ada laporan yang cocok"
+            description="Ubah kata kunci atau filter status untuk melihat laporan lain."
+        >
+            <Button variant="outline" class="h-11" @click="resetFilters"
+                >Hapus filter</Button
+            >
+        </EmptyState>
+
+        <EmptyState
+            v-else-if="reports.data.length === 0"
             title="Belum ada laporan"
             description="Laporan yang Anda buat akan tampil di sini."
         >

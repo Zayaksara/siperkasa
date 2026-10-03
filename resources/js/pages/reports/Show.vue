@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Pencil } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
@@ -56,16 +56,25 @@ defineOptions({
 });
 
 const confirmCancel = ref(false);
+const cancelling = ref(false);
 
 function doCancel() {
+    if (cancelling.value) return;
+    cancelling.value = true;
     router.post(
         cancel.url(props.report.id),
         {},
-        { preserveScroll: true, onFinish: () => (confirmCancel.value = false) },
+        {
+            preserveScroll: true,
+            onFinish: () => {
+                cancelling.value = false;
+                confirmCancel.value = false;
+            },
+        },
     );
 }
 
-const details: [string, string][] = [
+const details = computed<[string, string][]>(() => [
     ['Kategori', props.report.category ?? '-'],
     ['Lokasi', `${props.report.building ?? '-'}, ${props.report.room ?? '-'}`],
     [
@@ -87,7 +96,7 @@ const details: [string, string][] = [
     ],
     ['PIC', props.report.pic ?? 'Belum ditugaskan'],
     ['Dibuat', formatDateTime(props.report.created_at)],
-];
+]);
 </script>
 
 <template>
@@ -121,7 +130,6 @@ const details: [string, string][] = [
         <section
             v-if="report.rejection_reason"
             class="rounded-xl border border-destructive/40 bg-status-rejected-bg p-4 text-status-rejected"
-            role="status"
         >
             <h2 class="font-semibold">Laporan ditolak</h2>
             <p class="mt-1 text-sm">{{ report.rejection_reason }}</p>
@@ -130,7 +138,6 @@ const details: [string, string][] = [
         <section
             v-if="report.hold_reason && report.status === 'On_Hold'"
             class="rounded-xl border bg-status-on-hold-bg p-4 text-status-on-hold"
-            role="status"
         >
             <h2 class="font-semibold">Pengerjaan ditunda</h2>
             <p class="mt-1 text-sm">{{ report.hold_reason }}</p>
@@ -145,13 +152,15 @@ const details: [string, string][] = [
 
         <section aria-labelledby="desc">
             <h2 id="desc" class="mb-1 font-semibold">Deskripsi</h2>
-            <p class="whitespace-pre-line">{{ report.description }}</p>
+            <p class="break-words whitespace-pre-line">
+                {{ report.description }}
+            </p>
         </section>
 
         <section v-if="report.damage_photos.length" aria-labelledby="photos">
             <h2 id="photos" class="mb-2 font-semibold">Foto kerusakan</h2>
             <ul class="grid grid-cols-3 gap-2">
-                <li v-for="photo in report.damage_photos" :key="photo.id">
+                <li v-for="(photo, i) in report.damage_photos" :key="photo.id">
                     <a
                         :href="photo.url"
                         target="_blank"
@@ -160,7 +169,7 @@ const details: [string, string][] = [
                     >
                         <img
                             :src="photo.url"
-                            alt="Foto kerusakan"
+                            :alt="`Foto kerusakan ${i + 1} dari ${report.damage_photos.length}`"
                             class="size-full object-cover"
                             loading="lazy"
                         />
@@ -175,7 +184,12 @@ const details: [string, string][] = [
             aria-labelledby="done"
         >
             <h2 id="done" class="font-semibold">Hasil perbaikan</h2>
-            <p class="whitespace-pre-line">{{ report.repair_action }}</p>
+            <p
+                v-if="report.repair_action"
+                class="break-words whitespace-pre-line"
+            >
+                {{ report.repair_action }}
+            </p>
             <dl class="grid gap-3 sm:grid-cols-3">
                 <div>
                     <dt class="text-sm text-muted-foreground">
@@ -200,7 +214,10 @@ const details: [string, string][] = [
                 v-if="report.completion_photos.length"
                 class="grid grid-cols-3 gap-2"
             >
-                <li v-for="photo in report.completion_photos" :key="photo.id">
+                <li
+                    v-for="(photo, i) in report.completion_photos"
+                    :key="photo.id"
+                >
                     <a
                         :href="photo.url"
                         target="_blank"
@@ -209,7 +226,7 @@ const details: [string, string][] = [
                     >
                         <img
                             :src="photo.url"
-                            alt="Foto bukti perbaikan"
+                            :alt="`Foto bukti perbaikan ${i + 1} dari ${report.completion_photos.length}`"
                             class="size-full object-cover"
                             loading="lazy"
                         />
@@ -230,6 +247,7 @@ const details: [string, string][] = [
         description="Laporan yang dibatalkan tidak bisa dibuka kembali."
         confirm-label="Ya, batalkan"
         destructive
+        :processing="cancelling"
         @confirm="doCancel"
     />
 </template>
