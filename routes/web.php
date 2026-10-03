@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AssetController;
 use App\Http\Controllers\Admin\AssetImportController;
 use App\Http\Controllers\Admin\BuildingController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\RoomController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserImportController;
@@ -65,6 +66,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('buildings/{building}/rooms', [RoomController::class, 'store'])->name('buildings.rooms.store');
         Route::put('rooms/{room}', [RoomController::class, 'update'])->name('rooms.update');
         Route::delete('rooms/{room}', [RoomController::class, 'destroy'])->name('rooms.destroy');
+        Route::get('reports', [AdminReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/{report}', [AdminReportController::class, 'show'])->name('reports.show');
     });
 
     Route::middleware('role:pic')->prefix('pic')->name('pic.')->group(function () {
