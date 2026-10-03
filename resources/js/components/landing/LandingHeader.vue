@@ -1,0 +1,126 @@
+<script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
+import { ArrowRight, Menu, X } from '@lucide/vue';
+import { onKeyStroke, useWindowScroll } from '@vueuse/core';
+import { computed, ref, useTemplateRef } from 'vue';
+import BrandLogo from '@/components/BrandLogo.vue';
+import { dashboard, login } from '@/routes';
+import { scrollToSection } from './scrollTo';
+
+defineProps<{ authed: boolean }>();
+
+const { y } = useWindowScroll();
+const menuOpen = ref(false);
+const menuButton = useTemplateRef<HTMLButtonElement>('menuButton');
+const solid = computed(() => y.value > 24 || menuOpen.value);
+
+onKeyStroke('Escape', () => {
+    if (!menuOpen.value) return;
+    menuOpen.value = false;
+    menuButton.value?.focus();
+});
+
+function go(event: MouseEvent, id: string): void {
+    menuOpen.value = false;
+    scrollToSection(event, id);
+}
+
+const links = [
+    { id: 'cara-kerja', label: 'Cara kerja' },
+    { id: 'fitur', label: 'Fitur' },
+    { id: 'peran', label: 'Peran' },
+];
+</script>
+
+<template>
+    <header
+        class="fixed inset-x-0 top-0 z-50 border-b transition-[background-color,border-color,box-shadow] duration-300 motion-reduce:transition-none"
+        :class="
+            solid
+                ? 'border-border bg-background/85 shadow-[0_8px_28px_-12px_color-mix(in_oklab,var(--foreground)_18%,transparent)] backdrop-blur-md'
+                : 'border-transparent bg-transparent'
+        "
+    >
+        <div
+            class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 transition-[height] duration-300 motion-reduce:transition-none sm:px-6"
+            :class="solid ? 'h-16' : 'h-20'"
+        >
+            <a
+                href="#beranda"
+                class="flex min-h-11 items-center gap-2.5 rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                aria-label="SiPerkasa, kembali ke atas"
+                @click="scrollToSection($event, 'beranda')"
+            >
+                <BrandLogo :size="28" />
+                <span
+                    class="hidden text-[17px] font-bold tracking-tight text-foreground min-[400px]:inline"
+                >
+                    Si<span class="text-primary">Perkasa</span>
+                </span>
+            </a>
+
+            <nav aria-label="Navigasi halaman" class="hidden md:block">
+                <ul class="flex items-center gap-1">
+                    <li v-for="link in links" :key="link.id">
+                        <a
+                            :href="`#${link.id}`"
+                            class="inline-flex min-h-11 items-center rounded-full px-4 text-[15px] font-medium text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:bg-secondary"
+                            @click="scrollToSection($event, link.id)"
+                        >
+                            {{ link.label }}
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="flex items-center gap-2">
+                <button
+                    ref="menuButton"
+                    type="button"
+                    class="inline-flex size-11 items-center justify-center rounded-full text-foreground transition-colors duration-150 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:bg-secondary md:hidden"
+                    :aria-expanded="menuOpen"
+                    aria-controls="menu-seluler"
+                    :aria-label="
+                        menuOpen ? 'Tutup menu navigasi' : 'Buka menu navigasi'
+                    "
+                    @click="menuOpen = !menuOpen"
+                >
+                    <component
+                        :is="menuOpen ? X : Menu"
+                        class="size-5"
+                        aria-hidden="true"
+                    />
+                </button>
+                <Link
+                    :href="authed ? dashboard() : login()"
+                    class="group inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-4 text-[15px] font-semibold text-primary-foreground transition-[background-color,scale] duration-200 hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none sm:px-5"
+                >
+                    {{ authed ? 'Buka Dashboard' : 'Masuk' }}
+                    <ArrowRight
+                        class="hidden size-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none sm:block"
+                        aria-hidden="true"
+                    />
+                </Link>
+            </div>
+        </div>
+
+        <nav
+            v-show="menuOpen"
+            id="menu-seluler"
+            aria-label="Navigasi halaman (seluler)"
+            class="border-t border-border bg-background px-4 pb-4 md:hidden"
+        >
+            <ul class="flex flex-col pt-2">
+                <li v-for="link in links" :key="link.id">
+                    <a
+                        :href="`#${link.id}`"
+                        class="flex min-h-12 items-center rounded-xl px-3 text-base font-medium text-foreground transition-colors duration-150 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:bg-secondary"
+                        @click="go($event, link.id)"
+                    >
+                        {{ link.label }}
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </header>
+</template>
