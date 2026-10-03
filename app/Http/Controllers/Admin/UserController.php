@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\SaveUserRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -21,7 +22,7 @@ class UserController extends Controller
         $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:100'],
             'role' => ['nullable', 'in:user,admin,pic'],
-            'status' => ['nullable', 'in:active,inactive'],
+            'status' => ['nullable', 'in:active,inactive,trashed'],
         ]);
 
         $users = User::query()
@@ -30,7 +31,8 @@ class UserController extends Controller
                 $query->where(fn ($inner) => $inner->where('name', 'like', $like)->orWhere('nim_nip', 'like', $like));
             })
             ->when($filters['role'] ?? null, fn ($query, $role) => $query->where('role', $role))
-            ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('is_active', $status === 'active'))
+            ->when(($filters['status'] ?? null) === 'trashed', fn ($query) => $query->onlyTrashed())
+            ->when(in_array($filters['status'] ?? null, ['active', 'inactive'], true), fn ($query) => $query->where('is_active', $filters['status'] === 'active'))
             ->orderBy('name')
             ->paginate(20)
             ->withQueryString()
@@ -42,6 +44,9 @@ class UserController extends Controller
                 'role' => $user->role->value,
                 'role_label' => $user->role->label(),
                 'is_active' => $user->is_active,
+                'deleted' => $user->trashed(),
+                'is_self' => $user->is($request->user()),
+                'is_super_admin' => $user->isSuperAdmin(),
             ]);
 
         return Inertia::render('admin/users/Index', [
@@ -95,6 +100,40 @@ class UserController extends Controller
         $user->clearDefaultPicIfNotPic();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => $data['is_active'] ? 'Akun diaktifkan.' : 'Akun dinonaktifkan.']);
+
+        return back();
+    }
+
+    public function destroy(Request $request, User $user): RedirectResponse
+    {
+        Gate::authorize('delete', $user);
+
+        if ($user->is($request->user())) {
+            return back()->withErrors(['user' => 'Tidak bisa menghapus akun sendiri.']);
+        }
+
+        if ($user->isSuperAdmin()) {
+            return back()->withErrors(['user' => 'Super admin tidak bisa dihapus.']);
+        }
+
+        DB::transaction(function () use ($user) {
+            $user->defaultCategories()->update(['default_pic_id' => null]);
+            $user->delete();
+            DB::table('sessions')->where('user_id', $user->id)->delete();
+        });
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Akun dihapus.']);
+
+        return back();
+    }
+
+    public function restore(User $user): RedirectResponse
+    {
+        Gate::authorize('restore', $user);
+
+        $user->restore();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Akun dipulihkan.']);
 
         return back();
     }

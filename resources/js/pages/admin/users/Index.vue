@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
-import { KeyRound, Pencil, Plus, Power, Upload } from '@lucide/vue';
+import {
+    KeyRound,
+    Pencil,
+    Plus,
+    Power,
+    RotateCcw,
+    Trash2,
+    Upload,
+} from '@lucide/vue';
 import { computed, ref } from 'vue';
+import { toast } from 'vue-sonner';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import InputError from '@/components/InputError.vue';
@@ -22,8 +31,10 @@ import { NativeSelect } from '@/components/ui/native-select';
 import {
     active,
     importMethod as importUsers,
+    destroy,
     index,
     password as setPassword,
+    restore,
     store,
     update,
 } from '@/routes/admin/users';
@@ -36,6 +47,9 @@ type Row = {
     role: string;
     role_label: string;
     is_active: boolean;
+    deleted: boolean;
+    is_self: boolean;
+    is_super_admin: boolean;
 };
 type ImportResult = {
     created: number;
@@ -139,6 +153,32 @@ function confirmToggle() {
     );
 }
 
+const removing = ref<Row | null>(null);
+const restoring = ref<Row | null>(null);
+
+function confirmRemove() {
+    if (!removing.value) return;
+    router.delete(destroy.url(removing.value.id), {
+        preserveScroll: true,
+        onError: (errors) => toast.error(errors.user ?? 'Akun gagal dihapus.'),
+        onFinish: () => (removing.value = null),
+    });
+}
+
+function confirmRestore() {
+    if (!restoring.value) return;
+    router.post(
+        restore.url(restoring.value.id),
+        {},
+        {
+            preserveScroll: true,
+            onError: (errors) =>
+                toast.error(errors.user ?? 'Akun gagal dipulihkan.'),
+            onFinish: () => (restoring.value = null),
+        },
+    );
+}
+
 const importForm = useForm<{ file: File | null }>({ file: null });
 
 function submitImport() {
@@ -155,7 +195,7 @@ function submitImport() {
     <div class="flex flex-col gap-4 p-4">
         <PageHeader
             title="Pengguna"
-            description="Akun dibuat dan dikelola admin. Akun tidak dihapus, hanya dinonaktifkan."
+            description="Akun dibuat dan dikelola admin. Akun yang dihapus disembunyikan dan bisa dipulihkan."
         >
             <Button class="h-11" @click="create"
                 ><Plus class="size-4" /> Tambah pengguna</Button
@@ -179,6 +219,7 @@ function submitImport() {
                 <option value="">Semua status</option>
                 <option value="active">Aktif</option>
                 <option value="inactive">Nonaktif</option>
+                <option value="trashed">Terhapus</option>
             </NativeSelect>
             <Button type="submit" class="h-11 md:col-span-4 md:w-fit"
                 >Terapkan filter</Button
@@ -231,7 +272,12 @@ function submitImport() {
                     <p class="truncate font-medium">
                         {{ row.name }}
                         <span
-                            v-if="!row.is_active"
+                            v-if="row.deleted"
+                            class="ml-1 rounded bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive"
+                            >Terhapus</span
+                        >
+                        <span
+                            v-else-if="!row.is_active"
                             class="ml-1 rounded bg-status-cancelled-bg px-2 py-0.5 text-xs font-semibold text-status-cancelled"
                             >Nonaktif</span
                         >
@@ -243,35 +289,54 @@ function submitImport() {
                 </div>
                 <div class="flex shrink-0 gap-1">
                     <Button
+                        v-if="row.deleted"
                         variant="outline"
-                        size="icon"
-                        class="size-11"
-                        :aria-label="`Ubah ${row.name}`"
-                        @click="edit(row)"
-                        ><Pencil class="size-4"
-                    /></Button>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        class="size-11"
-                        :aria-label="`Ganti password ${row.name}`"
-                        @click="pwUser = row"
-                        ><KeyRound class="size-4"
-                    /></Button>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        class="size-11"
-                        :disabled="row.id === me"
-                        :aria-label="
-                            row.is_active
-                                ? `Nonaktifkan ${row.name}`
-                                : `Aktifkan ${row.name}`
-                        "
-                        @click="toggling = row"
+                        class="h-11"
+                        :aria-label="`Pulihkan ${row.name}`"
+                        @click="restoring = row"
+                        ><RotateCcw class="size-4" /> Pulihkan</Button
                     >
-                        <Power class="size-4" />
-                    </Button>
+                    <template v-else>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            class="size-11"
+                            :aria-label="`Ubah ${row.name}`"
+                            @click="edit(row)"
+                            ><Pencil class="size-4"
+                        /></Button>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            class="size-11"
+                            :aria-label="`Ganti password ${row.name}`"
+                            @click="pwUser = row"
+                            ><KeyRound class="size-4"
+                        /></Button>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            class="size-11"
+                            :disabled="row.id === me"
+                            :aria-label="
+                                row.is_active
+                                    ? `Nonaktifkan ${row.name}`
+                                    : `Aktifkan ${row.name}`
+                            "
+                            @click="toggling = row"
+                        >
+                            <Power class="size-4" />
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            class="size-11 text-destructive hover:text-destructive"
+                            :disabled="row.is_self || row.is_super_admin"
+                            :aria-label="`Hapus ${row.name}`"
+                            @click="removing = row"
+                            ><Trash2 class="size-4"
+                        /></Button>
+                    </template>
                 </div>
             </li>
         </ul>
@@ -445,5 +510,24 @@ function submitImport() {
         :destructive="toggling?.is_active"
         @update:open="(value) => !value && (toggling = null)"
         @confirm="confirmToggle"
+    />
+
+    <ConfirmDialog
+        :open="removing !== null"
+        title="Hapus akun?"
+        :description="`Hapus akun ${removing?.name}? Akun disembunyikan dan tidak bisa login. Riwayat laporan tetap tersimpan.`"
+        confirm-label="Hapus"
+        destructive
+        @update:open="(value) => !value && (removing = null)"
+        @confirm="confirmRemove"
+    />
+
+    <ConfirmDialog
+        :open="restoring !== null"
+        title="Pulihkan akun?"
+        :description="`${restoring?.name} bisa masuk kembali dan muncul lagi di daftar pengguna.`"
+        confirm-label="Pulihkan"
+        @update:open="(value) => !value && (restoring = null)"
+        @confirm="confirmRestore"
     />
 </template>

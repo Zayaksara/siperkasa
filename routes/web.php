@@ -49,6 +49,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('users', [UserController::class, 'store'])->name('users.store');
         Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::patch('users/{user}/active', [UserController::class, 'active'])->name('users.active');
+        Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+        Route::post('users/{user}/restore', [UserController::class, 'restore'])->withTrashed()->name('users.restore');
         Route::put('users/{user}/password', [UserController::class, 'password'])->name('users.password');
         Route::get('assets', [AssetController::class, 'index'])->name('assets.index');
         Route::get('assets/{asset}', [AssetController::class, 'show'])->name('assets.show');

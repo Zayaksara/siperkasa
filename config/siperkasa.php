@@ -7,4 +7,7 @@ return [
     'photos' => ['min' => 1, 'max' => 3, 'max_kb' => 2048],
 
     'pdf_max_rows' => 1000,
+
+    // NIM/NIP of the seeded super admin; this account can never be deleted.
+    'super_admin_nip' => env('SUPER_ADMIN_NIP', 'admin'),
 ];

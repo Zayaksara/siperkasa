@@ -19,7 +19,7 @@ class SaveUserRequest extends FormRequest
         $id = $user instanceof User ? $user->id : null;
 
         return [
-            'nim_nip' => $this->nimNipRules($id),
+            'nim_nip' => ['required', 'string', 'max:255', Rule::unique(User::class)->whereNull('deleted_at')->ignore($id)],
             'name' => $this->nameRules(),
             'email' => $this->emailRules($id),
             'role' => ['required', Rule::enum(UserRole::class)],
@@ -36,6 +36,10 @@ class SaveUserRequest extends FormRequest
     {
         return [function (Validator $validator) {
             $user = $this->route('user');
+
+            if ($user === null && User::onlyTrashed()->where('nim_nip', $this->input('nim_nip'))->exists()) {
+                $validator->errors()->add('nim_nip', 'NIM/NIP milik akun yang dihapus. Pulihkan akun tersebut.');
+            }
 
             if ($user instanceof User && $user->is($this->user()) && $this->input('role') !== UserRole::Admin->value) {
                 $validator->errors()->add('role', 'Anda tidak bisa mengubah peran akun sendiri.');

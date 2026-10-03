@@ -28,6 +28,7 @@ final class ImportUsers
 
         $nimNips = array_filter(array_map(fn ($row) => BmnValue::string($row['nim_nip'] ?? null), $rows));
         $existingUsers = User::whereIn('nim_nip', $nimNips)->get()->keyBy('nim_nip');
+        $trashedNimNips = User::onlyTrashed()->whereIn('nim_nip', $nimNips)->pluck('nim_nip')->flip();
 
         foreach ($rows as $line => $row) {
             $data = [
@@ -40,6 +41,13 @@ final class ImportUsers
 
             if (! array_filter($data)) {
                 continue; // blank line
+            }
+
+            if ($data['nim_nip'] !== null && $trashedNimNips->has($data['nim_nip'])) {
+                $result['failed']++;
+                $result['errors'][] = ['line' => $line, 'message' => 'NIM/NIP milik akun yang dihapus. Pulihkan akun tersebut.'];
+
+                continue;
             }
 
             $existing = $data['nim_nip'] === null ? null : $existingUsers->get($data['nim_nip']);

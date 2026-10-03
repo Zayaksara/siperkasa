@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
         }
 
         User::firstOrCreate(
-            ['nim_nip' => env('SUPER_ADMIN_NIP', 'admin')],
+            ['nim_nip' => config('siperkasa.super_admin_nip')],
             [
                 'name' => 'Super Admin',
                 'email' => 'admin@siperkasa.local',

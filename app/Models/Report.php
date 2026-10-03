@@ -69,7 +69,7 @@ class Report extends Model
     /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     /** @return BelongsTo<Category, $this> */
@@ -93,13 +93,13 @@ class Report extends Model
     /** @return BelongsTo<User, $this> */
     public function admin(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'admin_id');
+        return $this->belongsTo(User::class, 'admin_id')->withTrashed();
     }
 
     /** @return BelongsTo<User, $this> */
     public function assignedPic(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'assigned_pic_id');
+        return $this->belongsTo(User::class, 'assigned_pic_id')->withTrashed();
     }
 
     /** @return HasMany<ReportAttachment, $this> */
