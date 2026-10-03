@@ -4,6 +4,7 @@ import { UserRound } from '@lucide/vue';
 import { computed } from 'vue';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { useRoleNav } from '@/composables/useRoleNav';
+import { toUrl } from '@/lib/utils';
 import { edit } from '@/routes/profile';
 import type { NavItem } from '@/types';
 
@@ -14,6 +15,14 @@ const tabs = computed<NavItem[]>(() => [
     ...items.value.slice(0, 4),
     { title: 'Profil', href: edit(), icon: UserRound },
 ]);
+
+// Only the most specific matching tab is current ("/reports/create" is not also "/reports").
+const currentTab = computed(
+    () =>
+        [...tabs.value]
+            .filter((tab) => isCurrentOrParentUrl(tab.href))
+            .sort((a, b) => toUrl(b.href).length - toUrl(a.href).length)[0],
+);
 </script>
 
 <template>
@@ -25,7 +34,7 @@ const tabs = computed<NavItem[]>(() => [
             v-for="item in tabs"
             :key="item.title"
             :href="item.href"
-            :aria-current="isCurrentOrParentUrl(item.href) ? 'page' : undefined"
+            :aria-current="item === currentTab ? 'page' : undefined"
             class="flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 px-1 text-xs font-medium text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none aria-[current=page]:text-primary"
         >
             <component :is="item.icon" class="size-5" aria-hidden="true" />

@@ -10,12 +10,18 @@ export type AssetOption = {
 
 <script setup lang="ts">
 import { X } from '@lucide/vue';
-import { onBeforeUnmount, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { search } from '@/routes/assets';
 
+const MIN_CHARS = 2;
+
 const model = defineModel<AssetOption | null>({ default: null });
+
+const uid = useId();
+const listboxId = `${uid}-listbox`;
+const optionId = (index: number) => `${uid}-option-${index}`;
 
 const query = ref('');
 const results = ref<AssetOption[]>([]);
@@ -23,23 +29,56 @@ const open = ref(false);
 const active = ref(-1);
 const loading = ref(false);
 const failed = ref(false);
+const searched = ref(false);
+const inputRef = ref<{ $el: HTMLElement }>();
+const clearRef = ref<{ $el: HTMLElement }>();
 let timer: ReturnType<typeof setTimeout> | undefined;
 let sequence = 0;
 
-function onInput() {
+const trimmed = computed(() => query.value.trim());
+
+const status = computed(() => {
+    if (failed.value) return 'Pencarian gagal. Coba lagi.';
+    if (loading.value) return 'Mencari aset…';
+    if (trimmed.value.length < MIN_CHARS) {
+        return 'Ketik minimal 2 karakter untuk mencari aset.';
+    }
+    if (searched.value && results.value.length === 0) {
+        return 'Aset tidak ditemukan.';
+    }
+    if (results.value.length > 0) {
+        return `${results.value.length} aset ditemukan. Gunakan panah atas dan bawah lalu Enter untuk memilih.`;
+    }
+
+    return '';
+});
+
+watch(query, (value) => {
     clearTimeout(timer);
     sequence++;
     failed.value = false;
 
-    if (query.value.trim().length < 2) {
+    if (value.trim().length < MIN_CHARS) {
         results.value = [];
         open.value = false;
         loading.value = false;
+        searched.value = false;
+        active.value = -1;
+
         return;
     }
 
     timer = setTimeout(load, 300);
-}
+});
+
+watch(active, async (index) => {
+    if (index < 0) return;
+
+    await nextTick();
+    document
+        .getElementById(optionId(index))
+        ?.scrollIntoView({ block: 'nearest' });
+});
 
 async function load() {
     const current = ++sequence;
@@ -48,7 +87,7 @@ async function load() {
 
     try {
         const response = await fetch(
-            search.url({ query: { q: query.value.trim() } }),
+            search.url({ query: { q: trimmed.value } }),
             {
                 headers: { Accept: 'application/json' },
                 credentials: 'same-origin',
@@ -61,25 +100,45 @@ async function load() {
 
         results.value = json.data;
         active.value = -1;
-        open.value = true;
+        searched.value = true;
+        open.value = json.data.length > 0;
     } catch {
         if (current !== sequence) return;
         results.value = [];
         failed.value = true;
-        open.value = true;
+        open.value = false;
     } finally {
         if (current === sequence) loading.value = false;
     }
 }
 
-function choose(option: AssetOption) {
+async function choose(option: AssetOption) {
+    clearTimeout(timer);
     model.value = option;
     query.value = '';
     results.value = [];
     open.value = false;
+
+    await nextTick();
+    clearRef.value?.$el.focus();
+}
+
+async function clear() {
+    model.value = null;
+
+    await nextTick();
+    inputRef.value?.$el.focus();
 }
 
 function onKeydown(event: KeyboardEvent) {
+    if (event.key === 'ArrowDown' && !open.value && results.value.length > 0) {
+        event.preventDefault();
+        open.value = true;
+        active.value = 0;
+
+        return;
+    }
+
     if (!open.value) return;
 
     if (event.key === 'ArrowDown') {
@@ -92,6 +151,7 @@ function onKeydown(event: KeyboardEvent) {
         event.preventDefault();
         choose(results.value[active.value]);
     } else if (event.key === 'Escape') {
+        event.preventDefault();
         open.value = false;
     }
 }
@@ -112,12 +172,13 @@ onBeforeUnmount(() => clearTimeout(timer));
                 </p>
             </div>
             <Button
+                ref="clearRef"
                 type="button"
                 variant="outline"
                 size="icon"
                 class="size-11 shrink-0"
                 aria-label="Hapus aset terpilih"
-                @click="model = null"
+                @click="clear"
             >
                 <X class="size-4" />
             </Button>
@@ -125,53 +186,40 @@ onBeforeUnmount(() => clearTimeout(timer));
 
         <template v-else>
             <Input
+                ref="inputRef"
                 v-model="query"
                 class="h-11"
                 role="combobox"
                 aria-label="Cari aset"
                 aria-autocomplete="list"
-                aria-controls="asset-listbox"
+                :aria-controls="listboxId"
                 :aria-expanded="open"
                 :aria-busy="loading"
                 :aria-activedescendant="
-                    active >= 0 ? `asset-option-${active}` : undefined
+                    open && active >= 0 ? optionId(active) : undefined
                 "
                 placeholder="Cari kode atau nama aset (opsional)"
                 autocomplete="off"
-                @input="onInput"
                 @keydown="onKeydown"
                 @blur="open = false"
             />
             <p
-                v-if="loading"
-                class="mt-1 text-xs text-muted-foreground"
+                class="mt-1 min-h-4 text-xs"
+                :class="failed ? 'text-destructive' : 'text-muted-foreground'"
                 aria-live="polite"
             >
-                Mencari aset…
+                {{ status }}
             </p>
             <ul
-                v-show="open"
-                id="asset-listbox"
+                v-show="open && results.length > 0"
+                :id="listboxId"
                 role="listbox"
                 aria-label="Hasil pencarian aset"
                 class="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-md border border-border bg-popover text-popover-foreground shadow-md"
             >
                 <li
-                    v-if="failed"
-                    class="p-3 text-sm text-destructive"
-                    role="alert"
-                >
-                    Pencarian gagal. Coba lagi.
-                </li>
-                <li
-                    v-else-if="results.length === 0 && !loading"
-                    class="p-3 text-sm text-muted-foreground"
-                >
-                    Aset tidak ditemukan.
-                </li>
-                <li
                     v-for="(option, index) in results"
-                    :id="`asset-option-${index}`"
+                    :id="optionId(index)"
                     :key="option.id"
                     role="option"
                     :aria-selected="index === active"

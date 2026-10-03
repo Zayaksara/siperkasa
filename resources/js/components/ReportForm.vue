@@ -3,6 +3,7 @@ import { router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import AssetCombobox from '@/components/AssetCombobox.vue';
 import type { AssetOption } from '@/components/AssetCombobox.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import InputError from '@/components/InputError.vue';
 import PhotoUploader from '@/components/PhotoUploader.vue';
 import { Button } from '@/components/ui/button';
@@ -63,21 +64,30 @@ const form = useForm({
     remove_photo_ids: [] as number[],
 });
 
+const compressing = ref(false);
+const confirmCancel = ref(false);
+const blocked = computed(() => form.processing || compressing.value);
+
 watch(buildingId, () => {
-    if (!rooms.value.some((room) => room.id === Number(form.room_id)))
+    if (!rooms.value.some((room) => room.id === Number(form.room_id))) {
         form.room_id = '';
+    }
 });
 
-const photoError = computed(() => {
-    const errors = form.errors as Record<string, string | undefined>;
-
-    return (
-        errors.photos ??
-        Object.entries(errors).find(([key]) => key.startsWith('photos.'))?.[1]
-    );
-});
+const errors = computed(
+    () => form.errors as Record<string, string | undefined>,
+);
+const photoError = computed(
+    () =>
+        errors.value.photos ??
+        Object.entries(errors.value).find(([key]) =>
+            key.startsWith('photos.'),
+        )?.[1],
+);
 
 function submit() {
+    if (blocked.value) return;
+
     form.transform((data) => {
         const { asset, ...rest } = data;
         const payload = { ...rest, asset_id: asset?.id ?? null };
@@ -89,10 +99,27 @@ function submit() {
         props.mode === 'edit' ? update.url(props.report!.id) : store.url();
     form.post(url, { forceFormData: true, preserveScroll: true });
 }
+
+function leave() {
+    router.visit(props.report ? show.url(props.report.id) : index.url());
+}
+
+function cancel() {
+    if (form.isDirty) {
+        confirmCancel.value = true;
+
+        return;
+    }
+
+    leave();
+}
 </script>
 
 <template>
-    <form class="grid gap-5 pb-4" @submit.prevent="submit">
+    <form
+        class="grid gap-5 pb-4 [&_button]:scroll-mb-40 [&_input]:scroll-mb-40 [&_select]:scroll-mb-40 [&_textarea]:scroll-mb-40"
+        @submit.prevent="submit"
+    >
         <section
             class="grid gap-1 rounded-xl border border-border bg-muted/40 p-3 text-sm"
             aria-label="Data pelapor"
@@ -179,14 +206,10 @@ function submit() {
             </div>
         </div>
 
-        <div class="grid gap-2">
-            <Label>Aset terkait (opsional)</Label>
+        <div class="grid gap-2" role="group" aria-labelledby="asset-label">
+            <Label id="asset-label">Aset terkait (opsional)</Label>
             <AssetCombobox v-model="form.asset" />
-            <InputError
-                :message="
-                    (form.errors as Record<string, string | undefined>).asset_id
-                "
-            />
+            <InputError :message="errors.asset_id" />
         </div>
 
         <div class="grid gap-2">
@@ -195,11 +218,17 @@ function submit() {
                 id="description"
                 v-model="form.description"
                 :rows="5"
+                minlength="10"
                 maxlength="2000"
                 placeholder="Jelaskan apa yang rusak dan sejak kapan."
                 required
+                aria-describedby="description-count"
                 :aria-invalid="!!form.errors.description"
             />
+            <p id="description-count" class="text-xs text-muted-foreground">
+                {{ form.description.length }} dari 2000 karakter. Minimal 10
+                karakter.
+            </p>
             <InputError :message="form.errors.description" />
         </div>
 
@@ -222,46 +251,54 @@ function submit() {
             <InputError :message="form.errors.user_priority" />
         </div>
 
-        <div class="grid gap-2">
-            <Label>Foto kerusakan</Label>
+        <div class="grid gap-2" role="group" aria-labelledby="photos-label">
+            <Label id="photos-label">Foto kerusakan</Label>
             <PhotoUploader
                 v-model="form.photos"
                 v-model:removed-ids="form.remove_photo_ids"
+                v-model:busy="compressing"
                 :existing="report?.damage_photos ?? []"
                 :error="photoError"
             />
         </div>
 
         <div
-            class="sticky bottom-14 z-30 -mx-4 flex gap-2 border-t border-border bg-background p-4 md:bottom-0"
+            class="sticky bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 -mx-4 flex gap-2 border-t border-border bg-background p-4 md:bottom-0"
         >
             <Button
                 type="button"
                 variant="outline"
                 class="h-11"
                 :disabled="form.processing"
-                @click="
-                    router.visit(
-                        props.report ? show.url(props.report.id) : index.url(),
-                    )
-                "
+                @click="cancel"
             >
                 Batal
             </Button>
             <Button
                 type="submit"
                 class="h-11 flex-1"
-                :disabled="form.processing"
+                :disabled="blocked"
                 data-test="submit-report"
             >
                 {{
                     form.processing
                         ? 'Mengirim…'
-                        : mode === 'edit'
-                          ? 'Simpan perubahan'
-                          : 'Kirim laporan'
+                        : compressing
+                          ? 'Memproses foto…'
+                          : mode === 'edit'
+                            ? 'Simpan perubahan'
+                            : 'Kirim laporan'
                 }}
             </Button>
         </div>
+
+        <ConfirmDialog
+            v-model:open="confirmCancel"
+            title="Buang perubahan?"
+            description="Isian yang belum dikirim akan hilang."
+            confirm-label="Ya, buang perubahan"
+            destructive
+            @confirm="leave"
+        />
     </form>
 </template>

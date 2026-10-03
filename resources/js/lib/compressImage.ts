@@ -1,55 +1,94 @@
+export const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+export const MAX_BYTES = 2048 * 1024;
+
+export const TYPE_ERROR = 'Foto harus berformat jpg, png, atau webp.';
+export const SIZE_ERROR = 'Ukuran foto maksimal 2 MB.';
+
+const QUALITIES = (quality: number) => [quality, quality - 0.2, quality - 0.4];
+
 /**
- * Downscales an image so its longest side is at most `maxSide` px and re-encodes it as WebP.
- * Falls back to the original file when the browser cannot decode or encode it.
+ * Downscales an image so its longest side is at most `maxSide` px and re-encodes it (WebP when
+ * the browser supports it) so it fits the 2 MB upload limit. Retries with lower quality, then a
+ * smaller size. Resolves with the original file only when it is already an accepted type and
+ * within the limit; rejects with a user-facing message otherwise.
  */
 export async function compressImage(
     file: File,
     maxSide = 1600,
     quality = 0.8,
 ): Promise<File> {
-    if (
-        !file.type.startsWith('image/') ||
-        typeof createImageBitmap !== 'function'
-    ) {
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+        throw new Error(TYPE_ERROR);
+    }
+
+    const original = () => {
+        if (file.size > MAX_BYTES) throw new Error(SIZE_ERROR);
+
         return file;
+    };
+
+    if (typeof createImageBitmap !== 'function') return original();
+
+    let bitmap: ImageBitmap;
+    try {
+        bitmap = await createImageBitmap(file, {
+            imageOrientation: 'from-image',
+        });
+    } catch {
+        return original();
     }
 
     try {
-        const bitmap = await createImageBitmap(file, {
-            imageOrientation: 'from-image',
-        });
-        const scale = Math.min(
-            1,
-            maxSide / Math.max(bitmap.width, bitmap.height),
-        );
-        const width = Math.round(bitmap.width * scale);
-        const height = Math.round(bitmap.height * scale);
+        for (const side of [maxSide, maxSide * 0.75, maxSide * 0.5]) {
+            for (const q of QUALITIES(quality)) {
+                const blob = await encode(bitmap, side, q);
 
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
+                if (!blob || !ACCEPTED_TYPES.includes(blob.type)) {
+                    return original();
+                }
 
-        const context = canvas.getContext('2d');
-        if (!context) return file;
+                if (blob.size <= MAX_BYTES) {
+                    // Keep the original when re-encoding does not make it smaller.
+                    if (blob.size >= file.size && file.size <= MAX_BYTES) {
+                        return file;
+                    }
 
-        context.drawImage(bitmap, 0, 0, width, height);
-        bitmap.close();
-
-        const blob = await new Promise<Blob | null>((resolve) =>
-            canvas.toBlob(resolve, 'image/webp', quality),
-        );
-
-        // Keep the original when re-encoding does not make it smaller.
-        if (!blob || blob.size >= file.size) {
-            return file;
+                    return new File([blob], renamed(file.name, blob.type), {
+                        type: blob.type,
+                    });
+                }
+            }
         }
 
-        return new File([blob], renamed(file.name), { type: 'image/webp' });
-    } catch {
-        return file;
+        return original();
+    } finally {
+        bitmap.close();
     }
 }
 
-function renamed(name: string): string {
-    return `${name.replace(/\.[^.]+$/, '')}.webp`;
+async function encode(
+    bitmap: ImageBitmap,
+    maxSide: number,
+    quality: number,
+): Promise<Blob | null> {
+    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+
+    const context = canvas.getContext('2d');
+    if (!context) return null;
+
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+    return new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, 'image/webp', quality),
+    );
+}
+
+function renamed(name: string, type: string): string {
+    const extension =
+        type === 'image/png' ? 'png' : type === 'image/jpeg' ? 'jpg' : 'webp';
+
+    return `${name.replace(/\.[^.]+$/, '')}.${extension}`;
 }
