@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Reports\InvalidTransition;
 use App\Actions\Reports\UpdateReport;
 use App\Enums\AttachmentType;
 use App\Models\Category;
@@ -7,7 +8,6 @@ use App\Models\Report;
 use App\Models\ReportAttachment;
 use App\Models\ReportStatusLog;
 use App\Models\User;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -218,7 +218,7 @@ test('the action refuses a report that left pending after it was loaded', functi
     Report::whereKey($this->report->id)->update(['status' => 'Assigned']);
 
     expect(fn () => app(UpdateReport::class)->handle($loaded, $this->owner, ['title' => 'Terlambat'], [], [$this->photo->id]))
-        ->toThrow(AuthorizationException::class);
+        ->toThrow(InvalidTransition::class);
 
     expect($this->report->fresh()->title)->toBe('Judul lama')
         ->and(ReportAttachment::find($this->photo->id))->not->toBeNull();

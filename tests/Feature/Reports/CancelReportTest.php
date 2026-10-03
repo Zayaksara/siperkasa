@@ -1,10 +1,10 @@
 <?php
 
 use App\Actions\Reports\CancelReport;
+use App\Actions\Reports\InvalidTransition;
 use App\Enums\ReportStatus;
 use App\Models\Report;
 use App\Models\User;
-use Illuminate\Auth\Access\AuthorizationException;
 
 test('the owner cancels a pending report', function () {
     $owner = User::factory()->create();
@@ -57,7 +57,7 @@ test('the action refuses a report that left pending after it was loaded', functi
     $loaded = Report::findOrFail($report->id);
     Report::whereKey($report->id)->update(['status' => ReportStatus::Assigned]);
 
-    expect(fn () => app(CancelReport::class)->handle($loaded, $owner))->toThrow(AuthorizationException::class);
+    expect(fn () => app(CancelReport::class)->handle($loaded, $owner))->toThrow(InvalidTransition::class);
 
     expect($report->fresh()->status)->toBe(ReportStatus::Assigned)
         ->and($report->statusLogs()->count())->toBe(0);
