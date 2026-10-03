@@ -83,7 +83,7 @@ const timeline = [
                 <p
                     class="mx-auto mt-5 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-[17.5px]"
                 >
-                    Foto, kirim, lalu pantau prosesnya — dari validasi admin,
+                    Foto, kirim, lalu pantau prosesnya dari validasi admin,
                     pengerjaan teknisi, sampai perbaikan selesai. Semua
                     transparan dalam satu sistem.
                 </p>
