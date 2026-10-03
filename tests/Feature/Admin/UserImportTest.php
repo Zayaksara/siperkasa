@@ -89,3 +89,17 @@ test('only csv and xlsx files are accepted', function () {
 test('non-admins can not import users', function () {
     $this->actingAs(User::factory()->pic()->create())->post(route('admin.users.import'), [])->assertForbidden();
 });
+
+test('a row that would demote the importing admin fails while other rows still import', function () {
+    $file = usersCsv([
+        [$this->admin->nim_nip, 'Admin Sendiri', '', 'user', ''],
+        ['7001', 'Orang Lain', '', 'user', 'abc12345'],
+    ]);
+
+    $this->actingAs($this->admin)->post(route('admin.users.import'), ['file' => $file])
+        ->assertSessionHas('import_result', fn ($r) => $r['created'] === 1 && $r['failed'] === 1
+            && $r['errors'][0]['line'] === 2 && $r['errors'][0]['message'] === 'Tidak bisa mengubah peran akun sendiri.');
+
+    expect($this->admin->fresh()->role)->toBe(UserRole::Admin)
+        ->and($this->admin->fresh()->name)->not->toBe('Admin Sendiri');
+});

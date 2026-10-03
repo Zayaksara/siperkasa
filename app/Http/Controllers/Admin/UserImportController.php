@@ -17,7 +17,7 @@ class UserImportController extends Controller
 
         $file = $request->file('file');
 
-        $result = $importer->handle($file->getRealPath(), $file->getClientOriginalExtension());
+        $result = $importer->handle($file->getRealPath(), $file->getClientOriginalExtension(), $request->user());
 
         return to_route('admin.users.index')->with('import_result', $result);
     }

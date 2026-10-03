@@ -13,7 +13,7 @@ use Illuminate\Validation\Rule;
 final class ImportUsers
 {
     /** @return array{created: int, updated: int, failed: int, errors: list<array{line: int, message: string}>, generated: list<array{nim_nip: string, password: string}>} */
-    public function handle(string $path, string $extension): array
+    public function handle(string $path, string $extension, User $actor): array
     {
         $result = ['created' => 0, 'updated' => 0, 'failed' => 0, 'errors' => [], 'generated' => []];
 
@@ -48,6 +48,13 @@ final class ImportUsers
             }
 
             if ($existing) {
+                if ($existing->is($actor) && $data['role'] !== UserRole::Admin->value) {
+                    $result['failed']++;
+                    $result['errors'][] = ['line' => $line, 'message' => 'Tidak bisa mengubah peran akun sendiri.'];
+
+                    continue;
+                }
+
                 $existing->update(array_filter([
                     'name' => $data['name'],
                     'email' => $data['email'],
