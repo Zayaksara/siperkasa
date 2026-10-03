@@ -60,11 +60,11 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     /**
-     * Aset yang di-PIC-i oleh user ini secara default.
+     * Categories whose default PIC is this user.
      */
-    public function picAssets(): HasMany
+    public function defaultCategories(): HasMany
     {
-        return $this->hasMany(Asset::class, 'default_pic_id');
+        return $this->hasMany(Category::class, 'default_pic_id');
     }
 
     /**
@@ -91,4 +91,3 @@ class User extends Authenticatable implements PasskeyUser
         return $this->hasMany(Report::class, 'assigned_pic_id');
     }
 }
-

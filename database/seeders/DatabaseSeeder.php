@@ -32,6 +32,8 @@ class DatabaseSeeder extends Seeder
             ],
         );
 
+        $this->call([CategorySeeder::class, BuildingSeeder::class]);
+
         if (! app()->environment('local')) {
             return;
         }

@@ -6,28 +6,28 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('assets', function (Blueprint $table) {
             $table->id();
-            $table->string('asset_code')->unique();      // Kode Inventaris (Misal: FT-IT-001)
-            $table->string('name');                       // Nama Alat (Misal: Proyektor, AC)
-            $table->string('brand_type')->nullable();     // Merk/Tipe (Opsional)
+            $table->string('asset_code')->unique();          // {Kode Barang}-{NUP}
+            $table->string('kode_barang')->index();
+            $table->unsignedInteger('nup');
+            $table->string('name')->index();
+            $table->string('brand')->nullable();
+            $table->string('type')->nullable();
+            $table->string('jenis_bmn');
+            $table->enum('golongan', ['IT', 'NON-IT'])->index();
+            $table->string('condition')->nullable();
+            $table->date('acquired_at')->nullable();
+            $table->decimal('acquisition_value', 18, 2)->nullable();
+            $table->string('kode_register')->nullable()->index();
             $table->foreignId('category_id')->nullable()->constrained('categories')->nullOnDelete();
-            $table->string('building')->nullable();       // Gedung tempat alat berada
-            $table->string('room')->nullable();           // Ruangan tempat alat berada
-            $table->foreignId('default_pic_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->integer('purchase_year')->nullable();  // Tahun Pengadaan (Opsional)
+            $table->json('bmn_data');
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('assets');

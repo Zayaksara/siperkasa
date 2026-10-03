@@ -4,27 +4,33 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
  * @property string $name
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property int|null $default_pic_id
  */
 class Category extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'name',
-    ];
+    protected $fillable = ['name', 'default_pic_id'];
 
-    /**
-     * Aset yang termasuk dalam kategori ini.
-     */
     public function assets(): HasMany
     {
         return $this->hasMany(Asset::class);
+    }
+
+    public function defaultPic(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'default_pic_id');
+    }
+
+    /** True when deleting this category would orphan data (extended in Plan 3 with reports). */
+    public function isInUse(): bool
+    {
+        return $this->assets()->exists();
     }
 }
