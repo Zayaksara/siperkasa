@@ -76,6 +76,17 @@
     --color-status-rejected-bg: var(--status-rejected-bg);
     --color-status-cancelled: var(--status-cancelled);
     --color-status-cancelled-bg: var(--status-cancelled-bg);
+
+    --color-landing-bg: var(--landing-bg);
+    --color-landing-surface: var(--landing-surface);
+    --color-landing-line: var(--landing-line);
+    --color-landing-fg: var(--landing-fg);
+    --color-landing-muted: var(--landing-muted);
+    --color-landing-gold: var(--landing-gold);
+    --color-landing-gold-hover: var(--landing-gold-hover);
+    --color-landing-gold-fg: var(--landing-gold-fg);
+    --color-landing-ring: var(--landing-ring);
+    --color-landing-glow: var(--landing-glow);
 }
 
 /*
@@ -106,7 +117,8 @@
     }
 }
 
-:root {
+:root,
+.landing-paper {
     --background: #ffffff;
     --foreground: #07110b;
     --card: #ffffff;
@@ -160,6 +172,33 @@
     --status-rejected-bg: #fde7e5;
     --status-cancelled: #3f4542;
     --status-cancelled-bg: #e2e5e3;
+
+    /*
+      Landing page (Welcome) only. Dark ground derived from brand primary
+      #0A5E3D / primary-strong #0F443E, gold from brand accent #BB8F32.
+      Same values in light and dark appearance: the landing is always dark.
+      Contrast on --landing-bg: fg 14.9:1, muted 8.4:1, gold 7.6:1.
+    */
+    --landing-bg: #04231a;
+    --landing-surface: #08301f;
+    --landing-line: #1d4a3b;
+    --landing-fg: #eef4f1;
+    --landing-muted: #a8bdb4;
+    --landing-gold: #d4a94a;
+    --landing-gold-hover: #e0b878;
+    --landing-gold-fg: #04231a;
+    --landing-ring: #e0b878;
+    --landing-glow: #0a5e3d;
+}
+
+/*
+  Product mockups on the landing always render in the app's light theme,
+  even when the visitor uses dark appearance, so the UI reads as paper on
+  the dark ground. `.landing-paper` shares the :root declaration above, so
+  the light values are defined once.
+*/
+.landing-paper {
+    color-scheme: light;
 }
 
 .dark {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, setLayoutProps } from '@inertiajs/vue3';
-import { computed, ref, watchEffect } from 'vue';
+import { computed, ref, useTemplateRef, watchEffect } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,10 +10,12 @@ import {
     InputOTPGroup,
     InputOTPSlot,
 } from '@/components/ui/input-otp';
+import { shake } from '@/lib/motion';
 import { store } from '@/routes/two-factor/login';
 import type { TwoFactorConfigContent } from '@/types';
 
 const showRecoveryInput = ref<boolean>(false);
+const formShell = useTemplateRef<HTMLElement>('formShell');
 const code = ref<string>('');
 
 const authConfigContent = computed<TwoFactorConfigContent>(() => {
@@ -50,13 +52,16 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
 <template>
     <Head title="Verifikasi dua langkah" />
 
-    <div class="space-y-6">
+    <div ref="formShell" class="space-y-6">
         <template v-if="!showRecoveryInput">
             <Form
                 v-bind="store.form()"
                 class="space-y-4"
                 reset-on-error
-                @error="code = ''"
+                @error="
+                    code = '';
+                    shake(formShell);
+                "
                 #default="{ errors, processing, clearErrors }"
             >
                 <input type="hidden" name="code" :value="code" />
@@ -114,6 +119,7 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
                 v-bind="store.form()"
                 class="space-y-4"
                 reset-on-error
+                @error="shake(formShell)"
                 #default="{ errors, processing, clearErrors }"
             >
                 <Input

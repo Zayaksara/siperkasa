@@ -1,98 +1,151 @@
 <script setup lang="ts">
-import { BadgeCheck, ClipboardCheck, Send, Wrench } from '@lucide/vue';
-import Reveal from './Reveal.vue';
+import { computed, useTemplateRef } from "vue";
+import { gsap, revealOnScroll, useMotion } from "@/lib/motion";
 
-const steps = [
+const props = defineProps<{ totalAssets: number }>();
+
+const fmt = new Intl.NumberFormat("id-ID");
+
+// A zero count says nothing useful, so the figure only appears when > 0.
+const pickAsset = computed(() =>
+    Number(props.totalAssets) > 0
+        ? `Pilih dari ${fmt.format(props.totalAssets)} aset yang sudah tercatat`
+        : "Pilih aset dan lokasinya",
+);
+
+const steps = computed(() => [
     {
-        icon: Send,
-        title: 'Lapor',
-        text: 'Isi formulir singkat dari HP: pilih aset, jelaskan kerusakannya, lalu lampirkan foto dari kamera.',
+        title: "Lapor",
+        who: "Pelapor",
+        text: `${pickAsset.value}, jelaskan kerusakannya, lalu lampirkan foto dari kamera HP.`,
     },
     {
-        icon: ClipboardCheck,
-        title: 'Validasi admin',
-        text: 'Admin Sarpras memeriksa laporan, menentukan prioritas dan target waktu (SLA), lalu menugaskan PIC.',
+        title: "Validasi",
+        who: "Admin Sarpras",
+        text: "Laporan diperiksa, diberi prioritas dan target selesai, lalu ditugaskan ke teknisi. Laporan yang tidak sesuai ditolak dengan alasan.",
     },
     {
-        icon: Wrench,
-        title: 'Dikerjakan PIC',
-        text: 'Teknisi penanggung jawab memperbarui progres pengerjaan sehingga statusnya selalu terlihat.',
+        title: "Dikerjakan",
+        who: "PIC teknisi",
+        text: "Teknisi menandai laporan sedang dikerjakan dan mencatat kendala bila perbaikan harus ditunda.",
     },
     {
-        icon: BadgeCheck,
-        title: 'Selesai & notifikasi',
-        text: 'Begitu perbaikan tuntas, laporan ditutup dan pelapor langsung menerima notifikasi.',
+        title: "Selesai",
+        who: "PIC teknisi",
+        text: "Teknisi menutup laporan dengan foto hasil perbaikan, dan pelapor menerima notifikasi.",
     },
-];
+]);
+
+const root = useTemplateRef<HTMLElement>("root");
+
+// Step text is always fully readable (no scroll-bound visibility, so a jump
+// via the nav lands on legible copy). Scroll only scrubs the decorative gold
+// bars across, in order, both ways.
+useMotion(root, ({ isDesktop }) => {
+    const q = gsap.utils.selector(root.value);
+    const bars = q(".ps-bar");
+
+    revealOnScroll(q(".ps-head")[0]);
+
+    if (isDesktop) {
+        const tl = gsap.timeline({
+            scrollTrigger: {
+                trigger: q(".ps-steps")[0],
+                start: "top 85%",
+                end: "top 45%",
+                scrub: 0.6,
+            },
+        });
+        bars.forEach((bar, i) => {
+            tl.fromTo(
+                bar,
+                { scaleX: 0 },
+                { scaleX: 1, duration: 1, ease: "none" },
+                i === 0 ? 0 : ">-0.2",
+            );
+        });
+        return;
+    }
+
+    bars.forEach((bar) => {
+        gsap.fromTo(
+            bar,
+            { scaleX: 0 },
+            {
+                scaleX: 1,
+                ease: "none",
+                scrollTrigger: {
+                    trigger: bar.parentElement,
+                    start: "top 90%",
+                    end: "top 60%",
+                    scrub: 0.6,
+                },
+            },
+        );
+    });
+});
 </script>
 
 <template>
     <section
         id="cara-kerja"
-        class="scroll-mt-20 bg-muted py-16 sm:py-24"
+        ref="root"
+        class="scroll-mt-20 pt-24 sm:pt-32"
         aria-labelledby="proses-title"
     >
-        <div
-            class="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16"
-        >
-            <div class="lg:sticky lg:top-28 lg:self-start">
-                <Reveal>
-                    <p
-                        class="text-[13px] font-semibold tracking-[0.14em] text-brand-accent-strong uppercase"
-                    >
-                        Cara kerja
-                    </p>
-                    <h2
-                        id="proses-title"
-                        class="mt-3 text-[30px] leading-tight font-bold tracking-tight text-balance text-foreground sm:text-[40px]"
-                    >
-                        Empat langkah dari laporan sampai beres.
-                    </h2>
-                    <p
-                        class="mt-4 max-w-md text-base leading-relaxed text-muted-foreground"
-                    >
-                        Alur yang sama untuk semua laporan, sehingga tidak ada
-                        yang tercecer dan setiap pihak tahu gilirannya.
-                    </p>
-                </Reveal>
+        <div class="mx-auto max-w-6xl px-4 sm:px-6">
+            <div class="ps-head">
+                <h2
+                    id="proses-title"
+                    class="max-w-2xl text-[30px] leading-tight font-semibold tracking-[-0.02em] text-balance text-landing-fg sm:text-[44px]"
+                >
+                    Empat tahap untuk setiap laporan.
+                </h2>
+                <p
+                    class="mt-4 max-w-xl text-base leading-relaxed text-landing-muted sm:text-[17.5px]"
+                >
+                    Semua laporan melewati tahap yang sama, jadi Anda selalu
+                    tahu siapa yang sedang memegangnya.
+                </p>
             </div>
 
-            <ol class="space-y-4">
-                <Reveal
-                    v-for="(step, i) in steps"
-                    :key="step.title"
-                    as="li"
-                    :delay="i * 80"
-                    class="group relative flex gap-4 rounded-2xl border border-border bg-card p-5 transition-[translate,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_8px_28px_color-mix(in_oklab,var(--foreground)_8%,transparent)] motion-reduce:hover:translate-y-0 sm:gap-5 sm:p-6"
-                >
-                    <span
-                        class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary transition-colors duration-200 group-hover:bg-primary group-hover:text-primary-foreground"
+            <div class="ps-steps mt-12 lg:mt-16">
+                <ol class="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+                    <li
+                        v-for="(step, i) in steps"
+                        :key="step.title"
+                        class="relative border-t-2 border-landing-line pt-5"
                     >
-                        <component
-                            :is="step.icon"
-                            class="size-5"
+                        <!-- Gold bar = step reached; drawn by GSAP on scroll. -->
+                        <span
                             aria-hidden="true"
+                            class="ps-bar absolute -top-0.5 left-0 h-0.5 w-full origin-left bg-landing-gold"
                         />
-                    </span>
-                    <div class="min-w-0">
-                        <p
-                            class="text-[13px] font-semibold text-muted-foreground tabular-nums"
-                        >
-                            {{ String(i + 1).padStart(2, '0') }}
-                        </p>
-                        <h3
-                            class="mt-0.5 text-[17.5px] font-semibold text-foreground sm:text-[21px]"
-                        >
-                            {{ step.title }}
-                        </h3>
-                        <p
-                            class="mt-1.5 text-[15px] leading-relaxed text-muted-foreground"
-                        >
-                            {{ step.text }}
-                        </p>
-                    </div>
-                </Reveal>
-            </ol>
+                        <div class="ps-body">
+                            <p class="flex items-baseline gap-3">
+                                <span
+                                    class="text-[15px] font-semibold text-landing-gold tabular-nums"
+                                    >{{ i + 1 }}</span
+                                >
+                                <span
+                                    class="text-[21px] font-semibold text-landing-fg"
+                                    >{{ step.title }}</span
+                                >
+                            </p>
+                            <p
+                                class="mt-1 text-[15px] font-medium text-landing-fg/90"
+                            >
+                                {{ step.who }}
+                            </p>
+                            <p
+                                class="mt-3 text-[15px] leading-relaxed text-landing-muted"
+                            >
+                                {{ step.text }}
+                            </p>
+                        </div>
+                    </li>
+                </ol>
+            </div>
         </div>
     </section>
 </template>

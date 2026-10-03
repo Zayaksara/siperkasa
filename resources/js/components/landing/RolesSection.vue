@@ -1,99 +1,82 @@
 <script setup lang="ts">
-import { CircleCheck, HardHat, UserCog, UserRound } from '@lucide/vue';
-import Reveal from './Reveal.vue';
+import { useTemplateRef } from 'vue';
+import { gsap, revealBatch, revealOnScroll, useMotion } from '@/lib/motion';
 
 const roles = [
     {
-        icon: UserRound,
         name: 'Pelapor',
         who: 'Mahasiswa, dosen, dan tenaga kependidikan',
         points: [
-            'Lapor kerusakan dengan foto',
-            'Pantau status laporan',
-            'Terima notifikasi saat selesai',
+            'Melapor kerusakan dengan foto',
+            'Mengubah atau membatalkan laporan selama belum divalidasi',
+            'Memantau status dan menerima notifikasi',
         ],
     },
     {
-        icon: UserCog,
-        name: 'Admin',
+        name: 'Admin Sarpras',
         who: 'Tim Sarana dan Prasarana',
         points: [
-            'Validasi & tolak laporan',
-            'Atur prioritas dan SLA',
-            'Tugaskan PIC, rekap & export',
+            'Memvalidasi atau menolak laporan',
+            'Menetapkan prioritas, target selesai, dan PIC',
+            'Melihat rekap dan mengekspor data',
         ],
     },
     {
-        icon: HardHat,
-        name: 'PIC',
-        who: 'Teknisi penanggung jawab',
+        name: 'PIC teknisi',
+        who: 'Teknisi penanggung jawab perbaikan',
         points: [
-            'Lihat daftar tugas',
-            'Perbarui progres pengerjaan',
-            'Unggah foto hasil perbaikan',
+            'Melihat daftar tugas perbaikan',
+            'Memperbarui status dan mencatat kendala',
+            'Menutup laporan dengan foto hasil perbaikan',
         ],
     },
 ];
+
+const root = useTemplateRef<HTMLElement>('root');
+
+// Three columns enter together with a light left-to-right stagger.
+useMotion(root, ({ context }) => {
+    const q = gsap.utils.selector(root.value);
+    revealOnScroll(q('.rl-head')[0]);
+    revealBatch(q('.rl-col'), context, { stagger: 0.12 });
+});
 </script>
 
 <template>
     <section
         id="peran"
-        class="scroll-mt-20 bg-muted py-16 sm:py-24"
+        ref="root"
+        class="scroll-mt-20 pt-24 sm:pt-32"
         aria-labelledby="peran-title"
     >
         <div class="mx-auto max-w-6xl px-4 sm:px-6">
-            <Reveal class="mx-auto max-w-2xl text-center">
-                <p
-                    class="text-[13px] font-semibold tracking-[0.14em] text-brand-accent-strong uppercase"
-                >
-                    Peran
-                </p>
-                <h2
-                    id="peran-title"
-                    class="mt-3 text-[30px] leading-tight font-bold tracking-tight text-balance text-foreground sm:text-[40px]"
-                >
-                    Satu sistem, tiga peran yang saling terhubung.
-                </h2>
-            </Reveal>
+            <h2
+                id="peran-title"
+                class="rl-head max-w-2xl text-[30px] leading-tight font-semibold tracking-[-0.02em] text-balance text-landing-fg sm:text-[44px]"
+            >
+                Tiga peran, satu laporan yang sama.
+            </h2>
 
-            <ul class="mt-10 grid gap-4 sm:mt-14 md:grid-cols-3">
-                <Reveal
-                    v-for="(role, i) in roles"
+            <ul class="mt-12 grid gap-10 md:grid-cols-3 md:gap-8 lg:mt-16">
+                <li
+                    v-for="role in roles"
                     :key="role.name"
-                    as="li"
-                    :delay="i * 90"
-                    class="group flex flex-col rounded-[22px] border border-border bg-card p-6 transition-[translate,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_8px_28px_color-mix(in_oklab,var(--foreground)_8%,transparent)] motion-reduce:hover:translate-y-0 sm:p-8"
+                    class="rl-col border-t-2 border-landing-line pt-5"
                 >
-                    <span
-                        class="flex size-12 items-center justify-center rounded-2xl bg-secondary text-primary transition-colors duration-200 group-hover:bg-primary group-hover:text-primary-foreground"
-                    >
-                        <component
-                            :is="role.icon"
-                            class="size-6"
-                            aria-hidden="true"
-                        />
-                    </span>
-                    <h3 class="mt-6 text-[21px] font-semibold text-foreground">
+                    <h3 class="text-[21px] font-semibold text-landing-fg">
                         {{ role.name }}
                     </h3>
-                    <p class="mt-1 text-[15px] text-muted-foreground">
+                    <p class="mt-1 text-[15px] text-landing-muted">
                         {{ role.who }}
                     </p>
-                    <ul class="mt-6 space-y-2.5 border-t border-border pt-6">
-                        <li
-                            v-for="point in role.points"
-                            :key="point"
-                            class="flex items-start gap-2.5 text-[15px] text-foreground"
-                        >
-                            <CircleCheck
-                                class="mt-0.5 size-4 shrink-0 text-primary"
-                                aria-hidden="true"
-                            />
+                    <ul
+                        class="mt-5 list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-landing-fg marker:text-landing-gold"
+                    >
+                        <li v-for="point in role.points" :key="point">
                             {{ point }}
                         </li>
                     </ul>
-                </Reveal>
+                </li>
             </ul>
         </div>
     </section>
