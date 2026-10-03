@@ -132,6 +132,20 @@ test('creating a user with a trashed NIM/NIP is refused', function () {
     ])->assertSessionHasErrors(['nim_nip' => 'NIM/NIP milik akun yang dihapus. Pulihkan akun tersebut.']);
 });
 
+test('updating a user to a trashed NIM/NIP is refused', function () {
+    $user = User::factory()->create(['nim_nip' => '444']);
+    $trashed = User::factory()->create(['nim_nip' => '555']);
+    $trashed->delete();
+
+    $response = $this->actingAs($this->admin)->put(route('admin.users.update', $user), [
+        'nim_nip' => '555', 'name' => $user->name, 'email' => $user->email, 'role' => 'user',
+    ]);
+
+    $response->assertSessionHasErrors(['nim_nip' => 'NIM/NIP milik akun yang dihapus. Pulihkan akun tersebut.']);
+
+    expect($user->fresh()->nim_nip)->toBe('444');
+});
+
 test('import refuses a trashed NIM/NIP row and continues', function () {
     $trashed = User::factory()->create(['nim_nip' => '555', 'name' => 'Lama']);
     $trashed->delete();

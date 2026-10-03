@@ -37,7 +37,12 @@ class SaveUserRequest extends FormRequest
         return [function (Validator $validator) {
             $user = $this->route('user');
 
-            if ($user === null && User::onlyTrashed()->where('nim_nip', $this->input('nim_nip'))->exists()) {
+            $trashedQuery = User::onlyTrashed()->where('nim_nip', $this->input('nim_nip'));
+            if ($user instanceof User) {
+                $trashedQuery->whereKeyNot($user->id);
+            }
+
+            if ($trashedQuery->exists()) {
                 $validator->errors()->add('nim_nip', 'NIM/NIP milik akun yang dihapus. Pulihkan akun tersebut.');
             }
 
