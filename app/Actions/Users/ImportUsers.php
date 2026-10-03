@@ -13,7 +13,7 @@ use Illuminate\Validation\ValidationException;
 
 final class ImportUsers
 {
-    public const MAX_ROWS = 500;
+    public const MAX_ROWS = 100;
 
     /** @return array{created: int, updated: int, failed: int, errors: list<array{line: int, message: string}>, generated: list<array{nim_nip: string, password: string}>} */
     public function handle(string $path, string $extension, User $actor): array

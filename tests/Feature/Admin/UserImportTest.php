@@ -105,20 +105,20 @@ test('a row that would demote the importing admin fails while other rows still i
         ->and($this->admin->fresh()->name)->not->toBe('Admin Sendiri');
 });
 
-test('a file over 500 rows is rejected and nothing is written', function () {
-    $rows = array_map(fn ($i) => ['9'.$i, 'User '.$i, '', 'user', 'abc12345'], range(1, 501));
+test('a file over 100 rows is rejected and nothing is written', function () {
+    $rows = array_map(fn ($i) => ['9'.$i, 'User '.$i, '', 'user', 'abc12345'], range(1, 101));
 
     $this->actingAs($this->admin)->post(route('admin.users.import'), ['file' => usersCsv($rows)])
-        ->assertSessionHasErrors(['file' => 'Maksimal 500 baris per file.']);
+        ->assertSessionHasErrors(['file' => 'Maksimal 100 baris per file.']);
 
     expect(User::count())->toBe(1);
 });
 
-test('exactly 500 rows are accepted', function () {
-    $rows = array_map(fn ($i) => ['8'.$i, 'User '.$i, '', 'user', 'abc12345'], range(1, 500));
+test('exactly 100 rows are accepted', function () {
+    $rows = array_map(fn ($i) => ['8'.$i, 'User '.$i, '', 'user', 'abc12345'], range(1, 100));
 
     $this->actingAs($this->admin)->post(route('admin.users.import'), ['file' => usersCsv($rows)])
-        ->assertSessionHas('import_result', fn ($r) => $r['created'] === 500);
+        ->assertSessionHas('import_result', fn ($r) => $r['created'] === 100);
 });
 
 test('demoting a pic through import clears the default pic of their categories', function () {
