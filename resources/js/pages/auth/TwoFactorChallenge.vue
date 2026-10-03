@@ -69,6 +69,11 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
                             v-model="code"
                             :maxlength="6"
                             :disabled="processing"
+                            aria-label="Kode autentikasi"
+                            :aria-invalid="errors.code ? true : undefined"
+                            :aria-describedby="
+                                errors.code ? 'code-error' : undefined
+                            "
                             autofocus
                         >
                             <InputOTPGroup>
@@ -80,7 +85,7 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
                             </InputOTPGroup>
                         </InputOTP>
                     </div>
-                    <InputError :message="errors.code" />
+                    <InputError id="code-error" :message="errors.code" />
                 </div>
                 <Button
                     type="submit"
@@ -117,11 +122,18 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
                     placeholder="Masukkan kode pemulihan"
                     aria-label="Kode pemulihan"
                     autocomplete="one-time-code"
+                    :aria-invalid="errors.recovery_code ? true : undefined"
+                    :aria-describedby="
+                        errors.recovery_code ? 'recovery_code-error' : undefined
+                    "
                     class="h-11 rounded-xl bg-background px-3.5 md:text-[15px]"
                     v-focus
                     required
                 />
-                <InputError :message="errors.recovery_code" />
+                <InputError
+                    id="recovery_code-error"
+                    :message="errors.recovery_code"
+                />
                 <Button
                     type="submit"
                     class="h-12 w-full rounded-full text-base font-semibold transition-[background-color,scale] duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98] motion-reduce:transition-none"

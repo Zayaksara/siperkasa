@@ -38,8 +38,9 @@ defineExpose({
                     'absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset active:text-foreground motion-reduce:transition-none',
                 )
             "
-            aria-label="Tampilkan password"
-            :aria-pressed="showPassword"
+            :aria-label="
+                showPassword ? 'Sembunyikan password' : 'Tampilkan password'
+            "
         >
             <EyeOff v-if="showPassword" class="size-4" aria-hidden="true" />
             <Eye v-else class="size-4" aria-hidden="true" />
