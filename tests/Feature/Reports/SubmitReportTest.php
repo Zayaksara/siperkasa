@@ -7,7 +7,9 @@ use App\Models\Asset;
 use App\Models\Report;
 use App\Models\User;
 use App\Notifications\ReportSubmitted;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Tests\Support\ReportInput;
@@ -156,4 +158,53 @@ test('admins and pics can not create reports', function (string $state) {
 
 test('guests are sent to the login page', function () {
     $this->get(route('reports.create'))->assertRedirect(route('login'));
+});
+
+test('a photo store failure leaves no report, log, attachment, file or notification behind', function () {
+    $input = ReportInput::valid();
+    unset($input['photos']);
+
+    $failing = new class('boom.jpg', 100, 'image/jpeg') extends UploadedFile
+    {
+        public function __construct(string $name, int $size, string $mime)
+        {
+            parent::__construct(UploadedFile::fake()->image($name)->getPathname(), $name, $mime, null, true);
+        }
+
+        public function store($path = '', $options = []): string|false
+        {
+            throw new RuntimeException('disk full');
+        }
+    };
+
+    expect(fn () => app(SubmitReport::class)->handle($this->reporter, $input, [UploadedFile::fake()->image('ok.jpg'), $failing]))
+        ->toThrow(RuntimeException::class, 'disk full');
+
+    expect(Report::count())->toBe(0)
+        ->and(DB::table('report_status_logs')->count())->toBe(0)
+        ->and(DB::table('report_attachments')->count())->toBe(0)
+        ->and(Storage::disk('local')->allFiles())->toBeEmpty();
+    Notification::assertNothingSent();
+});
+
+test('a ticket collision that keeps happening is rethrown after three attempts', function () {
+    $input = ReportInput::valid();
+    $photos = $input['photos'];
+    unset($input['photos']);
+
+    $taken = Report::factory()->create(['ticket_number' => 'SPK-'.now()->format('ym').'-0001']);
+
+    $calls = 0;
+    Report::creating(function (Report $report) use (&$calls, $taken) {
+        $calls++;
+        $report->ticket_number = $taken->ticket_number;
+    });
+
+    expect(fn () => app(SubmitReport::class)->handle($this->reporter, $input, $photos))
+        ->toThrow(UniqueConstraintViolationException::class);
+
+    expect($calls)->toBe(3)
+        ->and(Report::count())->toBe(1)
+        ->and(Storage::disk('local')->allFiles())->toBeEmpty();
+    Notification::assertNothingSent();
 });
