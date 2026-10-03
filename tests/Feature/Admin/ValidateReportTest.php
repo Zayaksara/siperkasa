@@ -131,6 +131,7 @@ test('a stale validate is refused and changes nothing', function () {
 
     Notification::fake();
     $report = Report::factory()->create(['status' => ReportStatus::Pending]);
+    $originalSlaDate = $report->sla_date;
     Report::whereKey($report->id)->update(['status' => ReportStatus::Assigned]); // row moved on, model stale
 
     expect(fn () => app(ValidateReport::class)->handle(
@@ -142,6 +143,7 @@ test('a stale validate is refused and changes nothing', function () {
     ))->toThrow(InvalidTransition::class);
 
     expect($report->fresh()->status)->toBe(ReportStatus::Assigned)
+        ->and($report->fresh()->sla_date)->toBe($originalSlaDate)
         ->and($report->statusLogs()->count())->toBe(0);
     Notification::assertNothingSent();
 });

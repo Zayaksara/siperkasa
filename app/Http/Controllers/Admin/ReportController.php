@@ -93,7 +93,7 @@ class ReportController extends Controller
             $request->user(),
             Priority::from($request->validated('admin_priority')),
             Date::parse($request->validated('sla_date')),
-            User::findOrFail($request->validated('assigned_pic_id')),
+            User::findOrFail($request->integer('assigned_pic_id')),
         );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => "Laporan {$report->ticket_number} divalidasi dan ditugaskan."]);
