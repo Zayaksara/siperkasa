@@ -22,7 +22,12 @@ final class ValidateReport
             $report,
             ReportStatus::Assigned,
             $admin,
-            "Ditugaskan ke {$pic->name}",
+            sprintf(
+                'Ditugaskan ke %s · Prioritas %s · SLA %s',
+                $pic->name,
+                $priority->label(),
+                $sla->locale('id')->translatedFormat('d M Y H:i'),
+            ),
             [
                 'admin_id' => $admin->id,
                 'admin_priority' => $priority,

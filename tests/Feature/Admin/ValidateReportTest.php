@@ -70,6 +70,8 @@ test('validating assigns the report and records everything', function () {
     $log = $report->statusLogs()->sole();
     expect($log->from_status)->toBe('Pending')->and($log->to_status)->toBe('Assigned')->and($log->actor_id)->toBe($this->admin->id);
 
+    expect($log->note)->toBe("Ditugaskan ke {$this->pic->name} · Prioritas Tinggi · SLA 18 Okt 2026 10:00");
+
     Notification::assertSentTo($this->pic, ReportAssigned::class);
     Notification::assertSentTo($report->user, ReportStatusChanged::class, fn ($n) => $n->report->status === ReportStatus::Assigned);
 });

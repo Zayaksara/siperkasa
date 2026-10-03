@@ -67,3 +67,12 @@ test('the url is a safe fallback when role routes do not exist yet', function ()
 
     expect((new ReportSubmitted($report))->toArray($admin)['url'])->toBeString()->not->toBeEmpty();
 });
+
+test('the url is a relative path, independent of host', function () {
+    $report = Report::factory()->create();
+    $admin = User::factory()->admin()->create();
+
+    $url = (new ReportSubmitted($report))->toArray($admin)['url'];
+
+    expect($url)->toBe(route('admin.reports.show', $report, false))->toStartWith('/')->not->toStartWith('//');
+});

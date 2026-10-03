@@ -15,6 +15,9 @@ class AttachmentController extends Controller
 
         abort_unless(Storage::disk('local')->exists($attachment->path), 404);
 
-        return Storage::disk('local')->response($attachment->path, null, ['Cache-Control' => 'private, max-age=3600']);
+        return Storage::disk('local')->response($attachment->path, null, [
+            'Cache-Control' => 'private, max-age=3600',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 }

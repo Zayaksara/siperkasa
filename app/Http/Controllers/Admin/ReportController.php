@@ -32,7 +32,7 @@ class ReportController extends Controller
         $filter = ReportFilter::fromRequest($request);
 
         $reports = $filter->apply(Report::query())
-            ->with(['category:id,name', 'room.building:id,name', 'user:id,name', 'assignedPic:id,name'])
+            ->withSummary()
             ->orderByRaw("CASE WHEN status = 'Pending' THEN 0 ELSE 1 END")
             ->orderByRaw("CASE WHEN status = 'Pending' THEN created_at END ASC")
             ->orderByDesc('created_at')

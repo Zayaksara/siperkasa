@@ -34,7 +34,7 @@ class ReportController extends Controller
 
         $reports = Report::query()
             ->visibleTo($request->user())
-            ->with(['category:id,name', 'room.building:id,name', 'assignedPic:id,name', 'user:id,name'])
+            ->withSummary()
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
             ->when($filters['q'] ?? null, function ($query, string $q) {
                 $like = '%'.addcslashes($q, '%_\\').'%';

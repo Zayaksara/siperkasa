@@ -25,6 +25,12 @@ test('people who can see the report can open its photos', function (string $who)
     $this->actingAs($user)->get(route('attachments.show', $this->attachment))->assertOk();
 })->with(['owner', 'pic', 'admin']);
 
+test('photo responses send nosniff', function () {
+    $this->actingAs($this->owner)->get(route('attachments.show', $this->attachment))
+        ->assertOk()
+        ->assertHeader('X-Content-Type-Options', 'nosniff');
+});
+
 test('everyone else gets 403', function (string $who) {
     $user = match ($who) {
         'other reporter' => User::factory()->create(),

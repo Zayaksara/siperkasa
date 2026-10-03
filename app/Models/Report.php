@@ -136,6 +136,17 @@ class Report extends Model
         };
     }
 
+    /**
+     * Eager-loads exactly what ReportPresenter::summary() reads.
+     *
+     * @param  Builder<Report>  $query
+     * @return Builder<Report>
+     */
+    public function scopeWithSummary(Builder $query): Builder
+    {
+        return $query->with(['category:id,name', 'room.building:id,name', 'user:id,name', 'assignedPic:id,name']);
+    }
+
     /** @param Builder<Report> $query */
     public function scopeOverdue(Builder $query): Builder
     {
