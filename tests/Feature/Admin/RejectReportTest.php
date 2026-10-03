@@ -49,13 +49,27 @@ test('a reason of at least 10 characters is required', function () {
     expect($this->report->fresh()->status)->toBe(ReportStatus::Pending);
 });
 
+test('a rejected report can not be rejected or validated again', function () {
+    $this->actingAs($this->admin)->post(route('admin.reports.reject', $this->report), ['rejection_reason' => 'Alasan yang cukup panjang.']);
+
+    $this->actingAs($this->admin)->post(route('admin.reports.reject', $this->report), ['rejection_reason' => 'Alasan kedua yang panjang.'])->assertForbidden();
+    $this->actingAs($this->admin)->post(route('admin.reports.approve', $this->report), [
+        'admin_priority' => 'High',
+        'sla_date' => now()->addDay()->format('Y-m-d\TH:i'),
+        'assigned_pic_id' => User::factory()->pic()->create()->id,
+    ])->assertForbidden();
+
+    expect($this->report->fresh()->rejection_reason)->toBe('Alasan yang cukup panjang.')
+        ->and($this->report->fresh()->status)->toBe(ReportStatus::Rejected)
+        ->and($this->report->statusLogs()->count())->toBe(1);
+});
+
 test('only admins can reject', function (string $state) {
     $this->actingAs(User::factory()->{$state}()->create())
         ->post(route('admin.reports.reject', $this->report), adminRejectPayload())->assertForbidden();
 })->with(['reporter', 'pic']);
 
 test('a stale reject changes nothing', function () {
-    Notification::fake();
     $report = Report::factory()->create(['status' => ReportStatus::Pending]);
     Report::whereKey($report->id)->update(['status' => ReportStatus::Closed]); // row moved on, model stale
 
