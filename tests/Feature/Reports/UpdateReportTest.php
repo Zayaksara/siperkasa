@@ -21,7 +21,7 @@ beforeEach(function () {
     Storage::disk('local')->put($this->photo->path, 'x');
 });
 
-function updatePayload(array $overrides = []): array
+function reportUpdatePayload(array $overrides = []): array
 {
     $input = ReportInput::valid($overrides);
     unset($input['photos']);
@@ -37,7 +37,7 @@ test('the edit page is shown to the owner while pending', function () {
 test('the owner updates a pending report and the edit is logged', function () {
     $category = Category::factory()->create();
 
-    $this->actingAs($this->owner)->post(route('reports.update', $this->report), updatePayload(['title' => 'Judul baru', 'category_id' => $category->id]))
+    $this->actingAs($this->owner)->post(route('reports.update', $this->report), reportUpdatePayload(['title' => 'Judul baru', 'category_id' => $category->id]))
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('reports.show', $this->report));
 
@@ -50,21 +50,21 @@ test('the owner updates a pending report and the edit is logged', function () {
 
 test('new photos can be added up to three in total', function () {
     $this->actingAs($this->owner)->post(route('reports.update', $this->report), [
-        ...updatePayload(),
+        ...reportUpdatePayload(),
         'photos' => [UploadedFile::fake()->image('b.jpg'), UploadedFile::fake()->image('c.jpg')],
     ])->assertSessionHasNoErrors();
 
     expect($this->report->damagePhotos()->count())->toBe(3);
 
     $this->actingAs($this->owner)->post(route('reports.update', $this->report), [
-        ...updatePayload(),
+        ...reportUpdatePayload(),
         'photos' => [UploadedFile::fake()->image('d.jpg')],
     ])->assertSessionHasErrors(['photos' => 'Maksimal 3 foto.']);
 });
 
 test('an existing photo can be replaced', function () {
     $this->actingAs($this->owner)->post(route('reports.update', $this->report), [
-        ...updatePayload(),
+        ...reportUpdatePayload(),
         'remove_photo_ids' => [$this->photo->id],
         'photos' => [UploadedFile::fake()->image('baru.jpg')],
     ])->assertSessionHasNoErrors();
@@ -76,7 +76,7 @@ test('an existing photo can be replaced', function () {
 
 test('removing every photo without adding one is refused and the photo stays', function () {
     $this->actingAs($this->owner)->post(route('reports.update', $this->report), [
-        ...updatePayload(),
+        ...reportUpdatePayload(),
         'remove_photo_ids' => [$this->photo->id],
     ])->assertSessionHasErrors(['photos' => 'Minimal 1 foto kerusakan.']);
 
@@ -89,7 +89,7 @@ test('photo ids of another report can not be removed through this report', funct
     Storage::disk('local')->put($foreign->path, 'x');
 
     $this->actingAs($this->owner)->post(route('reports.update', $this->report), [
-        ...updatePayload(),
+        ...reportUpdatePayload(),
         'remove_photo_ids' => [$foreign->id],
         'photos' => [UploadedFile::fake()->image('b.jpg')],
     ])->assertSessionHasNoErrors()->assertRedirect(route('reports.show', $this->report));
@@ -101,7 +101,7 @@ test('photo ids of another report can not be removed through this report', funct
 
 test('added photos are stored under the report damage folder', function () {
     $this->actingAs($this->owner)->post(route('reports.update', $this->report), [
-        ...updatePayload(),
+        ...reportUpdatePayload(),
         'photos' => [UploadedFile::fake()->image('b.jpg')],
     ])->assertSessionHasNoErrors();
 
@@ -114,7 +114,7 @@ test('added photos are stored under the report damage folder', function () {
 
 test('a photo-only edit still writes a log row', function () {
     $this->actingAs($this->owner)->post(route('reports.update', $this->report), [
-        ...updatePayload([
+        ...reportUpdatePayload([
             'title' => $this->report->title,
             'category_id' => $this->report->category_id,
             'room_id' => $this->report->room_id,
@@ -135,7 +135,7 @@ test('with three photos, removing one and adding three is refused', function () 
     Storage::disk('local')->put($third->path, 'x');
 
     $this->actingAs($this->owner)->post(route('reports.update', $this->report), [
-        ...updatePayload(),
+        ...reportUpdatePayload(),
         'remove_photo_ids' => [$this->photo->id],
         'photos' => [UploadedFile::fake()->image('a.jpg'), UploadedFile::fake()->image('b.jpg'), UploadedFile::fake()->image('c.jpg')],
     ])->assertSessionHasErrors(['photos' => 'Maksimal 3 foto.']);
@@ -193,7 +193,7 @@ test('when writing the log fails the old file stays and no new file is left', fu
 test('a stale form is refused once the report is no longer pending', function () {
     $this->report->update(['status' => 'Assigned']);
 
-    $this->actingAs($this->owner)->post(route('reports.update', $this->report), updatePayload(['title' => 'Terlambat']))->assertForbidden();
+    $this->actingAs($this->owner)->post(route('reports.update', $this->report), reportUpdatePayload(['title' => 'Terlambat']))->assertForbidden();
     $this->actingAs($this->owner)->get(route('reports.edit', $this->report))->assertForbidden();
 
     expect($this->report->fresh()->title)->toBe('Judul lama');
@@ -203,7 +203,7 @@ test('a stale form that also removes the only photo gets 403 and nothing changes
     $this->report->update(['status' => 'Assigned']);
 
     $this->actingAs($this->owner)->post(route('reports.update', $this->report), [
-        ...updatePayload(['title' => 'Terlambat']),
+        ...reportUpdatePayload(['title' => 'Terlambat']),
         'remove_photo_ids' => [$this->photo->id],
     ])->assertForbidden();
 
@@ -226,11 +226,11 @@ test('the action refuses a report that left pending after it was loaded', functi
 });
 
 test('only the owner can edit', function () {
-    $this->actingAs(User::factory()->create())->post(route('reports.update', $this->report), updatePayload())->assertForbidden();
-    $this->actingAs(User::factory()->admin()->create())->post(route('reports.update', $this->report), updatePayload())->assertForbidden();
+    $this->actingAs(User::factory()->create())->post(route('reports.update', $this->report), reportUpdatePayload())->assertForbidden();
+    $this->actingAs(User::factory()->admin()->create())->post(route('reports.update', $this->report), reportUpdatePayload())->assertForbidden();
 });
 
 test('validation rules of the create form apply to edits too', function () {
-    $this->actingAs($this->owner)->post(route('reports.update', $this->report), updatePayload(['title' => '', 'description' => 'x']))
+    $this->actingAs($this->owner)->post(route('reports.update', $this->report), reportUpdatePayload(['title' => '', 'description' => 'x']))
         ->assertSessionHasErrors(['title', 'description']);
 });

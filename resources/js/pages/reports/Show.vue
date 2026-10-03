@@ -4,6 +4,7 @@ import { Pencil } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import PageHeader from '@/components/PageHeader.vue';
+import OverdueBadge from '@/components/OverdueBadge.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import Timeline from '@/components/Timeline.vue';
 import { Button } from '@/components/ui/button';
@@ -105,11 +106,7 @@ const details = computed<[string, string][]>(() => [
     <div class="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4">
         <PageHeader :title="report.title" :description="report.ticket_number">
             <StatusBadge :status="report.status" />
-            <span
-                v-if="report.is_overdue"
-                class="rounded-full bg-status-rejected-bg px-2.5 py-1 text-xs font-semibold text-status-rejected"
-                >Terlambat</span
-            >
+            <OverdueBadge v-if="report.is_overdue" />
         </PageHeader>
 
         <div v-if="can.update || can.cancel" class="flex flex-wrap gap-2">

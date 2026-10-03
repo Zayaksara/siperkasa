@@ -5,6 +5,7 @@ import { computed, ref, watch } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import Pagination from '@/components/Pagination.vue';
+import OverdueBadge from '@/components/OverdueBadge.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -148,11 +149,7 @@ function filter(status?: string) {
                             >{{ report.ticket_number }}</span
                         >
                         <span class="flex items-center gap-2">
-                            <span
-                                v-if="report.is_overdue"
-                                class="rounded-full bg-status-rejected-bg px-2.5 py-1 text-xs font-semibold text-status-rejected"
-                                >Terlambat</span
-                            >
+                            <OverdueBadge v-if="report.is_overdue" />
                             <StatusBadge :status="report.status" />
                         </span>
                     </div>

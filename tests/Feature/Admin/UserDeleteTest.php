@@ -162,3 +162,35 @@ test('import refuses a trashed NIM/NIP row and continues', function () {
 
     expect(User::withTrashed()->where('nim_nip', '555')->first()->name)->toBe('Lama');
 });
+
+test('deleting a PIC with active reports is blocked', function () {
+    $pic = User::factory()->pic()->create();
+    Report::factory()->count(3)->assigned($pic)->create();
+    Report::factory()->closed($pic)->create();
+
+    $this->actingAs($this->admin)->delete(route('admin.users.destroy', $pic))
+        ->assertSessionHasErrors(['user' => 'PIC masih menangani 3 laporan aktif. Alihkan laporan dulu.']);
+
+    expect(User::find($pic->id))->not->toBeNull();
+});
+
+test('deactivating a PIC with active reports is blocked', function () {
+    $pic = User::factory()->pic()->create();
+    Report::factory()->inProgress($pic)->create();
+
+    $this->actingAs($this->admin)->patch(route('admin.users.active', $pic), ['is_active' => false])
+        ->assertSessionHasErrors(['user' => 'PIC masih menangani 1 laporan aktif. Alihkan laporan dulu.']);
+
+    expect($pic->fresh()->is_active)->toBeTrue();
+});
+
+test('a PIC with only final reports can be deactivated and deleted', function () {
+    $pic = User::factory()->pic()->create();
+    Report::factory()->closed($pic)->create();
+
+    $this->actingAs($this->admin)->patch(route('admin.users.active', $pic), ['is_active' => false])->assertSessionHasNoErrors();
+    expect($pic->fresh()->is_active)->toBeFalse();
+
+    $this->actingAs($this->admin)->delete(route('admin.users.destroy', $pic))->assertSessionHasNoErrors();
+    expect(User::find($pic->id))->toBeNull();
+});

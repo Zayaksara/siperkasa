@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Reports\InvalidTransition;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\HandleAppearance;
@@ -37,6 +38,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        $exceptions->render(function (InvalidTransition $e, Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $e->getMessage()], 409);
+            }
+
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'Status laporan sudah berubah. Muat ulang halaman.']);
+
+            return back();
+        });
 
         $exceptions->respond(function (Response $response, Throwable $e, Request $request) {
             if (! $request->expectsJson()

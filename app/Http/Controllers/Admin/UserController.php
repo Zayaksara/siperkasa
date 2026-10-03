@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\ReportStatus;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SaveUserRequest;
@@ -96,6 +97,10 @@ class UserController extends Controller
             return back()->withErrors(['user' => 'Anda tidak bisa menonaktifkan akun sendiri.']);
         }
 
+        if (! $data['is_active'] && ($blocked = $this->activeReportsBlock($user))) {
+            return back()->withErrors(['user' => $blocked]);
+        }
+
         $user->update(['is_active' => $data['is_active']]);
         $user->clearDefaultPicIfNotPic();
 
@@ -114,6 +119,10 @@ class UserController extends Controller
 
         if ($user->isSuperAdmin()) {
             return back()->withErrors(['user' => 'Super admin tidak bisa dihapus.']);
+        }
+
+        if ($blocked = $this->activeReportsBlock($user)) {
+            return back()->withErrors(['user' => $blocked]);
         }
 
         DB::transaction(function () use ($user) {
@@ -149,5 +158,12 @@ class UserController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Password diganti.']);
 
         return back();
+    }
+
+    private function activeReportsBlock(User $user): ?string
+    {
+        $count = $user->assignedReports()->whereNotIn('status', ReportStatus::finalValues())->count();
+
+        return $count > 0 ? "PIC masih menangani {$count} laporan aktif. Alihkan laporan dulu." : null;
     }
 }

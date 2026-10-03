@@ -92,3 +92,31 @@ test('deleted row throws InvalidTransition', function () {
     expect(fn () => app(ReportTransitioner::class)->transition($report, ReportStatus::Assigned, $actor))
         ->toThrow(InvalidTransition::class);
 });
+
+test('note() logs the locked database status, not the stale in-memory one', function () {
+    $actor = User::factory()->admin()->create();
+    $report = Report::factory()->create(['status' => ReportStatus::Pending]);
+
+    $stale = Report::find($report->id);
+    Report::whereKey($report->id)->update(['status' => ReportStatus::Rejected]);
+
+    app(ReportTransitioner::class)->note($stale, $actor, 'Dialihkan');
+
+    $log = $report->statusLogs()->sole();
+    expect($log->from_status)->toBe('Rejected')->and($log->to_status)->toBe('Rejected');
+});
+
+test('transition saves the status when the stale model already equals the target', function () {
+    $actor = User::factory()->admin()->create();
+    $report = Report::factory()->create(['status' => ReportStatus::Pending]);
+
+    $stale = Report::find($report->id);
+    $stale->status = ReportStatus::Assigned;
+    $stale->syncOriginal();
+    Report::whereKey($report->id)->update(['status' => ReportStatus::Pending]);
+
+    app(ReportTransitioner::class)->transition($stale, ReportStatus::Assigned, $actor);
+
+    expect(Report::find($report->id)->status)->toBe(ReportStatus::Assigned)
+        ->and($report->statusLogs()->sole()->from_status)->toBe('Pending');
+});

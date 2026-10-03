@@ -25,7 +25,7 @@ defineProps<{
                 aria-hidden="true"
             />
             <div class="flex flex-wrap items-center gap-2">
-                <StatusBadge :status="item.to_status" />
+                <StatusBadge :status="item.to_status" :label="item.to_label" />
                 <time
                     class="text-xs text-muted-foreground"
                     :datetime="item.created_at"

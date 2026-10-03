@@ -19,13 +19,7 @@ final class ReportTransitioner
     public function transition(Report $report, ReportStatus $to, ?User $actor, ?string $note = null, array $attributes = []): Report
     {
         return DB::transaction(function () use ($report, $to, $actor, $note, $attributes) {
-            $currentStatus = Report::whereKey($report->id)->lockForUpdate()->value('status');
-
-            if ($currentStatus === null) {
-                throw InvalidTransition::between($report->status, $to);
-            }
-
-            $from = $currentStatus;
+            $from = $this->lockStatus($report, $to);
 
             if (! $from->canTransitionTo($to)) {
                 throw InvalidTransition::between($from, $to);
@@ -42,12 +36,31 @@ final class ReportTransitioner
     /** Records an event that does not change the status (edit, reassign). */
     public function note(Report $report, ?User $actor, string $note): void
     {
-        $this->log($report, $report->status->value, $report->status->value, $actor, $note);
+        DB::transaction(function () use ($report, $actor, $note) {
+            $status = $this->lockStatus($report)->value;
+
+            $this->log($report, $status, $status, $actor, $note);
+        });
     }
 
     public function logCreated(Report $report, ?User $actor): void
     {
         $this->log($report, null, $report->status->value, $actor, null);
+    }
+
+    /** Re-reads the status under a row lock and syncs the model to it, so a stale model cannot hide a change. */
+    private function lockStatus(Report $report, ?ReportStatus $to = null): ReportStatus
+    {
+        $status = Report::whereKey($report->id)->lockForUpdate()->value('status');
+
+        if ($status === null) {
+            throw InvalidTransition::between($report->status, $to ?? $report->status);
+        }
+
+        $report->setAttribute('status', $status);
+        $report->syncOriginalAttribute('status');
+
+        return $status;
     }
 
     private function log(Report $report, ?string $from, string $to, ?User $actor, ?string $note): void
