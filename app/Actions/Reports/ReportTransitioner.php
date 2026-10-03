@@ -8,7 +8,7 @@ use App\Models\ReportStatusLog;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
-/** The only place that changes a report's status. Call it inside a DB transaction. */
+/** The only place that changes a report's status. transition() opens its own DB transaction. */
 final class ReportTransitioner
 {
     /**
@@ -19,10 +19,13 @@ final class ReportTransitioner
     public function transition(Report $report, ReportStatus $to, ?User $actor, ?string $note = null, array $attributes = []): Report
     {
         return DB::transaction(function () use ($report, $to, $actor, $note, $attributes) {
-            // Re-read current status under row lock to prevent stale-model race
             $currentStatus = Report::whereKey($report->id)->lockForUpdate()->value('status');
-            // Status is already cast to enum by model
-            $from = $currentStatus instanceof ReportStatus ? $currentStatus : ReportStatus::from($currentStatus);
+
+            if ($currentStatus === null) {
+                throw InvalidTransition::between($report->status, $to);
+            }
+
+            $from = $currentStatus;
 
             if (! $from->canTransitionTo($to)) {
                 throw InvalidTransition::between($from, $to);

@@ -82,3 +82,13 @@ test('stale in-memory model cannot transition from old status', function () {
     expect(Report::find($report->id)->status)->toBe(ReportStatus::Rejected)
         ->and($report->statusLogs()->count())->toBe(0);
 });
+
+test('deleted row throws InvalidTransition', function () {
+    $actor = User::factory()->admin()->create();
+    $report = Report::factory()->create(['status' => ReportStatus::Pending]);
+
+    Report::whereKey($report->id)->delete();
+
+    expect(fn () => app(ReportTransitioner::class)->transition($report, ReportStatus::Assigned, $actor))
+        ->toThrow(InvalidTransition::class);
+});

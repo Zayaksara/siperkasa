@@ -8,7 +8,13 @@ use Illuminate\Support\Facades\DB;
 
 final class TicketNumber
 {
-    /** Next ticket for the month of $now, e.g. SPK-2610-0001 (restarts monthly). */
+    /**
+     * Next ticket for the month of $now, e.g. SPK-2610-0001 (restarts monthly).
+     *
+     * Caller MUST invoke this and insert the Report in the same DB transaction.
+     * The unique index on reports.ticket_number is the final guarantee.
+     * Callers catch UniqueConstraintViolationException and retry (outside this task).
+     */
     public static function next(?CarbonInterface $now = null): string
     {
         $prefix = 'SPK-'.($now ?? now())->format('ym').'-';
