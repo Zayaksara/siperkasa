@@ -9,15 +9,27 @@ use App\Support\Spreadsheet\RowReader;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 final class ImportUsers
 {
+    public const MAX_ROWS = 500;
+
     /** @return array{created: int, updated: int, failed: int, errors: list<array{line: int, message: string}>, generated: list<array{nim_nip: string, password: string}>} */
     public function handle(string $path, string $extension, User $actor): array
     {
         $result = ['created' => 0, 'updated' => 0, 'failed' => 0, 'errors' => [], 'generated' => []];
 
-        foreach (RowReader::assoc($path, $extension) as $line => $row) {
+        $rows = iterator_to_array(RowReader::assoc($path, $extension));
+
+        if (count($rows) > self::MAX_ROWS) {
+            throw ValidationException::withMessages(['file' => 'Maksimal '.self::MAX_ROWS.' baris per file.']);
+        }
+
+        $nimNips = array_filter(array_map(fn ($row) => BmnValue::string($row['nim_nip'] ?? null), $rows));
+        $existingUsers = User::whereIn('nim_nip', $nimNips)->get()->keyBy('nim_nip');
+
+        foreach ($rows as $line => $row) {
             $data = [
                 'nim_nip' => BmnValue::string($row['nim_nip'] ?? null),
                 'name' => BmnValue::string($row['name'] ?? null),
@@ -30,7 +42,7 @@ final class ImportUsers
                 continue; // blank line
             }
 
-            $existing = $data['nim_nip'] === null ? null : User::where('nim_nip', $data['nim_nip'])->first();
+            $existing = $data['nim_nip'] === null ? null : $existingUsers->get($data['nim_nip']);
 
             $validator = Validator::make($data, [
                 'nim_nip' => ['required', 'string', 'max:255'],
@@ -55,12 +67,13 @@ final class ImportUsers
                     continue;
                 }
 
+                // Password is only set on create; re-importing a roster must not reset existing passwords.
                 $existing->update(array_filter([
                     'name' => $data['name'],
                     'email' => $data['email'],
                     'role' => $data['role'],
-                    'password' => $data['password'],
                 ], fn ($value) => $value !== null));
+                $existing->clearDefaultPicIfNotPic();
                 $result['updated']++;
 
                 continue;

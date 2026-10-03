@@ -60,6 +60,16 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     /**
+     * Release categories that use this user as default PIC when the user is no longer an active PIC.
+     */
+    public function clearDefaultPicIfNotPic(): void
+    {
+        if (! $this->is_active || $this->role !== UserRole::Pic) {
+            $this->defaultCategories()->update(['default_pic_id' => null]);
+        }
+    }
+
+    /**
      * Categories whose default PIC is this user.
      */
     public function defaultCategories(): HasMany

@@ -79,3 +79,19 @@ test('the import history lists the latest imports', function () {
             ->has('imports', 1)
             ->where('imports.0.status', 'done'));
 });
+
+test('a failed job marks the import failed and deletes the uploaded file', function () {
+    Storage::fake('local');
+    Storage::disk('local')->put('imports/x.xlsx', 'data');
+    $import = AssetImport::create(['filename' => 'x.xlsx', 'status' => AssetImportStatus::Processing]);
+
+    (new ImportAssetsJob($import->id, 'imports/x.xlsx'))->failed(new RuntimeException('killed'));
+
+    expect($import->fresh()->status)->toBe(AssetImportStatus::Failed)
+        ->and($import->fresh()->errors[0]['message'])->toBe('Impor gagal diproses. Coba unggah ulang.');
+    Storage::disk('local')->assertMissing('imports/x.xlsx');
+});
+
+test('the job timeout stays below the queue retry_after', function () {
+    expect((new ImportAssetsJob(1, 'x'))->timeout)->toBeLessThan(config('queue.connections.database.retry_after'));
+});

@@ -74,6 +74,7 @@ class UserController extends Controller
         }
 
         $user->update($data);
+        $user->clearDefaultPicIfNotPic();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Pengguna diperbarui.']);
 
@@ -91,6 +92,7 @@ class UserController extends Controller
         }
 
         $user->update(['is_active' => $data['is_active']]);
+        $user->clearDefaultPicIfNotPic();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => $data['is_active'] ? 'Akun diaktifkan.' : 'Akun dinonaktifkan.']);
 

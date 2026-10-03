@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\UserRole;
+use App\Models\Category;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
@@ -96,3 +97,25 @@ test('non-admins are forbidden', function (string $state) {
     $this->actingAs($user)->get(route('admin.users.index'))->assertForbidden();
     $this->actingAs($user)->post(route('admin.users.store'), [])->assertForbidden();
 })->with(['reporter', 'pic']);
+
+test('demoting a pic clears the default pic of their categories', function () {
+    $pic = User::factory()->pic()->create();
+    $category = Category::factory()->create(['default_pic_id' => $pic->id]);
+
+    $this->actingAs($this->admin)->put(route('admin.users.update', $pic), [
+        'nim_nip' => $pic->nim_nip, 'name' => $pic->name, 'email' => $pic->email, 'role' => 'user',
+    ])->assertSessionHasNoErrors();
+
+    expect($category->fresh()->default_pic_id)->toBeNull();
+});
+
+test('deactivating a pic clears the default pic of their categories', function () {
+    $pic = User::factory()->pic()->create();
+    $category = Category::factory()->create(['default_pic_id' => $pic->id]);
+    $other = Category::factory()->create(['default_pic_id' => User::factory()->pic()->create()->id]);
+
+    $this->actingAs($this->admin)->patch(route('admin.users.active', $pic), ['is_active' => false]);
+
+    expect($category->fresh()->default_pic_id)->toBeNull()
+        ->and($other->fresh()->default_pic_id)->not->toBeNull();
+});

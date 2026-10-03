@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\UserRole;
+use App\Models\Category;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
@@ -74,7 +75,7 @@ test('re-importing never changes the active flag or the password of existing use
     $user = User::factory()->inactive()->create(['nim_nip' => '5001']);
     $hash = $user->password;
 
-    $this->actingAs($this->admin)->post(route('admin.users.import'), ['file' => usersCsv([['5001', 'Nama Baru', '', 'user', '']])]);
+    $this->actingAs($this->admin)->post(route('admin.users.import'), ['file' => usersCsv([['5001', 'Nama Baru', '', 'user', 'passwordbaru1']])]);
 
     expect($user->fresh()->is_active)->toBeFalse()
         ->and($user->fresh()->password)->toBe($hash)
@@ -102,4 +103,29 @@ test('a row that would demote the importing admin fails while other rows still i
 
     expect($this->admin->fresh()->role)->toBe(UserRole::Admin)
         ->and($this->admin->fresh()->name)->not->toBe('Admin Sendiri');
+});
+
+test('a file over 500 rows is rejected and nothing is written', function () {
+    $rows = array_map(fn ($i) => ['9'.$i, 'User '.$i, '', 'user', 'abc12345'], range(1, 501));
+
+    $this->actingAs($this->admin)->post(route('admin.users.import'), ['file' => usersCsv($rows)])
+        ->assertSessionHasErrors(['file' => 'Maksimal 500 baris per file.']);
+
+    expect(User::count())->toBe(1);
+});
+
+test('exactly 500 rows are accepted', function () {
+    $rows = array_map(fn ($i) => ['8'.$i, 'User '.$i, '', 'user', 'abc12345'], range(1, 500));
+
+    $this->actingAs($this->admin)->post(route('admin.users.import'), ['file' => usersCsv($rows)])
+        ->assertSessionHas('import_result', fn ($r) => $r['created'] === 500);
+});
+
+test('demoting a pic through import clears the default pic of their categories', function () {
+    $pic = User::factory()->pic()->create(['nim_nip' => '6001']);
+    $category = Category::factory()->create(['default_pic_id' => $pic->id]);
+
+    $this->actingAs($this->admin)->post(route('admin.users.import'), ['file' => usersCsv([['6001', $pic->name, '', 'user', '']])]);
+
+    expect($category->fresh()->default_pic_id)->toBeNull();
 });

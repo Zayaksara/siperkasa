@@ -12,4 +12,13 @@ class StoreAssetImportRequest extends FormRequest
             'file' => ['required', 'file', 'mimes:xlsx', 'max:20480'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'file.max' => 'Berkas maksimal 20 MB.',
+            'file.uploaded' => 'Berkas gagal diunggah. Ukuran maksimal 20 MB.',
+            'file.mimes' => 'Berkas harus berformat .xlsx.',
+        ];
+    }
 }
