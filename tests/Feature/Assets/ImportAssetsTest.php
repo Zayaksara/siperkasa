@@ -3,7 +3,9 @@
 use App\Actions\Assets\ImportAssets;
 use App\Enums\AssetImportStatus;
 use App\Models\Asset;
+use App\Models\AssetImport;
 use App\Models\Category;
+use Illuminate\Database\QueryException;
 use Tests\Support\BmnFixture;
 
 afterEach(function () {
@@ -121,4 +123,36 @@ it('imports through the artisan command', function () {
 
 it('fails the command when the file does not exist', function () {
     $this->artisan('assets:import', ['path' => 'C:/nope/missing.xlsx'])->assertFailed();
+});
+
+it('marks the import failed, keeps only written counts and rethrows when a batch cannot be written', function () {
+    $path = BmnFixture::xlsx([
+        BmnFixture::row(),
+        BmnFixture::row(['Kode Barang' => str_repeat('9', 300), 'NUP' => 2]),
+    ]);
+    $import = AssetImport::create(['filename' => 'x.xlsx', 'status' => AssetImportStatus::Queued]);
+
+    expect(fn () => (new ImportAssets(batchSize: 1))->handle($path, 'xlsx', $import))->toThrow(QueryException::class);
+
+    $import->refresh();
+    expect($import->status)->toBe(AssetImportStatus::Failed)
+        ->and($import->inserted)->toBe(1)
+        ->and($import->updated)->toBe(0)
+        ->and($import->errors[count($import->errors) - 1]['line'])->toBe(0);
+    expect(Asset::count())->toBe(1);
+});
+
+it('caps errors at 100 even when the import then fails', function () {
+    $rows = [];
+    foreach (range(1, 101) as $nup) {
+        $rows[] = BmnFixture::row(['NUP' => $nup, 'Golongan Aset' => 'BAD']);
+    }
+    $rows[] = BmnFixture::row(['Kode Barang' => str_repeat('9', 300), 'NUP' => 500]);
+    $import = AssetImport::create(['filename' => 'x.xlsx', 'status' => AssetImportStatus::Queued]);
+
+    expect(fn () => app(ImportAssets::class)->handle(BmnFixture::xlsx($rows), 'xlsx', $import))->toThrow(QueryException::class);
+
+    $import->refresh();
+    expect($import->errors)->toHaveCount(100)
+        ->and($import->errors[99]['line'])->toBe(0);
 });

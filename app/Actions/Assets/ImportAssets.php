@@ -80,7 +80,7 @@ final class ImportAssets
                 'inserted' => $stats['inserted'],
                 'updated' => $stats['updated'],
                 'failed' => $stats['failed'],
-                'errors' => [...$stats['errors'], ['line' => 0, 'message' => $e->getMessage()]],
+                'errors' => [...array_slice($stats['errors'], 0, self::MAX_ERRORS - 1), ['line' => 0, 'message' => $e->getMessage()]],
             ]);
 
             throw $e;
@@ -165,10 +165,12 @@ final class ImportAssets
         $codes = array_keys($batch);
         $existing = Asset::whereIn('asset_code', $codes)->count();
 
-        $stats['updated'] += $existing;
-        $stats['inserted'] += count($codes) - $existing;
+        $inserted = count($codes) - $existing;
 
         Asset::upsert(array_values($batch), ['asset_code'], self::UPDATE_COLUMNS);
+
+        $stats['updated'] += $existing;
+        $stats['inserted'] += $inserted;
 
         $batch = [];
     }
