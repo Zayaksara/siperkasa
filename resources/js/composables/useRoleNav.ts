@@ -1,5 +1,14 @@
 import { usePage } from '@inertiajs/vue3';
-import { Boxes, Building2, Home, Tags, Upload, Users } from '@lucide/vue';
+import {
+    Boxes,
+    Building2,
+    ClipboardList,
+    FilePlus,
+    Home,
+    Tags,
+    Upload,
+    Users,
+} from '@lucide/vue';
 import { computed } from 'vue';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as assetImportsIndex } from '@/routes/admin/asset-imports';
@@ -8,11 +17,17 @@ import { index as buildingsIndex } from '@/routes/admin/buildings';
 import { index as categoriesIndex } from '@/routes/admin/categories';
 import { index as usersIndex } from '@/routes/admin/users';
 import { dashboard as picDashboard } from '@/routes/pic';
+import {
+    create as reportsCreate,
+    index as reportsIndex,
+} from '@/routes/reports';
 import { dashboard as userDashboard } from '@/routes/user';
 import type { NavItem } from '@/types';
 
 const userNav: NavItem[] = [
     { title: 'Beranda', href: userDashboard(), icon: Home },
+    { title: 'Laporan Saya', href: reportsIndex(), icon: ClipboardList },
+    { title: 'Buat Laporan', href: reportsCreate(), icon: FilePlus },
 ];
 
 const adminNav: NavItem[] = [
