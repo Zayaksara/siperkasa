@@ -1,9 +1,11 @@
 import { usePage } from '@inertiajs/vue3';
-import { Boxes, Home, Upload } from '@lucide/vue';
+import { Boxes, Building2, Home, Tags, Upload } from '@lucide/vue';
 import { computed } from 'vue';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as assetImportsIndex } from '@/routes/admin/asset-imports';
 import { index as assetsIndex } from '@/routes/admin/assets';
+import { index as buildingsIndex } from '@/routes/admin/buildings';
+import { index as categoriesIndex } from '@/routes/admin/categories';
 import { dashboard as picDashboard } from '@/routes/pic';
 import { dashboard as userDashboard } from '@/routes/user';
 import type { NavItem } from '@/types';
@@ -16,6 +18,8 @@ const adminNav: NavItem[] = [
     { title: 'Beranda', href: adminDashboard(), icon: Home },
     { title: 'Aset', href: assetsIndex(), icon: Boxes },
     { title: 'Impor Aset', href: assetImportsIndex(), icon: Upload },
+    { title: 'Kategori', href: categoriesIndex(), icon: Tags },
+    { title: 'Gedung & Ruang', href: buildingsIndex(), icon: Building2 },
 ];
 
 const picNav: NavItem[] = [
