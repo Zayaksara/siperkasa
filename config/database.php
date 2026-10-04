@@ -62,6 +62,10 @@ return [
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
+            // Used by spatie/laravel-backup. cPanel usually: /usr/bin
+            'dump' => [
+                'dump_binary_path' => env('MYSQLDUMP_PATH', ''),
+            ],
         ],
 
         'mariadb' => [

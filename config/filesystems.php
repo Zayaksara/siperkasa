@@ -38,6 +38,30 @@ return [
             'report' => false,
         ],
 
+        // Daily backups. Private: never served over HTTP.
+        'backups' => [
+            'driver' => 'local',
+            'root' => storage_path('app/backups'),
+            'serve' => false,
+            'throw' => false,
+            'report' => false,
+        ],
+
+        // Second location for backups (another server over SFTP). Used only when BACKUP_OFFSITE_HOST is set.
+        'offsite' => [
+            'driver' => 'sftp',
+            'host' => env('BACKUP_OFFSITE_HOST'),
+            'port' => (int) env('BACKUP_OFFSITE_PORT', 22),
+            'username' => env('BACKUP_OFFSITE_USERNAME'),
+            'password' => env('BACKUP_OFFSITE_PASSWORD'),
+            'privateKey' => env('BACKUP_OFFSITE_PRIVATE_KEY'),
+            'passphrase' => env('BACKUP_OFFSITE_PASSPHRASE'),
+            'root' => env('BACKUP_OFFSITE_ROOT', '/backups/siperkasa'),
+            'timeout' => 30,
+            'throw' => true,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

@@ -8,6 +8,12 @@ return [
 
     'pdf_max_rows' => 500,
 
+    // Comma list of proxy IPs (or *) when the site sits behind a reverse proxy. Empty = trust none.
+    'trusted_proxies' => env('TRUSTED_PROXIES'),
+
+    // /up fails when free disk space under storage/ drops below this (MB).
+    'health_min_free_mb' => (int) env('HEALTH_MIN_FREE_MB', 1024),
+
     // Manual search keywords per category, for items that are not in the BMN asset list (building parts).
     'category_keywords' => [
         'Bangunan & Sarana' => [
