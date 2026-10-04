@@ -14,7 +14,7 @@ const root = useTemplateRef<HTMLElement>('root');
 // this is still running, see JourneyMockup's own timeline and its delay.
 useMotion(
     root,
-    ({ gsap, SplitText, context }) => {
+    ({ gsap, SplitText }) => {
         const host = root.value;
         const title = host?.querySelector<HTMLElement>('#hero-title');
 
@@ -27,34 +27,24 @@ useMotion(
 
         if (!title || !SplitText) return;
 
-        // Headline: words rise in on load (readable at once, ~0.8s), then as
-        // the hero scrolls out the characters dim in a left-to-right wave,
-        // scrubbed to scroll and fully reversible. Opacity and transform only.
-        // Words and characters animate on different layers so both can run.
-        const split = SplitText.create(title, {
-            type: 'words,chars',
+        // Headline: characters rise from beneath a clip line with a calm
+        // overshoot (back.out), once on load. Words stay whole, so lines
+        // never break mid-word. autoSplit re-splits on resize and font load;
+        // the returned tween keeps its progress across re-splits.
+        SplitText.create(title, {
+            type: 'lines,words,chars',
+            mask: 'lines',
+            autoSplit: true,
             aria: 'auto',
+            linesClass: 'hero-line',
+            onSplit: (self) =>
+                gsap.from(self.chars, {
+                    yPercent: 110,
+                    duration: 0.8,
+                    ease: 'back.out(1.7)',
+                    stagger: 0.02,
+                }),
         });
-        context.add(() => {
-            gsap.from(split.words, {
-                autoAlpha: 0,
-                y: motion.rise,
-                duration: 0.5,
-                stagger: 0.035,
-            });
-            gsap.to(split.chars, {
-                opacity: 0.18,
-                ease: 'none',
-                stagger: { each: 0.02 },
-                scrollTrigger: {
-                    trigger: title,
-                    start: 'top 18%',
-                    end: 'bottom top',
-                    scrub: 0.6,
-                },
-            });
-        });
-        return () => split.revert();
     },
     { hideUntilReady: true, plugins: ['SplitText'] },
 );
