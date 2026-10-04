@@ -37,5 +37,27 @@ test('a stale transition answers 409 for JSON requests', function () {
 
     $this->actingAs($admin)->postJson(route('test.stale', $report))
         ->assertStatus(409)
-        ->assertJsonPath('message', InvalidTransition::between(ReportStatus::Cancelled, ReportStatus::Assigned)->getMessage());
+        ->assertJsonPath('message', 'Status laporan sudah berubah menjadi Dibatalkan. Muat ulang halaman.');
+});
+
+test('a stale transition to the same status names the current status instead of "from X to X"', function () {
+    $message = InvalidTransition::changed(ReportStatus::Closed)->getMessage();
+
+    expect($message)->toBe('Status laporan sudah berubah menjadi Selesai. Muat ulang halaman.');
+});
+
+test('a PIC who lost the task is sent to the task list with the reason', function () {
+    $pic = User::factory()->pic()->create();
+    $report = Report::factory()->assigned($pic)->create();
+    Route::middleware('web')->post('/_test/lost/{report}', function (Report $report) use ($pic) {
+        Report::whereKey($report->id)->update(['assigned_pic_id' => User::factory()->pic()->create()->id]);
+
+        return app(ReportTransitioner::class)->transition($report, ReportStatus::InProgress, $pic, actorMustBe: $pic->id);
+    })->name('test.lost');
+    app('router')->getRoutes()->refreshNameLookups();
+
+    $this->actingAs($pic)->from(route('pic.tasks.show', $report))->post(route('test.lost', $report))
+        ->assertRedirect(route('pic.tasks.index'))
+        ->assertInertiaFlash('toast.message', 'Laporan tidak lagi ditugaskan kepada Anda.')
+        ->assertInertiaFlash('toast.type', 'error');
 });

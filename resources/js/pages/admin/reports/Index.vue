@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { computed, reactive } from 'vue';
+import { computed, reactive, watch } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import HoldBadge from '@/components/HoldBadge.vue';
 import InputError from '@/components/InputError.vue';
@@ -75,6 +75,26 @@ const f = reactive({
         props.filters.overdue === '1' ||
         props.filters.overdue === 1,
 });
+
+function syncFromProps() {
+    Object.assign(f, {
+        q: String(props.filters.q ?? ''),
+        status: String(props.filters.status ?? ''),
+        category_id: String(props.filters.category_id ?? ''),
+        building_id: String(props.filters.building_id ?? ''),
+        pic_id: String(props.filters.pic_id ?? ''),
+        priority: String(props.filters.priority ?? ''),
+        from: String(props.filters.from ?? ''),
+        to: String(props.filters.to ?? ''),
+        overdue:
+            props.filters.overdue === true ||
+            props.filters.overdue === '1' ||
+            props.filters.overdue === 1,
+    });
+}
+
+// Back/forward navigation changes props.filters without remounting the page.
+watch(() => props.filters, syncFromProps);
 
 const hasFilters = computed(() =>
     Object.values(props.filters).some(

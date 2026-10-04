@@ -53,6 +53,7 @@ test('resuming returns to In_Progress and keeps the original started_at', functi
     $startedAt = $report->started_at->toDateTimeString();
 
     $this->actingAs($this->pic)->post(route('pic.tasks.resume', $report))->assertRedirect(route('pic.tasks.show', $report));
+    Notification::assertSentTo($report->user, ReportStatusChanged::class, fn ($n) => $n->report->status === ReportStatus::InProgress);
 
     $report->refresh();
     expect($report->status)->toBe(ReportStatus::InProgress)
@@ -146,5 +147,27 @@ test('a pic who lost the task to a reassignment can not start it', function () {
 
     expect($report->fresh()->status)->toBe(ReportStatus::Assigned)
         ->and($report->statusLogs()->count())->toBe(0);
+    Notification::assertNothingSent();
+});
+
+test('a pic who lost the task to a reassignment can not hold it', function () {
+    $report = Report::factory()->inProgress($this->pic)->create();
+    Report::whereKey($report->id)->update(['assigned_pic_id' => User::factory()->pic()->create()->id]); // model stale
+
+    expect(fn () => app(HoldReport::class)->handle($report, $this->pic, 'Alasan yang cukup panjang.'))
+        ->toThrow(InvalidTransition::class);
+
+    expect($report->fresh()->status)->toBe(ReportStatus::InProgress)->and($report->statusLogs()->count())->toBe(0);
+    Notification::assertNothingSent();
+});
+
+test('a pic who lost the task to a reassignment can not resume it', function () {
+    $report = Report::factory()->onHold($this->pic)->create();
+    Report::whereKey($report->id)->update(['assigned_pic_id' => User::factory()->pic()->create()->id]); // model stale
+
+    expect(fn () => app(ResumeReport::class)->handle($report, $this->pic))
+        ->toThrow(InvalidTransition::class);
+
+    expect($report->fresh()->status)->toBe(ReportStatus::OnHold)->and($report->statusLogs()->count())->toBe(0);
     Notification::assertNothingSent();
 });

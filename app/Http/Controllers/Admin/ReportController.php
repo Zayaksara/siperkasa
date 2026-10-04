@@ -49,7 +49,8 @@ class ReportController extends Controller
             'options' => [
                 'categories' => Category::orderBy('name')->get(['id', 'name']),
                 'buildings' => Building::orderBy('code')->get(['id', 'name']),
-                'pics' => User::where('role', UserRole::Pic)->orderBy('name')->get(['id', 'name']),
+                'pics' => User::withTrashed()->where('role', UserRole::Pic)->orderBy('name')->get(['id', 'name', 'deleted_at'])
+                    ->map(fn (User $pic) => ['id' => $pic->id, 'name' => $pic->trashed() ? "{$pic->name} (terhapus)" : $pic->name]),
                 'statuses' => collect(ReportStatus::cases())->map(fn (ReportStatus $s) => ['value' => $s->value, 'label' => $s->label()]),
                 'priorities' => collect(Priority::cases())->map(fn (Priority $p) => ['value' => $p->value, 'label' => $p->label()]),
             ],

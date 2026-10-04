@@ -7,13 +7,14 @@ use DomainException;
 
 class InvalidTransition extends DomainException
 {
-    public static function between(ReportStatus $from, ReportStatus $to): self
+    /** The status already moved to $current, so the requested action no longer applies. */
+    public static function changed(ReportStatus $current): self
     {
-        return new self("Status laporan tidak bisa berubah dari {$from->value} ke {$to->value}.");
+        return new self("Status laporan sudah berubah menjadi {$current->label()}. Muat ulang halaman.");
     }
 
-    public static function notAssigned(): self
+    public static function notAssigned(): NotAssigned
     {
-        return new self('Laporan tidak lagi ditugaskan kepada Anda.');
+        return NotAssigned::make();
     }
 }

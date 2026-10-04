@@ -2,6 +2,7 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Plus } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
+import HoldBadge from '@/components/HoldBadge.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import Pagination from '@/components/Pagination.vue';
@@ -149,6 +150,12 @@ function filter(status?: string) {
                             >{{ report.ticket_number }}</span
                         >
                         <span class="flex items-center gap-2">
+                            <HoldBadge
+                                v-if="
+                                    report.status === 'On_Hold' &&
+                                    report.is_overdue
+                                "
+                            />
                             <OverdueBadge v-if="report.is_overdue" />
                             <StatusBadge :status="report.status" />
                         </span>

@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Reports\InvalidTransition;
+use App\Actions\Reports\NotAssigned;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\HandleAppearance;
@@ -42,6 +43,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (InvalidTransition $e, Request $request) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => $e->getMessage()], 409);
+            }
+
+            if ($e instanceof NotAssigned) {
+                Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage()]);
+
+                return to_route('pic.tasks.index');
             }
 
             Inertia::flash('toast', ['type' => 'error', 'message' => 'Status laporan sudah berubah. Muat ulang halaman.']);

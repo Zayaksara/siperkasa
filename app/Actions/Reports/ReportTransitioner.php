@@ -24,7 +24,7 @@ final class ReportTransitioner
             $from = $this->lockStatus($report, $to, $actorMustBe);
 
             if (! $from->canTransitionTo($to)) {
-                throw InvalidTransition::between($from, $to);
+                throw InvalidTransition::changed($from);
             }
 
             $report->forceFill([...$attributes, 'status' => $to])->save();
@@ -49,7 +49,7 @@ final class ReportTransitioner
             $status = $this->lockStatus($report, null, $actorMustBe);
 
             if (! in_array($status, $allowed, true)) {
-                throw InvalidTransition::between($status, $status);
+                throw InvalidTransition::changed($status);
             }
 
             return $work();
@@ -77,7 +77,7 @@ final class ReportTransitioner
         $row = Report::whereKey($report->id)->lockForUpdate()->first(['status', 'assigned_pic_id']);
 
         if ($row === null) {
-            throw InvalidTransition::between($report->status, $to ?? $report->status);
+            throw InvalidTransition::changed($report->status);
         }
 
         if ($actorMustBe !== null && $row->assigned_pic_id !== $actorMustBe) {

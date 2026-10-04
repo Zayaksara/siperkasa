@@ -114,3 +114,21 @@ test('filter validation errors use Indonesian field names', function () {
 
     $response->assertSessionHasErrors(['to' => 'Tanggal akhir harus sama dengan atau setelah tanggal mulai.']);
 });
+
+test('reports of a soft-deleted reporter and PIC stay listed and the PIC stays filterable', function () {
+    $pic = User::factory()->pic()->create(['name' => 'Pak Lama']);
+    $reporter = User::factory()->create(['name' => 'Pelapor Lama']);
+    $report = Report::factory()->for($reporter)->assigned($pic)->create();
+    $pic->delete();
+    $reporter->delete();
+
+    $this->actingAs($this->admin)->get(route('admin.reports.index'))
+        ->assertInertia(fn ($page) => $page
+            ->has('reports.data', 1)
+            ->where('reports.data.0.pic', 'Pak Lama')
+            ->where('reports.data.0.reporter', 'Pelapor Lama')
+            ->where('options.pics.0.name', 'Pak Lama (terhapus)'));
+
+    $this->actingAs($this->admin)->get(route('admin.reports.index', ['pic_id' => $pic->id]))
+        ->assertInertia(fn ($page) => $page->has('reports.data', 1)->where('reports.data.0.id', $report->id));
+});
