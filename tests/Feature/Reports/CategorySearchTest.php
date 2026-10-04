@@ -92,3 +92,26 @@ test('no match, short or empty query falls back to Lain-lain', function (string 
         ->assertOk()
         ->assertExactJson(['data' => [['id' => $this->lainLain->id, 'name' => 'Lain-lain', 'examples' => []]]]);
 })->with(['zzzzqqq', 'a', '']);
+
+test('an asset without a category is ignored', function () {
+    Asset::factory()->create(['name' => 'Meja Tanpa Kategori', 'category_id' => null]);
+
+    $this->actingAs(User::factory()->create())
+        ->getJson(route('categories.search', ['q' => 'tanpa kategori']))
+        ->assertOk()
+        ->assertJsonPath('data.0.name', 'Lain-lain');
+});
+
+test('underscore and backslash are matched literally', function () {
+    Asset::factory()->create(['name' => 'Kursi Kuliah']);
+    Asset::factory()->create(['name' => 'Kabel_Uji', 'category_id' => Category::factory()->create(['name' => 'Kabel Uji'])->id]);
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->getJson(route('categories.search', ['q' => 'K_rsi']))
+        ->assertJsonPath('data.0.name', 'Lain-lain');
+    $this->actingAs($user)->getJson(route('categories.search', ['q' => 'bel_uj']))
+        ->assertJsonPath('data.0.name', 'Kabel Uji');
+    $this->actingAs($user)->getJson(route('categories.search', ['q' => 'a\b']))
+        ->assertOk()->assertJsonPath('data.0.name', 'Lain-lain');
+});

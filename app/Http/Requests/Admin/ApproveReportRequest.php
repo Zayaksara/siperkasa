@@ -15,8 +15,8 @@ class ApproveReportRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => ['sometimes', 'string', 'min:10', 'max:120'],
-            'category_id' => ['sometimes', 'integer', Rule::exists('categories', 'id')],
+            'title' => ['sometimes', 'nullable', 'string', 'min:10', 'max:120'],
+            'category_id' => ['sometimes', 'nullable', 'integer', Rule::exists('categories', 'id')],
             'admin_priority' => ['required', Rule::enum(Priority::class)],
             'sla_date' => ['required', 'date', 'after:now'],
             'assigned_pic_id' => [

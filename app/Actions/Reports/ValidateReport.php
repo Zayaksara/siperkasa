@@ -10,7 +10,6 @@ use App\Models\User;
 use App\Notifications\ReportAssigned;
 use App\Notifications\ReportStatusChanged;
 use Carbon\CarbonInterface;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 
 final class ValidateReport
@@ -23,31 +22,36 @@ final class ValidateReport
      */
     public function handle(Report $report, User $admin, Priority $priority, CarbonInterface $sla, User $pic, ?string $title = null, ?int $categoryId = null): Report
     {
-        $note = sprintf(
-            'Ditugaskan ke %s · Prioritas %s · SLA %s',
-            $pic->name,
-            $priority->label(),
-            $sla->locale('id')->translatedFormat('d M Y H:i'),
-        );
-        $attributes = [
-            'admin_id' => $admin->id,
-            'admin_priority' => $priority,
-            'sla_date' => $sla,
-            'assigned_pic_id' => $pic->id,
-            'validated_at' => now(),
-        ];
+        $report = $this->transitioner->guard($report, ReportStatus::cases(), function () use ($report, $admin, $priority, $sla, $pic, $title, $categoryId) {
+            // Re-read under the lock so the "from" values in the note are the real ones.
+            $report->refresh()->loadMissing('category');
 
-        if ($title !== null && $title !== $report->title) {
-            $note .= sprintf(' · Judul diubah: "%s" → "%s"', $report->title, $title);
-            $attributes['title'] = $title;
-        }
+            $note = sprintf(
+                'Ditugaskan ke %s · Prioritas %s · SLA %s',
+                $pic->name,
+                $priority->label(),
+                $sla->locale('id')->translatedFormat('d M Y H:i'),
+            );
+            $attributes = [
+                'admin_id' => $admin->id,
+                'admin_priority' => $priority,
+                'sla_date' => $sla,
+                'assigned_pic_id' => $pic->id,
+                'validated_at' => now(),
+            ];
 
-        if ($categoryId !== null && $categoryId !== $report->category_id) {
-            $note .= sprintf(' · Kategori diubah: %s → %s', $report->category->name, Category::findOrFail($categoryId)->name);
-            $attributes['category_id'] = $categoryId;
-        }
+            if ($title !== null && $title !== $report->title) {
+                $note .= sprintf(' · Judul diubah: "%s" → "%s"', $report->title, $title);
+                $attributes['title'] = $title;
+            }
 
-        $report = DB::transaction(fn () => $this->transitioner->transition($report, ReportStatus::Assigned, $admin, $note, $attributes));
+            if ($categoryId !== null && $categoryId !== $report->category_id) {
+                $note .= sprintf(' · Kategori diubah: %s → %s', $report->category->name, Category::findOrFail($categoryId)->name);
+                $attributes['category_id'] = $categoryId;
+            }
+
+            return $this->transitioner->transition($report, ReportStatus::Assigned, $admin, $note, $attributes);
+        });
 
         Notification::send($pic, new ReportAssigned($report));
         Notification::send($report->user, new ReportStatusChanged($report));

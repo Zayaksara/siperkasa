@@ -101,7 +101,7 @@ class ReportController extends Controller
             Date::parse($request->validated('sla_date')),
             User::findOrFail($request->integer('assigned_pic_id')),
             $request->validated('title'),
-            $request->has('category_id') ? $request->integer('category_id') : null,
+            $request->integer('category_id') ?: null,
         );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => "Laporan {$report->ticket_number} divalidasi dan ditugaskan."]);

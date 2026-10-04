@@ -208,3 +208,12 @@ test('the detail page lists categories with their default pic', function () {
         ->assertInertia(fn ($page) => $page
             ->where('categories', fn ($list) => collect($list)->contains(fn ($c) => $c['id'] === $category->id && $c['default_pic_id'] === $this->pic->id && $c['name'] === $category->name)));
 });
+
+test('empty title and category are treated as no change', function () {
+    $title = $this->report->title;
+
+    $this->actingAs($this->admin)->post(route('admin.reports.approve', $this->report), adminApprovePayload($this->pic, ['title' => '', 'category_id' => '']))
+        ->assertSessionHasNoErrors();
+
+    expect($this->report->refresh()->title)->toBe($title)->and($this->report->status)->toBe(ReportStatus::Assigned);
+});

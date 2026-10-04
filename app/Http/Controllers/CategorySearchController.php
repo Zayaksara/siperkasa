@@ -6,6 +6,7 @@ use App\Models\Asset;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -63,10 +64,11 @@ class CategorySearchController extends Controller
 
         $assetRows = Asset::query()
             ->toBase()
+            ->whereNotNull('category_id')
             ->where('name', 'like', "%{$like}%")
             ->groupBy('category_id', 'name')
             ->orderByDesc('total')
-            ->get(['category_id', 'name', \DB::raw('COUNT(*) as total')]);
+            ->get(['category_id', 'name', DB::raw('COUNT(*) as total')]);
 
         foreach ($assetRows as $row) {
             $add($row->category_id, $row->name, (int) $row->total);
