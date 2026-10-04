@@ -29,6 +29,7 @@ class AssetSearchController extends Controller
                 'name' => $asset->name,
                 'brand' => $asset->brand,
                 'category' => $asset->category?->name,
+                'category_id' => $asset->category_id,
             ]);
 
         return response()->json(['data' => $assets]);

@@ -8,14 +8,15 @@ test('guests can not search assets', function () {
 });
 
 test('any logged-in role can search by name or code', function (string $state) {
-    Asset::factory()->create(['name' => 'Proyektor Epson', 'asset_code' => '3050101001-1']);
+    $asset = Asset::factory()->create(['name' => 'Proyektor Epson', 'asset_code' => '3050101001-1']);
     Asset::factory()->create(['name' => 'Kursi Kuliah']);
 
     $this->actingAs(User::factory()->{$state}()->create())
         ->getJson(route('assets.search', ['q' => 'proyek']))
         ->assertOk()
         ->assertJsonCount(1, 'data')
-        ->assertJsonPath('data.0.name', 'Proyektor Epson');
+        ->assertJsonPath('data.0.name', 'Proyektor Epson')
+        ->assertJsonPath('data.0.category_id', $asset->category_id);
 
     $this->actingAs(User::factory()->{$state}()->create())
         ->getJson(route('assets.search', ['q' => '3050101001']))

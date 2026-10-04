@@ -3,6 +3,7 @@ import { router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import AssetCombobox from '@/components/AssetCombobox.vue';
 import type { AssetOption } from '@/components/AssetCombobox.vue';
+import CategoryCombobox from '@/components/CategoryCombobox.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import InputError from '@/components/InputError.vue';
 import PhotoUploader from '@/components/PhotoUploader.vue';
@@ -68,6 +69,13 @@ const compressing = ref(false);
 const confirmCancel = ref(false);
 const blocked = computed(() => form.processing || compressing.value);
 
+watch(
+    () => form.asset,
+    (asset) => {
+        if (asset?.category_id) form.category_id = asset.category_id;
+    },
+);
+
 watch(buildingId, () => {
     if (!rooms.value.some((room) => room.id === Number(form.room_id))) {
         form.room_id = '';
@@ -125,11 +133,11 @@ function cancel() {
             aria-label="Data pelapor"
         >
             <div>
-                <span class="text-muted-foreground">Pelapor</span>
+                <span class="text-muted-foreground">Pelapor </span>
                 <span class="font-medium">{{ me.name }}</span>
             </div>
             <div>
-                <span class="text-muted-foreground">NIM/NIP</span>
+                <span class="text-muted-foreground">NIM/NIP </span>
                 <span class="font-medium">{{ me.nim_nip }}</span>
             </div>
         </section>
@@ -140,31 +148,28 @@ function cancel() {
                 id="title"
                 v-model="form.title"
                 class="h-11"
+                minlength="10"
                 maxlength="120"
-                placeholder="Contoh: Proyektor tidak menyala"
+                placeholder="Contoh: AC ruang 201 bocor"
                 required
+                aria-describedby="title-help"
                 :aria-invalid="!!form.errors.title"
             />
+            <p id="title-help" class="text-xs text-muted-foreground">
+                Sebut barang + kerusakan + lokasi singkat.
+            </p>
             <InputError :message="form.errors.title" />
         </div>
 
         <div class="grid gap-2">
             <Label for="category">Kategori</Label>
-            <NativeSelect
+            <CategoryCombobox
                 id="category"
                 v-model="form.category_id"
+                :categories="categories"
                 required
-                :aria-invalid="!!form.errors.category_id"
-            >
-                <option value="" disabled>Pilih kategori</option>
-                <option
-                    v-for="category in categories"
-                    :key="category.id"
-                    :value="category.id"
-                >
-                    {{ category.name }}
-                </option>
-            </NativeSelect>
+                :invalid="!!form.errors.category_id"
+            />
             <InputError :message="form.errors.category_id" />
         </div>
 

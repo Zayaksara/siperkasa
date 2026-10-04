@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
+import CategoryCombobox from '@/components/CategoryCombobox.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import HoldBadge from '@/components/HoldBadge.vue';
 import InputError from '@/components/InputError.vue';
@@ -33,6 +34,7 @@ const props = defineProps<{
         sla_date: string | null;
         created_at: string;
         category: string | null;
+        category_id: number | null;
         room: string | null;
         building: string | null;
         reporter: string | null;
@@ -59,6 +61,7 @@ const props = defineProps<{
     };
     can: { approve: boolean; reject: boolean; reassign: boolean };
     pics: { id: number; name: string; active_tasks: number }[];
+    categories: { id: number; name: string; default_pic_id: number | null }[];
     current_pic_id: number | null;
     suggested_pic_id: number | null;
     priorities: { value: string; label: string }[];
@@ -70,6 +73,8 @@ defineOptions({
 });
 
 const approveForm = useForm({
+    title: props.report.title,
+    category_id: (props.report.category_id ?? '') as string | number,
     admin_priority: props.report.user_priority,
     sla_date: props.sla_defaults[props.report.user_priority] ?? '',
     assigned_pic_id: (props.suggested_pic_id ?? '') as string | number,
@@ -86,6 +91,25 @@ watch(
     },
 );
 
+const suggestedPicId = ref<number | null>(props.suggested_pic_id);
+const picTouched = ref(false);
+watch(
+    () => approveForm.category_id,
+    (categoryId) => {
+        const picId = props.categories.find(
+            (c) => c.id === Number(categoryId),
+        )?.default_pic_id;
+        suggestedPicId.value =
+            picId != null && props.pics.some((pic) => pic.id === picId)
+                ? picId
+                : null;
+
+        if (!picTouched.value && suggestedPicId.value !== null) {
+            approveForm.assigned_pic_id = suggestedPicId.value;
+        }
+    },
+);
+
 const busy = computed(
     () => approveForm.processing || reassignForm.processing || rejectBusy.value,
 );
@@ -94,7 +118,26 @@ const noOtherPics = computed(() => otherPics.value.length === 0);
 
 function submitApprove() {
     if (busy.value || noPics.value) return;
-    approveForm.post(approve.url(props.report.id), { preserveScroll: true });
+    approveForm
+        .transform((data) => {
+            const { title, category_id, ...rest } = data;
+            const payload: Record<string, unknown> = { ...rest };
+            const newTitle = title.trim();
+
+            if (newTitle !== '' && newTitle !== props.report.title) {
+                payload.title = newTitle;
+            }
+
+            if (
+                category_id !== '' &&
+                Number(category_id) !== props.report.category_id
+            ) {
+                payload.category_id = category_id;
+            }
+
+            return payload as typeof data;
+        })
+        .post(approve.url(props.report.id), { preserveScroll: true });
 }
 
 const reassignForm = useForm({ assigned_pic_id: '' as string | number });
@@ -276,6 +319,34 @@ const details = computed<[string, string][]>(() => [
             </p>
             <form class="grid gap-4" @submit.prevent="submitApprove">
                 <div class="grid gap-2">
+                    <Label for="a-title">Judul laporan</Label>
+                    <Input
+                        id="a-title"
+                        v-model="approveForm.title"
+                        class="h-11"
+                        minlength="10"
+                        maxlength="120"
+                        placeholder="Contoh: AC ruang 201 bocor"
+                        aria-describedby="a-title-help"
+                        :aria-invalid="!!approveForm.errors.title"
+                    />
+                    <p id="a-title-help" class="text-xs text-muted-foreground">
+                        Sebut barang + kerusakan + lokasi singkat. Bisa
+                        dirapikan sebelum divalidasi.
+                    </p>
+                    <InputError :message="approveForm.errors.title" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="a-category">Kategori</Label>
+                    <CategoryCombobox
+                        id="a-category"
+                        v-model="approveForm.category_id"
+                        :categories="categories"
+                        :invalid="!!approveForm.errors.category_id"
+                    />
+                    <InputError :message="approveForm.errors.category_id" />
+                </div>
+                <div class="grid gap-2">
                     <Label for="a-priority">Prioritas</Label>
                     <NativeSelect
                         id="a-priority"
@@ -315,6 +386,7 @@ const details = computed<[string, string][]>(() => [
                         v-model="approveForm.assigned_pic_id"
                         required
                         :aria-invalid="!!approveForm.errors.assigned_pic_id"
+                        @change="picTouched = true"
                     >
                         <option value="" disabled>Pilih PIC</option>
                         <option
@@ -324,9 +396,7 @@ const details = computed<[string, string][]>(() => [
                         >
                             {{ pic.name }} ({{ pic.active_tasks }} tugas
                             aktif){{
-                                pic.id === suggested_pic_id
-                                    ? ' - disarankan'
-                                    : ''
+                                pic.id === suggestedPicId ? ' - disarankan' : ''
                             }}
                         </option>
                     </NativeSelect>

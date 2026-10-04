@@ -5,6 +5,7 @@ export type AssetOption = {
     name: string;
     brand: string | null;
     category: string | null;
+    category_id?: number | null;
 };
 </script>
 
