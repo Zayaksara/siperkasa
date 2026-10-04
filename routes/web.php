@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\UserImportController;
 use App\Http\Controllers\AssetSearchController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Pic\TaskController;
 use App\Http\Controllers\User\ReportController;
 use App\Models\Asset;
@@ -33,6 +34,12 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::get('assets/search', AssetSearchController::class)->name('assets.search');
     Route::get('attachments/{attachment}', AttachmentController::class)->name('attachments.show');
+
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('notifications/recent', [NotificationController::class, 'recent'])->name('notifications.recent');
+    Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+    Route::post('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+    Route::post('notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
 
     Route::middleware('role:user')->prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('index');

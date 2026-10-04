@@ -1,5 +1,6 @@
 import { usePage } from '@inertiajs/vue3';
 import {
+    Bell,
     Boxes,
     Building2,
     ClipboardList,
@@ -16,6 +17,7 @@ import { index as assetImportsIndex } from '@/routes/admin/asset-imports';
 import { index as assetsIndex } from '@/routes/admin/assets';
 import { index as buildingsIndex } from '@/routes/admin/buildings';
 import { index as categoriesIndex } from '@/routes/admin/categories';
+import { index as notificationsIndex } from '@/routes/notifications';
 import { index as adminReportsIndex } from '@/routes/admin/reports';
 import { index as usersIndex } from '@/routes/admin/users';
 import { dashboard as picDashboard } from '@/routes/pic';
@@ -31,6 +33,7 @@ const userNav: NavItem[] = [
     { title: 'Beranda', href: userDashboard(), icon: Home },
     { title: 'Laporan Saya', href: reportsIndex(), icon: ClipboardList },
     { title: 'Buat Laporan', href: reportsCreate(), icon: FilePlus },
+    { title: 'Notifikasi', href: notificationsIndex(), icon: Bell },
 ];
 
 const adminNav: NavItem[] = [
@@ -46,6 +49,7 @@ const adminNav: NavItem[] = [
 const picNav: NavItem[] = [
     { title: 'Beranda', href: picDashboard(), icon: Home },
     { title: 'Tugas', href: picTasksIndex(), icon: ListChecks },
+    { title: 'Notifikasi', href: notificationsIndex(), icon: Bell },
 ];
 
 export function useRoleNav() {
