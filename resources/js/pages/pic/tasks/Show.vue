@@ -7,6 +7,7 @@ import InputError from '@/components/InputError.vue';
 import OverdueBadge from '@/components/OverdueBadge.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PhotoUploader from '@/components/PhotoUploader.vue';
+import RupiahInput from '@/components/RupiahInput.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import Timeline from '@/components/Timeline.vue';
 import { Button } from '@/components/ui/button';
@@ -336,15 +337,10 @@ const hasActions = computed(
                     </div>
                     <div class="grid gap-2">
                         <Label for="c-cost">Biaya (Rupiah, opsional)</Label>
-                        <Input
+                        <RupiahInput
                             id="c-cost"
                             v-model="form.repair_cost"
-                            type="number"
-                            inputmode="decimal"
-                            min="0"
-                            step="0.01"
-                            placeholder="Contoh: 150000"
-                            class="h-11"
+                            placeholder="Contoh: 150.000"
                             :aria-invalid="!!form.errors.repair_cost"
                         />
                         <InputError :message="form.errors.repair_cost" />

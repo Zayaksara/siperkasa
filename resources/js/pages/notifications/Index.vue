@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import EmptyState from '@/components/EmptyState.vue';
+import StatusBadge from '@/components/StatusBadge.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import Pagination from '@/components/Pagination.vue';
 import { Button } from '@/components/ui/button';
@@ -56,7 +57,13 @@ defineOptions({
                         :class="item.read ? '' : 'bg-primary'"
                         aria-hidden="true"
                     />
-                    <span class="min-w-0">
+                    <span class="flex min-w-0 flex-col items-start">
+                        <StatusBadge
+                            v-if="item.status"
+                            :status="item.status"
+                            class="mb-1"
+                        />
+
                         <span
                             class="block text-sm"
                             :class="

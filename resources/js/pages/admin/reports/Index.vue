@@ -16,6 +16,15 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { formatDate, formatDateTime } from '@/lib/format';
 import { index, show } from '@/routes/admin/reports';
 
+// Whole row opens the detail; links, buttons, inputs and text selection keep their own behaviour.
+function openRow(event: MouseEvent, id: number) {
+    const target = event.target as HTMLElement;
+    if (target.closest('a, button, input, select, textarea, label')) return;
+    if (window.getSelection()?.toString()) return;
+
+    router.visit(show.url(id));
+}
+
 type Row = {
     id: number;
     ticket_number: string;
@@ -357,7 +366,9 @@ function reset() {
                         <tr
                             v-for="r in reports.data"
                             :key="r.id"
-                            class="hover:bg-accent"
+                            class="cursor-pointer hover:bg-accent"
+                            data-test="report-row"
+                            @click="openRow($event, r.id)"
                         >
                             <td class="p-3 whitespace-nowrap">
                                 <Link

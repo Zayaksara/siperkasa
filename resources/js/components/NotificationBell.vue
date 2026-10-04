@@ -2,6 +2,7 @@
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { Bell } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -144,6 +145,8 @@ onBeforeUnmount(() => {
                 class="min-h-11 flex-col items-start gap-0.5"
                 @select="router.post(read.url(item.id))"
             >
+                <StatusBadge v-if="item.status" :status="item.status" />
+
                 <span
                     class="text-sm"
                     :class="
