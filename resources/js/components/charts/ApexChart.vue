@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type ApexChartsType from "apexcharts";
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import type ApexChartsType from 'apexcharts';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 type Series = { name: string; data: number[] };
 
 const props = withDefaults(
     defineProps<{
-        type: "bar" | "line";
+        type: 'bar' | 'line';
         categories: string[];
         series: Series[];
         horizontal?: boolean;
@@ -21,12 +21,12 @@ const props = withDefaults(
         /** Stroke dash per series (line charts), a non-colour cue. 0 = solid. */
         dashArray?: number[];
         /** Marker shape per series (line charts), a non-colour cue. */
-        markerShapes?: ("circle" | "square" | "diamond" | "triangle")[];
+        markerShapes?: ('circle' | 'square' | 'diamond' | 'triangle')[];
     }>(),
     {
         height: 260,
-        colors: () => ["--chart-1", "--accent-sky"],
-        unit: "laporan",
+        colors: () => ['--chart-1', '--accent-sky'],
+        unit: 'laporan',
     },
 );
 
@@ -47,26 +47,26 @@ const escapeHtml = (text: string) =>
         /[&<>"']/g,
         (c) =>
             ({
-                "&": "&amp;",
-                "<": "&lt;",
-                ">": "&gt;",
-                '"': "&quot;",
-                "'": "&#39;",
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;',
             })[c] as string,
     );
 
 const token = (style: CSSStyleDeclaration, name: string) =>
-    style.getPropertyValue(name.startsWith("--") ? name : `--${name}`).trim();
+    style.getPropertyValue(name.startsWith('--') ? name : `--${name}`).trim();
 
 function buildOptions(): ApexCharts.ApexOptions {
     const root = document.documentElement;
     const style = getComputedStyle(root);
-    const dark = root.classList.contains("dark");
-    const muted = token(style, "--muted-foreground");
-    const grid = token(style, "--border");
-    const fg = token(style, "--foreground");
-    const font = token(style, "--font-sans") || "DM Sans, sans-serif";
-    const animate = !window.matchMedia("(prefers-reduced-motion: reduce)")
+    const dark = root.classList.contains('dark');
+    const muted = token(style, '--muted-foreground');
+    const grid = token(style, '--border');
+    const fg = token(style, '--foreground');
+    const font = token(style, '--font-sans') || 'DM Sans, sans-serif';
+    const animate = !window.matchMedia('(prefers-reduced-motion: reduce)')
         .matches;
     const colors = props.colors.map((name) => token(style, name));
 
@@ -76,14 +76,14 @@ function buildOptions(): ApexCharts.ApexOptions {
             height: props.height,
             fontFamily: font,
             foreColor: muted,
-            background: "transparent",
+            background: 'transparent',
             toolbar: { show: false },
             zoom: { enabled: false },
             animations: { enabled: animate },
             events: {
                 dataPointSelection: (_event, _chart, config) =>
                     emit(
-                        "select",
+                        'select',
                         config?.dataPointIndex ?? 0,
                         config?.seriesIndex ?? 0,
                     ),
@@ -96,28 +96,28 @@ function buildOptions(): ApexCharts.ApexOptions {
                 horizontal: props.horizontal ?? false,
                 distributed: props.distributed ?? false,
                 borderRadius: 4,
-                borderRadiusApplication: "end",
-                barHeight: "64%",
-                columnWidth: "56%",
-                dataLabels: { position: "top" },
+                borderRadiusApplication: 'end',
+                barHeight: '64%',
+                columnWidth: '56%',
+                dataLabels: { position: 'top' },
             },
         },
         dataLabels: {
-            enabled: props.type === "bar",
-            style: { fontSize: "12px", fontWeight: 600, colors: [fg] },
+            enabled: props.type === 'bar',
+            style: { fontSize: '12px', fontWeight: 600, colors: [fg] },
             offsetX: props.horizontal ? 14 : 0,
             offsetY: props.horizontal ? 0 : -18,
         },
         stroke: {
-            width: props.type === "line" ? 3 : 0,
-            curve: "smooth",
-            dashArray: props.type === "line" ? props.dashArray : undefined,
+            width: props.type === 'line' ? 3 : 0,
+            curve: 'smooth',
+            dashArray: props.type === 'line' ? props.dashArray : undefined,
         },
         markers: {
-            size: props.type === "line" ? 6 : 0,
+            size: props.type === 'line' ? 6 : 0,
             shape: props.markerShapes,
             strokeWidth: 2,
-            strokeColors: token(style, "--card"),
+            strokeColors: token(style, '--card'),
             hover: { size: 7 },
         },
         xaxis: {
@@ -128,21 +128,21 @@ function buildOptions(): ApexCharts.ApexOptions {
                           1.15,
                   )
                 : undefined,
-            tickPlacement: "on",
-            tickAmount: props.type === "line" ? 6 : undefined,
+            tickPlacement: 'on',
+            tickAmount: props.type === 'line' ? 6 : undefined,
             labels: {
-                style: { fontSize: "12px", colors: muted },
+                style: { fontSize: '12px', colors: muted },
                 trim: true,
                 rotate: 0,
                 hideOverlappingLabels: true,
                 formatter: (value: string | number) =>
-                    typeof value === "number" && !Number.isInteger(value)
-                        ? ""
+                    typeof value === 'number' && !Number.isInteger(value)
+                        ? ''
                         : String(value),
             },
             title: {
                 text: props.xTitle,
-                style: { fontSize: "12px", fontWeight: 500, color: muted },
+                style: { fontSize: '12px', fontWeight: 500, color: muted },
             },
             axisBorder: { color: grid },
             axisTicks: { color: grid },
@@ -153,7 +153,7 @@ function buildOptions(): ApexCharts.ApexOptions {
             decimalsInFloat: 0,
             labels: {
                 maxWidth: 120,
-                style: { fontSize: "12px", colors: muted },
+                style: { fontSize: '12px', colors: muted },
             },
         },
         grid: {
@@ -163,11 +163,11 @@ function buildOptions(): ApexCharts.ApexOptions {
         },
         legend: {
             show: props.series.length > 1,
-            position: "top",
-            horizontalAlign: "left",
-            fontSize: "13px",
+            position: 'top',
+            horizontalAlign: 'left',
+            fontSize: '13px',
             labels: { colors: fg },
-            markers: { size: 7, shape: "square", offsetX: -2 },
+            markers: { size: 7, shape: 'square', offsetX: -2 },
             itemMargin: { horizontal: 12, vertical: 4 },
             formatter: (name: string, opts) => {
                 const total = (
@@ -175,15 +175,15 @@ function buildOptions(): ApexCharts.ApexOptions {
                 ).reduce((sum, value) => sum + value, 0);
                 const index = opts?.seriesIndex ?? 0;
                 const cue =
-                    props.type === "line" && props.dashArray
-                        ? ` (${props.dashArray[index] ? "garis putus-putus" : "garis penuh"})`
-                        : "";
+                    props.type === 'line' && props.dashArray
+                        ? ` (${props.dashArray[index] ? 'garis putus-putus' : 'garis penuh'})`
+                        : '';
                 return `${escapeHtml(name)}${cue}: ${total} ${props.unit}`;
             },
         },
         tooltip: {
-            theme: dark ? "dark" : "light",
-            shared: props.type === "line",
+            theme: dark ? 'dark' : 'light',
+            shared: props.type === 'line',
             intersect: false,
             x: {
                 formatter: (value: number | string) =>
@@ -195,15 +195,15 @@ function buildOptions(): ApexCharts.ApexOptions {
             },
         },
         states: {
-            hover: { filter: { type: "lighten" } },
-            active: { filter: { type: "none" } },
+            hover: { filter: { type: 'lighten' } },
+            active: { filter: { type: 'none' } },
         },
     };
 }
 
 async function render() {
     if (!el.value) return;
-    const { default: ApexCharts } = await import("apexcharts");
+    const { default: ApexCharts } = await import('apexcharts');
     if (disposed || !el.value) return;
     const instance = new ApexCharts(el.value, buildOptions());
     chart = instance;
@@ -226,10 +226,10 @@ onMounted(() => {
     observer = new MutationObserver(refresh);
     observer.observe(document.documentElement, {
         attributes: true,
-        attributeFilter: ["class"],
+        attributeFilter: ['class'],
     });
-    motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    motionQuery.addEventListener("change", refresh);
+    motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    motionQuery.addEventListener('change', refresh);
 });
 
 watch(
@@ -249,7 +249,7 @@ onBeforeUnmount(() => {
     disposed = true;
     ready = false;
     observer?.disconnect();
-    motionQuery?.removeEventListener("change", refresh);
+    motionQuery?.removeEventListener('change', refresh);
     chart?.destroy();
     chart = undefined;
 });

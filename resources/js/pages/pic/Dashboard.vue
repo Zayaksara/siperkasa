@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link } from "@inertiajs/vue3";
+import { Head, Link } from '@inertiajs/vue3';
 import {
     CircleCheck,
     CirclePause,
@@ -7,16 +7,16 @@ import {
     Inbox,
     TriangleAlert,
     Wrench,
-} from "@lucide/vue";
-import EmptyState from "@/components/EmptyState.vue";
-import HoldBadge from "@/components/HoldBadge.vue";
-import OverdueBadge from "@/components/OverdueBadge.vue";
-import PageHeader from "@/components/PageHeader.vue";
-import StatCard from "@/components/StatCard.vue";
-import StatusBadge from "@/components/StatusBadge.vue";
-import { formatDateTime } from "@/lib/format";
-import { dashboard } from "@/routes/pic";
-import { index, show } from "@/routes/pic/tasks";
+} from '@lucide/vue';
+import EmptyState from '@/components/EmptyState.vue';
+import HoldBadge from '@/components/HoldBadge.vue';
+import OverdueBadge from '@/components/OverdueBadge.vue';
+import PageHeader from '@/components/PageHeader.vue';
+import StatCard from '@/components/StatCard.vue';
+import StatusBadge from '@/components/StatusBadge.vue';
+import { formatDateTime } from '@/lib/format';
+import { dashboard } from '@/routes/pic';
+import { index, show } from '@/routes/pic/tasks';
 
 defineProps<{
     stats: {
@@ -37,7 +37,7 @@ defineProps<{
 }>();
 
 defineOptions({
-    layout: { breadcrumbs: [{ title: "Beranda", href: dashboard() }] },
+    layout: { breadcrumbs: [{ title: 'Beranda', href: dashboard() }] },
 });
 </script>
 
@@ -112,7 +112,7 @@ defineOptions({
                                 {{
                                     task.sla_date
                                         ? formatDateTime(task.sla_date)
-                                        : "-"
+                                        : '-'
                                 }}
                             </span>
                         </span>
