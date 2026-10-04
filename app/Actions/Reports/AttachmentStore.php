@@ -28,20 +28,19 @@ final class AttachmentStore
         $paths = $this->putFiles($report, $type, $files);
 
         try {
-            [$result, $removed] = DB::transaction(function () use ($report, $type, $paths, $removeIds, $work) {
+            $result = DB::transaction(function () use ($report, $type, $paths, $removeIds, $work) {
                 $result = $work();
                 $removed = $this->remove($report, $type, $removeIds);
                 $this->addRows($report, $type, $paths);
+                DB::afterCommit(fn () => $this->deleteFiles($removed));
 
-                return [$result, $removed];
+                return $result;
             });
         } catch (Throwable $e) {
             $this->deleteFiles($paths);
 
             throw $e;
         }
-
-        $this->deleteFiles($removed);
 
         return $result;
     }

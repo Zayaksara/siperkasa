@@ -21,6 +21,7 @@ final class StartReport
             $pic,
             'Pengerjaan dimulai',
             ['started_at' => $report->started_at ?? now()],
+            $pic->id,
         ));
 
         Notification::send($report->user, new ReportStatusChanged($report));

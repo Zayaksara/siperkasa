@@ -32,7 +32,7 @@ final class CompleteReport
                 'repair_cost' => $data['repair_cost'] ?? null,
                 'vendor_name' => $data['vendor_name'] ?? null,
                 'closed_at' => now(),
-            ]);
+            ], $pic->id);
         });
 
         Notification::send($report->user, new ReportStatusChanged($report));

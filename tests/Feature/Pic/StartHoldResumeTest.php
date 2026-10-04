@@ -135,3 +135,16 @@ test('a stale resume changes nothing', function () {
         ->and($report->statusLogs()->count())->toBe(0);
     Notification::assertNothingSent();
 });
+
+test('a pic who lost the task to a reassignment can not start it', function () {
+    $report = Report::factory()->assigned($this->pic)->create();
+    $other = User::factory()->pic()->create();
+    Report::whereKey($report->id)->update(['assigned_pic_id' => $other->id]); // reassigned after the policy check, model stale
+
+    expect(fn () => app(StartReport::class)->handle($report, $this->pic))
+        ->toThrow(InvalidTransition::class);
+
+    expect($report->fresh()->status)->toBe(ReportStatus::Assigned)
+        ->and($report->statusLogs()->count())->toBe(0);
+    Notification::assertNothingSent();
+});

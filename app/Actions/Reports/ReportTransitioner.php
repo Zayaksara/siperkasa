@@ -14,13 +14,14 @@ final class ReportTransitioner
 {
     /**
      * @param  array<string, mixed>  $attributes  extra columns saved together with the new status
+     * @param  int|null  $actorMustBe  when set, the assigned PIC (re-read under the lock) must be this user id
      *
      * @throws InvalidTransition
      */
-    public function transition(Report $report, ReportStatus $to, ?User $actor, ?string $note = null, array $attributes = []): Report
+    public function transition(Report $report, ReportStatus $to, ?User $actor, ?string $note = null, array $attributes = [], ?int $actorMustBe = null): Report
     {
-        return DB::transaction(function () use ($report, $to, $actor, $note, $attributes) {
-            $from = $this->lockStatus($report, $to);
+        return DB::transaction(function () use ($report, $to, $actor, $note, $attributes, $actorMustBe) {
+            $from = $this->lockStatus($report, $to, $actorMustBe);
 
             if (! $from->canTransitionTo($to)) {
                 throw InvalidTransition::between($from, $to);
@@ -38,13 +39,14 @@ final class ReportTransitioner
      * Runs $work in a transaction while the report row is locked and its status (re-read under the lock) is one of $allowed.
      *
      * @param  array<int, ReportStatus>  $allowed
+     * @param  int|null  $actorMustBe  when set, the assigned PIC (re-read under the lock) must be this user id
      *
      * @throws InvalidTransition when the status is not allowed
      */
-    public function guard(Report $report, array $allowed, Closure $work): mixed
+    public function guard(Report $report, array $allowed, Closure $work, ?int $actorMustBe = null): mixed
     {
-        return DB::transaction(function () use ($report, $allowed, $work) {
-            $status = $this->lockStatus($report);
+        return DB::transaction(function () use ($report, $allowed, $work, $actorMustBe) {
+            $status = $this->lockStatus($report, null, $actorMustBe);
 
             if (! in_array($status, $allowed, true)) {
                 throw InvalidTransition::between($status, $status);
@@ -70,13 +72,19 @@ final class ReportTransitioner
     }
 
     /** Re-reads the status under a row lock and syncs the model to it, so a stale model cannot hide a change. */
-    private function lockStatus(Report $report, ?ReportStatus $to = null): ReportStatus
+    private function lockStatus(Report $report, ?ReportStatus $to = null, ?int $actorMustBe = null): ReportStatus
     {
-        $status = Report::whereKey($report->id)->lockForUpdate()->value('status');
+        $row = Report::whereKey($report->id)->lockForUpdate()->first(['status', 'assigned_pic_id']);
 
-        if ($status === null) {
+        if ($row === null) {
             throw InvalidTransition::between($report->status, $to ?? $report->status);
         }
+
+        if ($actorMustBe !== null && $row->assigned_pic_id !== $actorMustBe) {
+            throw InvalidTransition::notAssigned();
+        }
+
+        $status = $row->status;
 
         $report->setAttribute('status', $status);
         $report->syncOriginalAttribute('status');

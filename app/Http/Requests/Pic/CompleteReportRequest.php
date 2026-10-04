@@ -19,7 +19,7 @@ class CompleteReportRequest extends FormRequest
         return [
             'repair_action' => ['required', 'string', 'min:5', 'max:2000'],
             'completed_on' => ['required', 'date', 'before_or_equal:today', "after_or_equal:{$created}"],
-            'repair_cost' => ['nullable', 'numeric', 'min:0', 'max:9999999999999'],
+            'repair_cost' => ['nullable', 'numeric', 'decimal:0,2', 'min:0', 'max:9999999999999'],
             'vendor_name' => ['nullable', 'string', 'max:150'],
             'photos' => ['required', 'array', "min:{$photos['min']}", "max:{$photos['max']}"],
             'photos.*' => ['file', 'image', 'mimes:jpg,jpeg,png,webp', "max:{$photos['max_kb']}"],
@@ -38,6 +38,7 @@ class CompleteReportRequest extends FormRequest
             'completed_on.after_or_equal' => 'Tanggal selesai tidak boleh sebelum laporan dibuat.',
             'repair_cost.min' => 'Biaya tidak boleh negatif.',
             'repair_cost.numeric' => 'Biaya harus berupa angka.',
+            'repair_cost.decimal' => 'Biaya maksimal 2 angka desimal.',
             'photos.required' => 'Minimal 1 foto bukti pengerjaan.',
             'photos.min' => 'Minimal 1 foto bukti pengerjaan.',
             'photos.max' => 'Maksimal 3 foto.',

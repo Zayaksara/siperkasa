@@ -21,6 +21,7 @@ final class HoldReport
             $pic,
             $reason,
             ['hold_reason' => $reason],
+            $pic->id,
         ));
 
         Notification::send($report->user, new ReportStatusChanged($report));

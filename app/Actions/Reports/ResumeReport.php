@@ -21,6 +21,7 @@ final class ResumeReport
             $pic,
             'Pengerjaan dilanjutkan',
             ['hold_reason' => null],
+            $pic->id,
         ));
 
         Notification::send($report->user, new ReportStatusChanged($report));

@@ -138,3 +138,20 @@ test('a stale completion changes nothing and stores no files', function () {
         ->and(Storage::disk('local')->allFiles())->toBe([]);
     Notification::assertNothingSent();
 });
+
+test('a pic who lost the task to a reassignment can not complete it', function () {
+    $other = User::factory()->pic()->create();
+    Report::whereKey($this->report->id)->update(['assigned_pic_id' => $other->id]); // reassigned after the policy check, model stale
+
+    expect(fn () => app(CompleteReport::class)->handle($this->report, $this->pic, [
+        'repair_action' => 'Mengganti lampu proyektor.',
+        'completed_on' => now()->toDateString(),
+    ], [UploadedFile::fake()->image('selesai.jpg')]))->toThrow(InvalidTransition::class);
+
+    $report = $this->report->fresh();
+    expect($report->status)->toBe(ReportStatus::InProgress)
+        ->and($report->repair_action)->toBeNull()
+        ->and($report->attachments()->count())->toBe(0)
+        ->and(Storage::disk('local')->allFiles())->toBe([]);
+    Notification::assertNothingSent();
+});
