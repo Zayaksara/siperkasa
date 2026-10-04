@@ -51,5 +51,7 @@ class DatabaseSeeder extends Seeder
                 ['name' => $name, 'password' => 'password', 'role' => $role, 'is_active' => true],
             );
         }
+
+        $this->call(DemoReportSeeder::class);
     }
 }
