@@ -234,3 +234,10 @@ test('validation rules of the create form apply to edits too', function () {
     $this->actingAs($this->owner)->post(route('reports.update', $this->report), reportUpdatePayload(['title' => '', 'description' => 'x']))
         ->assertSessionHasErrors(['title', 'description']);
 });
+
+test('update rejects title with less than 10 characters', function () {
+    $this->actingAs($this->owner)->post(route('reports.update', $this->report), reportUpdatePayload(['title' => 'short']))
+        ->assertSessionHasErrors(['title' => 'Judul minimal 10 karakter. Sebut barang, kerusakan, dan lokasi singkat.']);
+
+    expect($this->report->fresh()->title)->toBe('Judul lama');
+});

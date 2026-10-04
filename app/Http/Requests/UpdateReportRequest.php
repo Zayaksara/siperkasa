@@ -26,7 +26,6 @@ class UpdateReportRequest extends StoreReportRequest
 
     /**
      * Early feedback only; UpdateReport rechecks the count under the row lock.
-     * For updates, skip the pending check from StoreReportRequest and only validate photos.
      *
      * @return array<int, callable(Validator): void>
      */

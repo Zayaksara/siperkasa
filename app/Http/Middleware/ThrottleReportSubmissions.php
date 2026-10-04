@@ -9,19 +9,18 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ThrottleReportSubmissions
 {
+    /**
+     * Check rate limit. Only count successful report creations; hit is done in controller.
+     */
     public function handle(Request $request, Closure $next): Response
     {
-        $limit = 10;
-        $decayMinutes = 60;
-        $key = 'report-submissions:'.$request->user()?->id;
+        $key = 'reports'.$request->user()?->id;
 
-        if (RateLimiter::tooManyAttempts($key, $limit)) {
+        if (RateLimiter::tooManyAttempts($key, 10)) {
             return back()->withErrors([
                 'title' => 'Terlalu banyak laporan dalam satu jam. Coba lagi nanti.',
             ]);
         }
-
-        RateLimiter::hit($key, $decayMinutes * 60);
 
         return $next($request);
     }

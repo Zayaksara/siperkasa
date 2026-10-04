@@ -253,7 +253,7 @@ test('only pending status counts toward the 5-report limit, not cancelled or rej
 });
 
 test('11th report submission within an hour is throttled with Indonesian message', function () {
-    $rateLimiterKey = 'report-submissions:'.$this->reporter->id;
+    $rateLimiterKey = 'reports'.$this->reporter->id;
 
     // Simulate 10 successful submissions by hitting the rate limiter
     for ($i = 0; $i < 10; $i++) {
@@ -266,4 +266,50 @@ test('11th report submission within an hour is throttled with Indonesian message
     $response->assertSessionHasErrors(['title' => 'Terlalu banyak laporan dalam satu jam. Coba lagi nanti.']);
 
     expect(Report::where('user_id', $this->reporter->id)->count())->toBe(0);
+});
+
+test('invalid submissions do not consume rate limit quota', function () {
+    // Try 10 invalid submissions (short title)
+    for ($i = 0; $i < 10; $i++) {
+        $this->actingAs($this->reporter)->post(route('reports.store'), ReportInput::valid(['title' => 'short']))
+            ->assertSessionHasErrors(['title']);
+    }
+
+    expect(Report::where('user_id', $this->reporter->id)->count())->toBe(0);
+
+    // Valid submission on 11th attempt should still succeed
+    $this->actingAs($this->reporter)->post(route('reports.store'), ReportInput::valid(['title' => str_repeat('x', 10)]))
+        ->assertSessionHasNoErrors();
+
+    expect(Report::where('user_id', $this->reporter->id)->count())->toBe(1);
+});
+
+test('10 successful real submissions then 11th is throttled', function () {
+    // First 5 submissions succeed (stores pending reports)
+    for ($i = 0; $i < 5; $i++) {
+        $this->actingAs($this->reporter)->post(route('reports.store'), ReportInput::valid(['title' => 'Report number '.($i + 1)]))
+            ->assertSessionHasNoErrors();
+    }
+
+    expect(Report::where('user_id', $this->reporter->id)->where('status', ReportStatus::Pending)->count())->toBe(5);
+
+    // Cancel the 5 reports to free up slots for more submissions
+    $reports = Report::where('user_id', $this->reporter->id)->get();
+    foreach ($reports as $report) {
+        $report->update(['status' => 'Cancelled']);
+    }
+
+    // Submit 5 more (total 10)
+    for ($i = 5; $i < 10; $i++) {
+        $this->actingAs($this->reporter)->post(route('reports.store'), ReportInput::valid(['title' => 'Report number '.($i + 1)]))
+            ->assertSessionHasNoErrors();
+    }
+
+    expect(Report::where('user_id', $this->reporter->id)->count())->toBe(10);
+
+    // 11th attempt should be throttled
+    $this->actingAs($this->reporter)->post(route('reports.store'), ReportInput::valid(['title' => 'Report number 11']))
+        ->assertSessionHasErrors(['title' => 'Terlalu banyak laporan dalam satu jam. Coba lagi nanti.']);
+
+    expect(Report::where('user_id', $this->reporter->id)->count())->toBe(10);
 });
