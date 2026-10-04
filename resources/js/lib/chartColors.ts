@@ -15,7 +15,7 @@ export const ENTITY_PALETTE = [
     '--chart-5',
 ] as const;
 
-/** Stable colour token per entity id: the same category/building keeps its colour across reloads and filters. */
-export function entityColor(id: number): string {
-    return ENTITY_PALETTE[Math.abs(Math.trunc(id)) % ENTITY_PALETTE.length];
+/** Colour by position in chart: every bar in one chart differs. Max 10 bars = 10 tokens. */
+export function rankColor(index: number): string {
+    return ENTITY_PALETTE[index % ENTITY_PALETTE.length];
 }

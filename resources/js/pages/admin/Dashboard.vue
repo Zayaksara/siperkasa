@@ -17,7 +17,7 @@ import StatCard from '@/components/StatCard.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { entityColor } from '@/lib/chartColors';
+import { rankColor } from '@/lib/chartColors';
 import { formatDateRange, formatHours } from '@/lib/format';
 import { motion, useMotion } from '@/lib/motion';
 import { dashboard } from '@/routes/admin';
@@ -166,11 +166,11 @@ const hotspots = computed<Hotspot[]>(() => [
         distributed: true,
         unit: 'laporan',
         empty: 'Belum ada laporan pada rentang ini.',
-        items: props.stats.by_category.map((c) => ({
+        items: props.stats.by_category.map((c, i) => ({
             label: c.name,
             value: c.total,
             href: link({ category_id: c.id }),
-            color: entityColor(c.id),
+            color: rankColor(i),
         })),
     },
     {
@@ -182,11 +182,11 @@ const hotspots = computed<Hotspot[]>(() => [
         distributed: true,
         unit: 'laporan',
         empty: 'Belum ada laporan pada rentang ini.',
-        items: props.stats.by_building.map((b) => ({
+        items: props.stats.by_building.map((b, i) => ({
             label: b.name,
             value: b.total,
             href: link({ building_id: b.id }),
-            color: entityColor(b.id),
+            color: rankColor(i),
         })),
     },
     {
@@ -195,13 +195,14 @@ const hotspots = computed<Hotspot[]>(() => [
         description:
             'Tugas aktif tiap PIC. Pilih PIC dengan beban rendah saat menugaskan.',
         color: '--accent-violet',
+        distributed: true,
         unit: 'tugas aktif',
         empty: 'Belum ada PIC aktif.',
-        items: props.stats.pic_load.map((p) => ({
+        items: props.stats.pic_load.map((p, i) => ({
             label: p.name,
             value: p.active_tasks,
             href: reportsIndex.url({ query: { pic_id: p.id } }),
-            color: '--accent-violet',
+            color: rankColor(i),
         })),
     },
 ]);
