@@ -61,13 +61,22 @@ const escapeHtml = (text: string) =>
     );
 
 const dataSignature = () =>
-    JSON.stringify([props.series, props.categories, props.height]);
+    JSON.stringify([
+        props.series,
+        props.categories,
+        props.height,
+        props.colors,
+    ]);
 
 /** Dense axis: daily trends have 8-31 points; fewer markers and straight segments keep them light. */
 const dense = () => props.type === 'line' && props.categories.length > 12;
 
 /** Dense category axis on a narrow chart: tilt labels instead of trimming them. */
 const tilt = () => dense() && (el.value?.clientWidth ?? 640) < 520;
+
+function resolveColors(style = getComputedStyle(document.documentElement)) {
+    return props.colors.map((name) => token(style, name));
+}
 
 const token = (style: CSSStyleDeclaration, name: string) =>
     style.getPropertyValue(name.startsWith('--') ? name : `--${name}`).trim();
@@ -82,7 +91,7 @@ function buildOptions(): ApexCharts.ApexOptions {
     const font = token(style, '--font-sans') || 'DM Sans, sans-serif';
     const animate = !window.matchMedia('(prefers-reduced-motion: reduce)')
         .matches;
-    const colors = props.colors.map((name) => token(style, name));
+    const colors = resolveColors(style);
 
     return {
         chart: {
@@ -261,6 +270,7 @@ function updateData() {
         {
             chart: { height: props.height },
             series: props.series,
+            colors: resolveColors(),
             xaxis: { categories: props.categories, max },
         },
         false,
@@ -290,10 +300,7 @@ onMounted(() => {
 // Parents often pass fresh inline arrays on every render (e.g. while typing in
 // a date input). Compare by content so only real data changes touch the chart.
 watch(dataSignature, updateData);
-watch(
-    () => JSON.stringify([props.colors, props.dashArray, props.markerShapes]),
-    restyle,
-);
+watch(() => JSON.stringify([props.dashArray, props.markerShapes]), restyle);
 
 onBeforeUnmount(() => {
     disposed = true;

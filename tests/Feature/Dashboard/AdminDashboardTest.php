@@ -188,6 +188,21 @@ test('a range over one year is a validation error, 366 days is accepted', functi
         ->assertInertia(fn ($page) => $page->where('stats.trend_granularity', 'week'));
 });
 
+test('a rejected range redirects back and the page receives the message to show', function () {
+    $this->actingAs($this->admin)->from(route('admin.dashboard'))
+        ->get(route('admin.dashboard', ['from' => '2024-01-01', 'to' => '2026-10-05']))
+        ->assertRedirect(route('admin.dashboard'))
+        ->assertSessionHasErrors(['to' => 'Rentang tanggal maksimal 1 tahun.']);
+
+    $this->actingAs($this->admin)->from(route('admin.dashboard'))
+        ->followingRedirects()
+        ->get(route('admin.dashboard', ['from' => '2024-01-01', 'to' => '2026-10-05']))
+        ->assertInertia(fn ($page) => $page
+            ->component('admin/Dashboard')
+            ->where('errors.to', 'Rentang tanggal maksimal 1 tahun.')
+            ->where('range.from', '2026-09-15'));
+});
+
 test('pic load lists active tasks per active pic', function () {
     $busy = User::factory()->pic()->create(['name' => 'Pak Sibuk']);
     User::factory()->pic()->inactive()->create();

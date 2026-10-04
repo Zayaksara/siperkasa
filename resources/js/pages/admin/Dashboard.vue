@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import {
     CircleCheck,
     ClipboardList,
@@ -11,11 +11,13 @@ import { computed, reactive, ref, watch } from 'vue';
 import ApexChart from '@/components/charts/ApexChart.vue';
 import ChartLegendList from '@/components/charts/ChartLegendList.vue';
 import EmptyState from '@/components/EmptyState.vue';
+import InputError from '@/components/InputError.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import StatCard from '@/components/StatCard.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { entityColor } from '@/lib/chartColors';
 import { formatDateRange, formatHours } from '@/lib/format';
 import { motion, useMotion } from '@/lib/motion';
 import { dashboard } from '@/routes/admin';
@@ -49,9 +51,19 @@ defineOptions({
 
 const form = reactive({ from: props.range.from, to: props.range.to });
 
+// Resync only when the applied range really changes (back/forward). A rejected
+// request keeps the same range, so what the user typed stays visible next to
+// the error instead of snapping back silently.
 watch(
-    () => props.range,
-    (range) => Object.assign(form, range),
+    () => `${props.range.from}|${props.range.to}`,
+    () => Object.assign(form, props.range),
+);
+
+const errors = computed(
+    () => usePage().props.errors as Record<string, string | undefined>,
+);
+const hasRangeError = computed(() =>
+    Boolean(errors.value.from || errors.value.to),
 );
 
 function apply() {
@@ -95,6 +107,8 @@ const activePreset = computed(() => {
 
 const periodCaption = computed(() => {
     const dates = formatDateRange(props.range.from, props.range.to);
+    // On a rejected range the data below still belongs to the last valid one.
+    if (hasRangeError.value) return `Data masih periode sebelumnya: ${dates}`;
     return activePreset.value
         ? `Periode: ${activePreset.value} hari terakhir · ${dates}`
         : `Periode: ${dates}`;
@@ -135,6 +149,8 @@ type Hotspot = {
     title: string;
     description: string;
     color: string;
+    /** One colour per entity (stable by id) instead of one for the whole chart. */
+    distributed?: boolean;
     unit: string;
     empty: string;
     items: { label: string; value: number; href: string; color: string }[];
@@ -147,13 +163,14 @@ const hotspots = computed<Hotspot[]>(() => [
         description:
             'Kategori alat yang paling sering rusak. Klik untuk melihat laporannya.',
         color: '--accent-teal',
+        distributed: true,
         unit: 'laporan',
         empty: 'Belum ada laporan pada rentang ini.',
         items: props.stats.by_category.map((c) => ({
             label: c.name,
             value: c.total,
             href: link({ category_id: c.id }),
-            color: '--accent-teal',
+            color: entityColor(c.id),
         })),
     },
     {
@@ -162,13 +179,14 @@ const hotspots = computed<Hotspot[]>(() => [
         description:
             'Gedung yang perlu perhatian lebih. Klik untuk melihat laporannya.',
         color: '--accent-sky',
+        distributed: true,
         unit: 'laporan',
         empty: 'Belum ada laporan pada rentang ini.',
         items: props.stats.by_building.map((b) => ({
             label: b.name,
             value: b.total,
             href: link({ building_id: b.id }),
-            color: '--accent-sky',
+            color: entityColor(b.id),
         })),
     },
     {
@@ -263,7 +281,10 @@ useMotion(
                     type="date"
                     class="h-11"
                     required
+                    :aria-invalid="Boolean(errors.from)"
+                    :aria-describedby="errors.from ? 'd-from-error' : undefined"
                 />
+                <InputError id="d-from-error" :message="errors.from" />
             </div>
             <div class="grid gap-1">
                 <Label for="d-to">Sampai</Label>
@@ -273,7 +294,10 @@ useMotion(
                     type="date"
                     class="h-11"
                     required
+                    :aria-invalid="Boolean(errors.to)"
+                    :aria-describedby="errors.to ? 'd-to-error' : undefined"
                 />
+                <InputError id="d-to-error" :message="errors.to" />
             </div>
             <Button type="submit" class="h-11">Terapkan</Button>
             <Button
@@ -509,7 +533,12 @@ useMotion(
                                 data: spot.items.map((i) => i.value),
                             },
                         ]"
-                        :colors="[spot.color]"
+                        :distributed="spot.distributed ?? false"
+                        :colors="
+                            spot.distributed
+                                ? spot.items.map((i) => i.color)
+                                : [spot.color]
+                        "
                         @select="(i) => visit(spot.items[i]?.href)"
                     />
                     <table class="sr-only">
@@ -526,7 +555,15 @@ useMotion(
                         </thead>
                         <tbody>
                             <tr v-for="item in spot.items" :key="item.label">
-                                <td>{{ item.label }}</td>
+                                <td>
+                                    <span
+                                        class="mr-2 inline-block size-3 rounded-sm align-middle"
+                                        :style="{
+                                            backgroundColor: `var(${item.color})`,
+                                        }"
+                                        aria-hidden="true"
+                                    />{{ item.label }}
+                                </td>
                                 <td>{{ item.value }}</td>
                             </tr>
                         </tbody>
