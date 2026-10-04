@@ -11,6 +11,7 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
 use Tests\Support\ReportInput;
 
@@ -207,4 +208,62 @@ test('a ticket collision that keeps happening is rethrown after three attempts',
         ->and(Report::count())->toBe(1)
         ->and(Storage::disk('local')->allFiles())->toBeEmpty();
     Notification::assertNothingSent();
+});
+
+test('title needs minimum 10 characters', function () {
+    $this->actingAs($this->reporter)->post(route('reports.store'), ReportInput::valid(['title' => 'short']))
+        ->assertSessionHasErrors(['title' => 'Judul minimal 10 karakter. Sebut barang, kerusakan, dan lokasi singkat.']);
+
+    expect(Report::count())->toBe(0);
+
+    $this->actingAs($this->reporter)->post(route('reports.store'), ReportInput::valid(['title' => str_repeat('a', 10)]))
+        ->assertSessionHasNoErrors();
+
+    expect(Report::count())->toBe(1);
+});
+
+test('5 pending reports blocks 6th submission', function () {
+    Report::factory()->pending()->count(5)->for($this->reporter, 'user')->create();
+
+    $this->actingAs($this->reporter)->post(route('reports.store'), ReportInput::valid())
+        ->assertSessionHasErrors(['title' => 'Kamu masih punya 5 laporan menunggu validasi. Tunggu sebagian divalidasi atau batalkan salah satunya.']);
+
+    expect(Report::count())->toBe(5);
+});
+
+test('4 pending + 1 cancelled allows 5th submission', function () {
+    Report::factory()->pending()->count(4)->for($this->reporter, 'user')->create();
+    Report::factory()->cancelled()->for($this->reporter, 'user')->create();
+
+    $this->actingAs($this->reporter)->post(route('reports.store'), ReportInput::valid())
+        ->assertSessionHasNoErrors();
+
+    expect(Report::where('user_id', $this->reporter->id)->count())->toBe(6);
+});
+
+test('only pending status counts toward the 5-report limit, not cancelled or rejected', function () {
+    Report::factory()->pending()->count(3)->for($this->reporter, 'user')->create();
+    Report::factory()->cancelled()->for($this->reporter, 'user')->create();
+    Report::factory()->rejected()->for($this->reporter, 'user')->create();
+
+    $this->actingAs($this->reporter)->post(route('reports.store'), ReportInput::valid())
+        ->assertSessionHasNoErrors();
+
+    expect(Report::where('user_id', $this->reporter->id)->count())->toBe(6);
+});
+
+test('11th report submission within an hour is throttled with Indonesian message', function () {
+    $rateLimiterKey = 'report-submissions:'.$this->reporter->id;
+
+    // Simulate 10 successful submissions by hitting the rate limiter
+    for ($i = 0; $i < 10; $i++) {
+        RateLimiter::hit($rateLimiterKey, 3600);
+    }
+
+    // 11th attempt should be throttled
+    $response = $this->actingAs($this->reporter)->post(route('reports.store'), ReportInput::valid(['title' => str_repeat('x', 10)]));
+
+    $response->assertSessionHasErrors(['title' => 'Terlalu banyak laporan dalam satu jam. Coba lagi nanti.']);
+
+    expect(Report::where('user_id', $this->reporter->id)->count())->toBe(0);
 });

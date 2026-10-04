@@ -18,6 +18,7 @@ use App\Http\Controllers\Pic\DashboardController as PicDashboardController;
 use App\Http\Controllers\Pic\TaskController;
 use App\Http\Controllers\User\DashboardController as UserDashboardController;
 use App\Http\Controllers\User\ReportController;
+use App\Http\Middleware\ThrottleReportSubmissions;
 use App\Models\Asset;
 use App\Models\Report;
 use Illuminate\Support\Facades\Route;
@@ -47,7 +48,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::middleware('role:user')->prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('index');
         Route::get('create', [ReportController::class, 'create'])->name('create');
-        Route::post('/', [ReportController::class, 'store'])->name('store');
+        Route::post('/', [ReportController::class, 'store'])->middleware(ThrottleReportSubmissions::class)->name('store');
         Route::get('{report}', [ReportController::class, 'show'])->name('show');
         Route::get('{report}/edit', [ReportController::class, 'edit'])->name('edit');
         Route::put('{report}', [ReportController::class, 'update'])->name('update');
