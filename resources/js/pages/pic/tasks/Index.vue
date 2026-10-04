@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import EmptyState from '@/components/EmptyState.vue';
-import HoldBadge from '@/components/HoldBadge.vue';
-import OverdueBadge from '@/components/OverdueBadge.vue';
-import PageHeader from '@/components/PageHeader.vue';
-import Pagination from '@/components/Pagination.vue';
-import StatusBadge from '@/components/StatusBadge.vue';
-import { Button } from '@/components/ui/button';
-import { formatDate, formatDateTime } from '@/lib/format';
-import { index, show } from '@/routes/pic/tasks';
+import { Head, Link } from "@inertiajs/vue3";
+import EmptyState from "@/components/EmptyState.vue";
+import HoldBadge from "@/components/HoldBadge.vue";
+import OverdueBadge from "@/components/OverdueBadge.vue";
+import PageHeader from "@/components/PageHeader.vue";
+import Pagination from "@/components/Pagination.vue";
+import StatusBadge from "@/components/StatusBadge.vue";
+import { Button } from "@/components/ui/button";
+import { formatDate, formatDateTime } from "@/lib/format";
+import { index, show } from "@/routes/pic/tasks";
 
 type Row = {
     id: number;
@@ -32,12 +32,19 @@ defineProps<{
         data: Row[];
         links: { url: string | null; label: string; active: boolean }[];
     };
-    tab: 'active' | 'done';
+    tab: "active" | "done";
+    filters: { status: string | null; overdue: boolean };
     counts: { active: number; done: number };
 }>();
 
+const statusLabels: Record<string, string> = {
+    Assigned: "Tugas baru",
+    In_Progress: "Sedang dikerjakan",
+    On_Hold: "Ditunda",
+};
+
 defineOptions({
-    layout: { breadcrumbs: [{ title: 'Tugas', href: index() }] },
+    layout: { breadcrumbs: [{ title: "Tugas", href: index() }] },
 });
 </script>
 
@@ -74,6 +81,21 @@ defineOptions({
                 >
             </Button>
         </nav>
+
+        <p
+            v-if="filters.status || filters.overdue"
+            class="flex flex-wrap items-center gap-2 text-sm"
+        >
+            <span class="text-muted-foreground">Filter:</span>
+            <span class="font-medium">{{
+                filters.overdue
+                    ? "Terlambat"
+                    : (statusLabels[filters.status ?? ""] ?? filters.status)
+            }}</span>
+            <Button as-child variant="outline" size="sm" class="h-11">
+                <Link :href="index.url()">Hapus filter</Link>
+            </Button>
+        </p>
 
         <EmptyState
             v-if="tasks.data.length === 0"
@@ -118,8 +140,8 @@ defineOptions({
                     </div>
                     <p class="font-semibold break-words">{{ task.title }}</p>
                     <p class="text-sm break-words text-muted-foreground">
-                        {{ task.category ?? '-' }} · {{ task.building ?? '-' }},
-                        {{ task.room ?? '-' }}
+                        {{ task.category ?? "-" }} · {{ task.building ?? "-" }},
+                        {{ task.room ?? "-" }}
                     </p>
                     <p
                         class="text-sm"
@@ -131,7 +153,7 @@ defineOptions({
                     >
                         SLA:
                         {{
-                            task.sla_date ? formatDateTime(task.sla_date) : '-'
+                            task.sla_date ? formatDateTime(task.sla_date) : "-"
                         }}
                         · Dibuat {{ formatDate(task.created_at) }}
                     </p>

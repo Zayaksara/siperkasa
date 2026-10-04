@@ -15,6 +15,7 @@ use App\Support\ReportPresenter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -26,18 +27,28 @@ class TaskController extends Controller
     {
         Gate::authorize('viewAny', Report::class);
 
+        $filters = $request->validate([
+            'status' => ['nullable', Rule::in([ReportStatus::Assigned->value, ReportStatus::InProgress->value, ReportStatus::OnHold->value])],
+            'overdue' => ['nullable', 'boolean'],
+        ]);
         $tab = $request->query('tab') === 'done' ? 'done' : 'active';
+        $overdue = $tab === 'active' && $request->boolean('overdue');
+        $status = $tab === 'active' ? ($filters['status'] ?? null) : null;
         $mine = fn () => Report::query()->visibleTo($request->user());
 
         $query = $mine()->withSummary();
 
         $tab === 'done'
             ? $query->where('status', ReportStatus::Closed)->orderByDesc('closed_at')->orderBy('id')
-            : $query->whereIn('status', self::ACTIVE)->orderBy('sla_date')->orderBy('id');
+            : $query->whereIn('status', self::ACTIVE)
+                ->when($status, fn ($q) => $q->where('status', $status))
+                ->when($overdue, fn ($q) => $q->overdue())
+                ->orderBy('sla_date')->orderBy('id');
 
         return Inertia::render('pic/tasks/Index', [
             'tasks' => $query->paginate(10)->withQueryString()->through(fn (Report $report) => ReportPresenter::summary($report)),
             'tab' => $tab,
+            'filters' => ['status' => $status, 'overdue' => $overdue],
             'counts' => [
                 'active' => $mine()->whereIn('status', self::ACTIVE)->count(),
                 'done' => $mine()->where('status', ReportStatus::Closed)->count(),

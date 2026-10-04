@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link } from "@inertiajs/vue3";
 import {
     CircleCheck,
     CircleX,
@@ -7,17 +7,17 @@ import {
     Hourglass,
     Plus,
     Wrench,
-} from '@lucide/vue';
-import EmptyState from '@/components/EmptyState.vue';
-import HoldBadge from '@/components/HoldBadge.vue';
-import OverdueBadge from '@/components/OverdueBadge.vue';
-import PageHeader from '@/components/PageHeader.vue';
-import StatCard from '@/components/StatCard.vue';
-import StatusBadge from '@/components/StatusBadge.vue';
-import { Button } from '@/components/ui/button';
-import { formatDate } from '@/lib/format';
-import { create, index, show } from '@/routes/reports';
-import { dashboard } from '@/routes/user';
+} from "@lucide/vue";
+import EmptyState from "@/components/EmptyState.vue";
+import HoldBadge from "@/components/HoldBadge.vue";
+import OverdueBadge from "@/components/OverdueBadge.vue";
+import PageHeader from "@/components/PageHeader.vue";
+import StatCard from "@/components/StatCard.vue";
+import StatusBadge from "@/components/StatusBadge.vue";
+import { Button } from "@/components/ui/button";
+import { formatDate } from "@/lib/format";
+import { create, index, show } from "@/routes/reports";
+import { dashboard } from "@/routes/user";
 
 defineProps<{
     stats: {
@@ -37,7 +37,7 @@ defineProps<{
 }>();
 
 defineOptions({
-    layout: { breadcrumbs: [{ title: 'Beranda', href: dashboard() }] },
+    layout: { breadcrumbs: [{ title: "Beranda", href: dashboard() }] },
 });
 </script>
 
@@ -68,7 +68,11 @@ defineOptions({
                 :icon="Wrench"
                 accent="sky"
                 hint="Teknisi menangani"
-                :href="index.url()"
+                :href="
+                    index.url({
+                        query: { status: 'Assigned,In_Progress,On_Hold' },
+                    })
+                "
             />
             <StatCard
                 label="Selesai"
@@ -84,7 +88,7 @@ defineOptions({
                 :icon="CircleX"
                 accent="rose"
                 hint="Lihat alasannya"
-                :href="index.url({ query: { status: 'Rejected' } })"
+                :href="index.url({ query: { status: 'Rejected,Cancelled' } })"
             />
         </div>
 

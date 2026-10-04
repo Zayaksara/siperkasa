@@ -18,7 +18,6 @@ use App\Support\ReportSubmissionLimit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,14 +28,24 @@ class ReportController extends Controller
         Gate::authorize('create', Report::class); // reporters only
 
         $filters = $request->validate([
-            'status' => ['nullable', Rule::enum(ReportStatus::class)],
+            // One status, or several separated by commas (e.g. "Rejected,Cancelled").
+            'status' => ['nullable', 'string', 'max:100', function (string $attribute, mixed $value, \Closure $fail) {
+                foreach (explode(',', (string) $value) as $status) {
+                    if (ReportStatus::tryFrom($status) === null) {
+                        $fail('The selected status is invalid.');
+
+                        return;
+                    }
+                }
+            }],
             'q' => ['nullable', 'string', 'max:100'],
         ]);
+        $statuses = isset($filters['status']) ? explode(',', $filters['status']) : [];
 
         $reports = Report::query()
             ->visibleTo($request->user())
             ->withSummary()
-            ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
+            ->when($statuses !== [], fn ($query) => $query->whereIn('status', $statuses))
             ->when($filters['q'] ?? null, function ($query, string $q) {
                 $like = '%'.addcslashes($q, '%_\\').'%';
                 $query->where(fn ($inner) => $inner->where('ticket_number', 'like', $like)->orWhere('title', 'like', $like));

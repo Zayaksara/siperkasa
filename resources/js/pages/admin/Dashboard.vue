@@ -1,24 +1,24 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router } from "@inertiajs/vue3";
 import {
     CircleCheck,
     ClipboardList,
     Hourglass,
     Timer,
     TriangleAlert,
-} from '@lucide/vue';
-import { computed, reactive, watch } from 'vue';
-import ApexChart from '@/components/charts/ApexChart.vue';
-import ChartLegendList from '@/components/charts/ChartLegendList.vue';
-import EmptyState from '@/components/EmptyState.vue';
-import PageHeader from '@/components/PageHeader.vue';
-import StatCard from '@/components/StatCard.vue';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { formatHours } from '@/lib/format';
-import { dashboard } from '@/routes/admin';
-import { index as reportsIndex } from '@/routes/admin/reports';
+} from "@lucide/vue";
+import { computed, reactive, watch } from "vue";
+import ApexChart from "@/components/charts/ApexChart.vue";
+import ChartLegendList from "@/components/charts/ChartLegendList.vue";
+import EmptyState from "@/components/EmptyState.vue";
+import PageHeader from "@/components/PageHeader.vue";
+import StatCard from "@/components/StatCard.vue";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { formatHours } from "@/lib/format";
+import { dashboard } from "@/routes/admin";
+import { index as reportsIndex } from "@/routes/admin/reports";
 
 const props = defineProps<{
     stats: {
@@ -42,7 +42,7 @@ const props = defineProps<{
 }>();
 
 defineOptions({
-    layout: { breadcrumbs: [{ title: 'Beranda', href: dashboard() }] },
+    layout: { breadcrumbs: [{ title: "Beranda", href: dashboard() }] },
 });
 
 const form = reactive({ from: props.range.from, to: props.range.to });
@@ -64,7 +64,7 @@ function lastDays(days: number) {
     const to = new Date();
     const from = new Date(to.getTime() - (days - 1) * 86_400_000);
     const fmt = (d: Date) =>
-        new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(
+        new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(
             d,
         );
     form.from = fmt(from);
@@ -84,13 +84,13 @@ const visit = (href?: string) => {
 const barHeight = (rows: number) => Math.max(160, rows * 40 + 24);
 
 const statuses: { key: string; label: string; color: string }[] = [
-    { key: 'Pending', label: 'Menunggu validasi', color: '--status-pending' },
-    { key: 'Assigned', label: 'Ditugaskan', color: '--status-assigned' },
-    { key: 'In_Progress', label: 'Dikerjakan', color: '--status-in-progress' },
-    { key: 'On_Hold', label: 'Ditunda', color: '--status-on-hold' },
-    { key: 'Closed', label: 'Selesai', color: '--status-closed' },
-    { key: 'Rejected', label: 'Ditolak', color: '--status-rejected' },
-    { key: 'Cancelled', label: 'Dibatalkan', color: '--status-cancelled' },
+    { key: "Pending", label: "Menunggu validasi", color: "--status-pending" },
+    { key: "Assigned", label: "Ditugaskan", color: "--status-assigned" },
+    { key: "In_Progress", label: "Dikerjakan", color: "--status-in-progress" },
+    { key: "On_Hold", label: "Ditunda", color: "--status-on-hold" },
+    { key: "Closed", label: "Selesai", color: "--status-closed" },
+    { key: "Rejected", label: "Ditolak", color: "--status-rejected" },
+    { key: "Cancelled", label: "Dibatalkan", color: "--status-cancelled" },
 ];
 
 const statusItems = computed(() =>
@@ -114,48 +114,48 @@ type Hotspot = {
 
 const hotspots = computed<Hotspot[]>(() => [
     {
-        id: 'category',
-        title: 'Kategori dengan laporan terbanyak',
+        id: "category",
+        title: "Kategori dengan laporan terbanyak",
         description:
-            'Kategori alat yang paling sering rusak. Klik untuk melihat laporannya.',
-        color: '--accent-teal',
-        unit: 'laporan',
-        empty: 'Belum ada laporan pada rentang ini.',
+            "Kategori alat yang paling sering rusak. Klik untuk melihat laporannya.",
+        color: "--accent-teal",
+        unit: "laporan",
+        empty: "Belum ada laporan pada rentang ini.",
         items: props.stats.by_category.map((c) => ({
             label: c.name,
             value: c.total,
             href: link({ category_id: c.id }),
-            color: '--accent-teal',
+            color: "--accent-teal",
         })),
     },
     {
-        id: 'building',
-        title: 'Gedung dengan laporan terbanyak',
+        id: "building",
+        title: "Gedung dengan laporan terbanyak",
         description:
-            'Gedung yang perlu perhatian lebih. Klik untuk melihat laporannya.',
-        color: '--accent-sky',
-        unit: 'laporan',
-        empty: 'Belum ada laporan pada rentang ini.',
+            "Gedung yang perlu perhatian lebih. Klik untuk melihat laporannya.",
+        color: "--accent-sky",
+        unit: "laporan",
+        empty: "Belum ada laporan pada rentang ini.",
         items: props.stats.by_building.map((b) => ({
             label: b.name,
             value: b.total,
             href: link({ building_id: b.id }),
-            color: '--accent-sky',
+            color: "--accent-sky",
         })),
     },
     {
-        id: 'load',
-        title: 'Beban kerja PIC',
+        id: "load",
+        title: "Beban kerja PIC",
         description:
-            'Tugas aktif tiap PIC. Pilih PIC dengan beban rendah saat menugaskan.',
-        color: '--accent-violet',
-        unit: 'tugas aktif',
-        empty: 'Belum ada PIC aktif.',
+            "Tugas aktif tiap PIC. Pilih PIC dengan beban rendah saat menugaskan.",
+        color: "--accent-violet",
+        unit: "tugas aktif",
+        empty: "Belum ada PIC aktif.",
         items: props.stats.pic_load.map((p) => ({
             label: p.name,
             value: p.active_tasks,
             href: reportsIndex.url({ query: { pic_id: p.id } }),
-            color: '--accent-violet',
+            color: "--accent-violet",
         })),
     },
 ]);
@@ -168,8 +168,8 @@ const trendHasData = computed(() =>
 );
 
 const trendSeries = computed(() => [
-    { name: 'Laporan masuk', data: props.stats.trend.map((w) => w.created) },
-    { name: 'Laporan selesai', data: props.stats.trend.map((w) => w.closed) },
+    { name: "Laporan masuk", data: props.stats.trend.map((w) => w.created) },
+    { name: "Laporan selesai", data: props.stats.trend.map((w) => w.closed) },
 ]);
 
 function addDays(date: string, days: number) {
@@ -370,6 +370,8 @@ function selectWeek(index: number, seriesIndex: number) {
                     :categories="stats.trend.map((w) => w.label)"
                     :series="trendSeries"
                     :colors="['--accent-sky', '--chart-1']"
+                    :dash-array="[0, 6]"
+                    :marker-shapes="['circle', 'square']"
                     x-title="Awal minggu (tanggal/bulan)"
                     @select="selectWeek"
                 />

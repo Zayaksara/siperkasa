@@ -29,6 +29,19 @@ test('the status filter narrows the list', function () {
         ->assertInertia(fn ($page) => $page->has('reports.data', 1)->where('reports.data.0.status', 'Closed'));
 });
 
+test('the status filter accepts several comma-separated statuses', function () {
+    Report::factory()->for($this->me)->rejected()->create();
+    Report::factory()->for($this->me)->cancelled()->create();
+    Report::factory()->for($this->me)->closed()->create();
+
+    $this->actingAs($this->me)->get(route('reports.index', ['status' => 'Rejected,Cancelled']))
+        ->assertInertia(fn ($page) => $page->has('reports.data', 2));
+});
+
+test('a bogus entry in a multi-status filter is a validation error', function () {
+    $this->actingAs($this->me)->get(route('reports.index', ['status' => 'Rejected,Bogus']))->assertSessionHasErrors('status');
+});
+
 test('an unknown status filter is a validation error', function () {
     $this->actingAs($this->me)->get(route('reports.index', ['status' => 'Bogus']))->assertSessionHasErrors('status');
 });

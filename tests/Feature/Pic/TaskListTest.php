@@ -32,6 +32,33 @@ test('active tasks are ordered by the nearest SLA, overdue first', function () {
             ->where('tasks.data.0.is_overdue', true));
 });
 
+test('the active tab can filter by status', function () {
+    Report::factory()->assigned($this->pic)->create();
+    $held = Report::factory()->onHold($this->pic)->create();
+
+    $this->actingAs($this->pic)->get(route('pic.tasks.index', ['status' => 'On_Hold']))
+        ->assertInertia(fn ($page) => $page
+            ->has('tasks.data', 1)
+            ->where('tasks.data.0.id', $held->id)
+            ->where('filters.status', 'On_Hold')
+            ->where('counts.active', 2));
+});
+
+test('the active tab can filter overdue tasks', function () {
+    $late = Report::factory()->inProgress($this->pic)->create(['sla_date' => now()->subDay()]);
+    Report::factory()->assigned($this->pic)->create(['sla_date' => now()->addDay()]);
+
+    $this->actingAs($this->pic)->get(route('pic.tasks.index', ['overdue' => 1]))
+        ->assertInertia(fn ($page) => $page
+            ->has('tasks.data', 1)
+            ->where('tasks.data.0.id', $late->id)
+            ->where('filters.overdue', true));
+});
+
+test('an invalid pic status filter is a validation error', function () {
+    $this->actingAs($this->pic)->get(route('pic.tasks.index', ['status' => 'Closed']))->assertSessionHasErrors('status');
+});
+
 test('the done tab lists closed tasks, newest first', function () {
     $old = Report::factory()->closed($this->pic)->create(['closed_at' => now()->subDays(2)]);
     $new = Report::factory()->closed($this->pic)->create(['closed_at' => now()]);
