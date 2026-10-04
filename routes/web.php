@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\UserImportController;
 use App\Http\Controllers\AssetSearchController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Pic\TaskController;
 use App\Http\Controllers\User\ReportController;
 use App\Models\Asset;
 use App\Models\Report;
@@ -75,6 +76,11 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::middleware('role:pic')->prefix('pic')->name('pic.')->group(function () {
         Route::inertia('dashboard', 'pic/Dashboard')->name('dashboard');
+        Route::get('tasks', [TaskController::class, 'index'])->name('tasks.index');
+        Route::get('tasks/{report}', [TaskController::class, 'show'])->name('tasks.show');
+        Route::post('tasks/{report}/start', [TaskController::class, 'start'])->name('tasks.start');
+        Route::post('tasks/{report}/hold', [TaskController::class, 'hold'])->name('tasks.hold');
+        Route::post('tasks/{report}/resume', [TaskController::class, 'resume'])->name('tasks.resume');
     });
 });
 

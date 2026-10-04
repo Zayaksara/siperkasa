@@ -61,18 +61,17 @@ test('a custom message overrides the default', function () {
     expect($payload['message'])->toBe('Pesan khusus');
 });
 
-test('the url is a safe fallback when role routes do not exist yet', function () {
+test('the url is a relative path per role', function (User $user, string $expectedRoute) {
     $report = Report::factory()->create();
-    $admin = User::factory()->admin()->create();
+    if ($user->role->value === 'pic') {
+        $report->update(['assigned_pic_id' => $user->id]);
+    }
 
-    expect((new ReportSubmitted($report))->toArray($admin)['url'])->toBeString()->not->toBeEmpty();
-});
+    $url = (new ReportStatusChanged($report))->toArray($user)['url'];
 
-test('the url is a relative path, independent of host', function () {
-    $report = Report::factory()->create();
-    $admin = User::factory()->admin()->create();
-
-    $url = (new ReportSubmitted($report))->toArray($admin)['url'];
-
-    expect($url)->toBe(route('admin.reports.show', $report, false))->toStartWith('/')->not->toStartWith('//');
-});
+    expect($url)->toBe(route($expectedRoute, $report, false))->toStartWith('/')->not->toStartWith('//');
+})->with([
+    [fn () => User::factory()->admin()->create(), 'admin.reports.show'],
+    [fn () => User::factory()->pic()->create(), 'pic.tasks.show'],
+    [fn () => User::factory()->reporter()->create(), 'reports.show'],
+]);
