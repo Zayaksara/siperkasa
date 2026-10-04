@@ -24,6 +24,6 @@ withDefaults(
                 <Breadcrumbs :breadcrumbs="breadcrumbs" />
             </template>
         </div>
-        <NotificationBell class="ml-auto" />
+        <div class="ml-auto"><NotificationBell /></div>
     </header>
 </template>

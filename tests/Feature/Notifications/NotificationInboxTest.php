@@ -103,7 +103,7 @@ test('reading the notification of a task that was reassigned marks it read and e
 
     $this->actingAs($pic)->post(route('notifications.read', $notification->id))
         ->assertRedirect(route('pic.tasks.index'))
-        ->assertInertiaFlash('toast', ['type' => 'error', 'message' => 'Laporan tidak lagi ditugaskan kepada Anda.']);
+        ->assertInertiaFlash('toast', ['type' => 'error', 'message' => 'Laporan tidak dapat dibuka.']);
 
     expect($notification->fresh()->read_at)->not->toBeNull();
 });
@@ -121,6 +121,9 @@ test('a stored url that leaves the site redirects to the dashboard', function (s
     'absolute' => 'https://evil.example/x',
     'protocol relative' => '//evil.example',
     'backslash' => '/\evil.example',
+    'tab' => '/'.chr(9).'/evil.example',
+    'carriage return' => '/'.chr(13).'/evil.example',
+    'newline' => '/'.chr(10).'/evil.example',
     'missing' => '',
 ]);
 

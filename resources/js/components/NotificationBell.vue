@@ -3,6 +3,7 @@ import { Link, router, usePage } from '@inertiajs/vue3';
 import { Bell } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -106,7 +107,7 @@ onBeforeUnmount(() => {
                 <Bell class="size-5" aria-hidden="true" />
                 <span
                     v-if="count > 0"
-                    class="absolute top-1 right-1 flex min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-xs font-bold text-white"
+                    class="absolute top-1 right-1 flex min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-xs font-bold text-destructive-foreground"
                     data-test="notification-badge"
                     aria-hidden="true"
                 >
@@ -116,17 +117,21 @@ onBeforeUnmount(() => {
         </DropdownMenuTrigger>
         <DropdownMenuContent
             align="end"
+            :collision-padding="12"
             class="w-[min(22rem,calc(100vw-1.5rem))]"
         >
             <DropdownMenuLabel>Notifikasi</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <p
-                v-if="loading"
-                class="p-3 text-sm text-muted-foreground"
+            <div
+                v-if="loading && items.length === 0"
+                class="flex flex-col gap-2 p-3"
                 role="status"
+                aria-label="Memuat notifikasi"
             >
-                Memuat…
-            </p>
+                <Skeleton class="h-4 w-full" />
+                <Skeleton class="h-3 w-1/3" />
+                <Skeleton class="h-4 w-5/6" />
+            </div>
             <p
                 v-else-if="items.length === 0"
                 class="p-3 text-sm text-muted-foreground"

@@ -44,7 +44,7 @@ class NotificationController extends Controller
         $report = $reportId ? Report::find($reportId) : null;
 
         if ($reportId && ($report === null || ! $user->can('view', $report))) {
-            Inertia::flash('toast', ['type' => 'error', 'message' => 'Laporan tidak lagi ditugaskan kepada Anda.']);
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'Laporan tidak dapat dibuka.']);
 
             return redirect()->route($user->role === UserRole::Pic ? 'pic.tasks.index' : 'dashboard');
         }
@@ -62,7 +62,7 @@ class NotificationController extends Controller
     /** Only same-site relative paths: rejects absolute URLs, protocol-relative `//host` and backslash tricks. */
     private static function safeUrl(mixed $url): ?string
     {
-        if (! is_string($url) || ! str_starts_with($url, '/') || str_starts_with($url, '//') || str_contains($url, '\\')) {
+        if (! is_string($url) || ! str_starts_with($url, '/') || str_starts_with($url, '//') || str_contains($url, '\\') || preg_match('/[\x00-\x1F\x7F]/', $url)) {
             return null;
         }
 
