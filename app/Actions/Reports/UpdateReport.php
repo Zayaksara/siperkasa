@@ -8,7 +8,6 @@ use App\Models\Report;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
-use Throwable;
 
 final class UpdateReport
 {
@@ -27,30 +26,15 @@ final class UpdateReport
      */
     public function handle(Report $report, User $actor, array $data, array $newPhotos, array $removeIds): Report
     {
-        // Files are written outside the transaction, rows inside it. Old files are
-        // deleted only after commit; new files are deleted again if the transaction fails.
-        $newPaths = $this->attachments->putFiles($report, AttachmentType::Damage, $newPhotos);
-
-        try {
-            $oldPaths = $this->transitioner->guard($report, [ReportStatus::Pending], function () use ($report, $actor, $data, $newPaths, $removeIds) {
-                $this->assertPhotoCount($report, $removeIds, count($newPaths));
+        $this->attachments->within($report, AttachmentType::Damage, $newPhotos, $removeIds, function () use ($report, $actor, $data, $newPhotos, $removeIds) {
+            $this->transitioner->guard($report, [ReportStatus::Pending], function () use ($report, $actor, $data, $newPhotos, $removeIds) {
+                $this->assertPhotoCount($report, $removeIds, count($newPhotos));
 
                 $report->update($data);
 
-                $removed = $this->attachments->remove($report, AttachmentType::Damage, $removeIds);
-                $this->attachments->addRows($report, AttachmentType::Damage, $newPaths);
-
                 $this->transitioner->note($report, $actor, 'Laporan diubah');
-
-                return $removed;
             });
-        } catch (Throwable $e) {
-            $this->attachments->deleteFiles($newPaths);
-
-            throw $e;
-        }
-
-        $this->attachments->deleteFiles($oldPaths);
+        });
 
         return $report;
     }

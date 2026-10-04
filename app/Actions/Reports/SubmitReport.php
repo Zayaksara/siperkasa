@@ -36,7 +36,7 @@ final class SubmitReport
         // Photos are stored only after the report row is committed (so a retried
         // ticket attempt never leaves files behind); clean up if storing fails.
         try {
-            $this->attachments->add($report, AttachmentType::Damage, $photos);
+            $this->attachments->within($report, AttachmentType::Damage, $photos, [], fn () => null);
         } catch (Throwable $e) {
             Storage::disk('local')->deleteDirectory("reports/{$report->id}");
             $report->delete();

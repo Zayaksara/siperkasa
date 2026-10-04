@@ -81,6 +81,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('tasks/{report}/start', [TaskController::class, 'start'])->name('tasks.start');
         Route::post('tasks/{report}/hold', [TaskController::class, 'hold'])->name('tasks.hold');
         Route::post('tasks/{report}/resume', [TaskController::class, 'resume'])->name('tasks.resume');
+        Route::post('tasks/{report}/complete', [TaskController::class, 'complete'])->name('tasks.complete');
     });
 });
 

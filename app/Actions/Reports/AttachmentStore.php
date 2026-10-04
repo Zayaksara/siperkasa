@@ -4,7 +4,9 @@ namespace App\Actions\Reports;
 
 use App\Enums\AttachmentType;
 use App\Models\Report;
+use Closure;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Throwable;
@@ -12,30 +14,43 @@ use Throwable;
 final class AttachmentStore
 {
     /**
-     * Stores the files and creates their rows. Deletes the stored files again if anything fails.
+     * Runs $work in one transaction together with the attachment changes, and keeps files and rows consistent.
+     *
+     * New files are written first (outside the transaction). Inside it $work runs, the rows of $removeIds are
+     * deleted and the rows of the new files are added. Removed files are deleted after commit; on any failure
+     * the new files are deleted again and the exception is rethrown.
      *
      * @param  array<int, UploadedFile>  $files
+     * @param  array<int, int|string>  $removeIds
      */
-    public function add(Report $report, AttachmentType $type, array $files): void
+    public function within(Report $report, AttachmentType $type, array $files, array $removeIds, Closure $work): mixed
     {
         $paths = $this->putFiles($report, $type, $files);
 
         try {
-            $this->addRows($report, $type, $paths);
+            [$result, $removed] = DB::transaction(function () use ($report, $type, $paths, $removeIds, $work) {
+                $result = $work();
+                $removed = $this->remove($report, $type, $removeIds);
+                $this->addRows($report, $type, $paths);
+
+                return [$result, $removed];
+            });
         } catch (Throwable $e) {
             $this->deleteFiles($paths);
 
             throw $e;
         }
+
+        $this->deleteFiles($removed);
+
+        return $result;
     }
 
     /**
-     * Writes the files to the private disk without touching the database.
-     *
      * @param  array<int, UploadedFile>  $files
      * @return list<string> stored paths
      */
-    public function putFiles(Report $report, AttachmentType $type, array $files): array
+    private function putFiles(Report $report, AttachmentType $type, array $files): array
     {
         $paths = [];
 
@@ -59,7 +74,7 @@ final class AttachmentStore
     }
 
     /** @param  list<string>  $paths  already stored files */
-    public function addRows(Report $report, AttachmentType $type, array $paths): void
+    private function addRows(Report $report, AttachmentType $type, array $paths): void
     {
         $position = (int) $report->attachments()->where('type', $type)->max('position');
 
@@ -74,12 +89,11 @@ final class AttachmentStore
 
     /**
      * Deletes the rows of the given attachments, but only if they belong to this report and type.
-     * Does not touch files: delete the returned paths after the surrounding transaction commits.
      *
      * @param  array<int, int|string>  $ids
      * @return list<string> paths of the removed attachments
      */
-    public function remove(Report $report, AttachmentType $type, array $ids): array
+    private function remove(Report $report, AttachmentType $type, array $ids): array
     {
         $paths = [];
 
@@ -93,7 +107,7 @@ final class AttachmentStore
     }
 
     /** @param  list<string>  $paths */
-    public function deleteFiles(array $paths): void
+    private function deleteFiles(array $paths): void
     {
         Storage::disk('local')->delete($paths);
     }

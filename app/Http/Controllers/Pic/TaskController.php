@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Pic;
 
+use App\Actions\Reports\CompleteReport;
 use App\Actions\Reports\HoldReport;
 use App\Actions\Reports\ResumeReport;
 use App\Actions\Reports\StartReport;
 use App\Enums\ReportStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Pic\CompleteReportRequest;
 use App\Http\Requests\Pic\HoldReportRequest;
 use App\Models\Report;
 use App\Support\ReportPresenter;
@@ -27,7 +29,7 @@ class TaskController extends Controller
         $tab = $request->query('tab') === 'done' ? 'done' : 'active';
         $mine = fn () => Report::query()->visibleTo($request->user());
 
-        $query = $mine()->with(['category:id,name', 'room.building:id,name', 'user:id,name', 'assignedPic:id,name']);
+        $query = $mine()->withSummary();
 
         $tab === 'done'
             ? $query->where('status', ReportStatus::Closed)->orderByDesc('closed_at')->orderBy('id')
@@ -89,5 +91,21 @@ class TaskController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Pengerjaan dilanjutkan.']);
 
         return to_route('pic.tasks.show', $report);
+    }
+
+    public function complete(CompleteReportRequest $request, Report $report, CompleteReport $complete): RedirectResponse
+    {
+        Gate::authorize('complete', $report);
+
+        $complete->handle(
+            $report,
+            $request->user(),
+            $request->safe()->except('photos'),
+            $request->file('photos', []),
+        );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => "Laporan {$report->ticket_number} selesai."]);
+
+        return to_route('pic.tasks.index');
     }
 }
