@@ -59,6 +59,7 @@ final class DashboardStats
             $counts[$status->value] = (int) ($byStatus[$status->value] ?? 0);
         }
 
+        /** @param literal-string $column */
         $avgHours = fn (string $column, ?ReportStatus $status = null) => $this->averageHours(
             $range()->when($status, fn (Builder $query) => $query->where('status', $status))->whereNotNull($column),
             $column,
@@ -91,14 +92,13 @@ final class DashboardStats
         ];
     }
 
-    /** @param Builder<Report> $query */
+    /**
+     * @param  Builder<Report>  $query
+     * @param  literal-string  $endColumn
+     */
     private function averageHours(Builder $query, string $endColumn): ?float
     {
-        $seconds = match ($endColumn) {
-            'closed_at' => $query->avg(DB::raw('TIMESTAMPDIFF(SECOND, reports.created_at, reports.closed_at)')),
-            'validated_at' => $query->avg(DB::raw('TIMESTAMPDIFF(SECOND, reports.created_at, reports.validated_at)')),
-            default => null,
-        };
+        $seconds = $query->avg(DB::raw('TIMESTAMPDIFF(SECOND, reports.created_at, reports.'.$endColumn.')'));
 
         return $seconds === null ? null : (float) round($seconds / 3600.0, 1);
     }
@@ -107,41 +107,45 @@ final class DashboardStats
     private function weeklyTrend(): array
     {
         $first = now()->startOfWeek()->subWeeks(11);
-
-        $created = Report::query()->where('created_at', '>=', $first)->pluck('created_at')
-            ->countBy(function ($date) {
-                if (! $date instanceof CarbonInterface) {
-                    return 0;
-                }
-                $w = $date->format('W');
-                $y = $date->format('o');
-                return (int) ($y * 100 + (int) $w);
-            });
-        $closed = Report::query()->whereNotNull('closed_at')->where('closed_at', '>=', $first)->pluck('closed_at')
-            ->countBy(function ($date) {
-                if (! $date instanceof CarbonInterface) {
-                    return 0;
-                }
-                $w = $date->format('W');
-                $y = $date->format('o');
-                return (int) ($y * 100 + (int) $w);
-            });
+        $created = $this->weeklyCounts('created_at', $first);
+        $closed = $this->weeklyCounts('closed_at', $first);
 
         $weeks = [];
         for ($i = 0; $i < 12; $i++) {
             $start = $first->addWeeks($i);
-            $w = $start->format('W');
-            $y = $start->format('o');
-            $key = (int) ($y * 100 + (int) $w);
+            $key = $this->weekKey($start);
             $weeks[] = [
                 'start' => $start->toDateString(),
                 'label' => $start->format('d/m'),
-                'created' => (int) ($created[$key] ?? 0),
-                'closed' => (int) ($closed[$key] ?? 0),
+                'created' => $created[$key] ?? 0,
+                'closed' => $closed[$key] ?? 0,
             ];
         }
 
         return $weeks;
+    }
+
+    /**
+     * Report count per ISO week (YEARWEEK mode 3) since $first, grouped in the DB.
+     *
+     * @param  literal-string  $column
+     * @return array<int, int>
+     */
+    private function weeklyCounts(string $column, CarbonInterface $first): array
+    {
+        return Report::query()
+            ->whereNotNull($column)->where($column, '>=', $first)
+            ->selectRaw('YEARWEEK('.$column.', 3) as week_key, COUNT(*) as total')
+            ->groupBy('week_key')
+            ->pluck('total', 'week_key')
+            ->mapWithKeys(fn ($total, $key) => [(int) $key => (int) $total])
+            ->all();
+    }
+
+    /** Same shape as MySQL YEARWEEK(date, 3): ISO year * 100 + ISO week. */
+    private function weekKey(CarbonInterface $date): int
+    {
+        return (int) $date->format('oW');
     }
 
     /**

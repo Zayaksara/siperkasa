@@ -81,6 +81,8 @@ test('the date filter narrows every count and includes the whole last day', func
 test('an invalid range is a validation error', function () {
     $this->actingAs($this->admin)->get(route('admin.dashboard', ['from' => '2026-10-14', 'to' => '2026-10-01']))
         ->assertSessionHasErrors('to');
+
+    expect(session('errors')->first('to'))->toContain('Tanggal akhir');
 });
 
 test('reports are grouped by category and building with ids for drill-down', function () {
@@ -110,6 +112,23 @@ test('the weekly trend counts reports created and closed per ISO week', function
             ->where('stats.trend.10.created', 1)
             ->where('stats.trend.11.start', '2026-10-12')
             ->where('stats.trend.11.created', 1)
+            ->where('stats.trend.11.closed', 1));
+});
+
+test('the weekly trend buckets reports correctly across the ISO year boundary', function () {
+    $this->travelTo(Carbon::parse('2027-01-05 12:00', 'Asia/Jakarta')); // ISO week 1 of 2027
+    Report::factory()->create(['created_at' => '2026-12-31 10:00:00']);   // ISO 2026-W53
+    Report::factory()->create(['created_at' => '2027-01-03 23:00:00']);   // Sunday, still 2026-W53
+    Report::factory()->closed()->create(['created_at' => '2026-12-01 10:00:00', 'closed_at' => '2027-01-04 08:00:00']); // 2027-W01
+
+    $this->actingAs($this->admin)->get(route('admin.dashboard'))
+        ->assertInertia(fn ($page) => $page
+            ->where('stats.trend.9.created', 0)
+            ->where('stats.trend.10.start', '2026-12-28')
+            ->where('stats.trend.10.created', 2)
+            ->where('stats.trend.10.closed', 0)
+            ->where('stats.trend.11.start', '2027-01-04')
+            ->where('stats.trend.11.created', 0)
             ->where('stats.trend.11.closed', 1));
 });
 
