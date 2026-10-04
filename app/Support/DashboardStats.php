@@ -94,9 +94,11 @@ final class DashboardStats
     /** @param Builder<Report> $query */
     private function averageHours(Builder $query, string $endColumn): ?float
     {
-        /** @var string $sql */
-        $sql = "TIMESTAMPDIFF(SECOND, reports.created_at, reports.{$endColumn})";
-        $seconds = $query->avg(DB::raw($sql));
+        $seconds = match ($endColumn) {
+            'closed_at' => $query->avg(DB::raw('TIMESTAMPDIFF(SECOND, reports.created_at, reports.closed_at)')),
+            'validated_at' => $query->avg(DB::raw('TIMESTAMPDIFF(SECOND, reports.created_at, reports.validated_at)')),
+            default => null,
+        };
 
         return $seconds === null ? null : (float) round($seconds / 3600.0, 1);
     }
@@ -111,26 +113,26 @@ final class DashboardStats
                 if (! $date instanceof CarbonInterface) {
                     return 0;
                 }
-                $year = $date->isoWeekYear();
-                $week = $date->isoWeek();
-                return (int) ($year * 100 + $week);
+                $w = $date->format('W');
+                $y = $date->format('o');
+                return (int) ($y * 100 + (int) $w);
             });
         $closed = Report::query()->whereNotNull('closed_at')->where('closed_at', '>=', $first)->pluck('closed_at')
             ->countBy(function ($date) {
                 if (! $date instanceof CarbonInterface) {
                     return 0;
                 }
-                $year = $date->isoWeekYear();
-                $week = $date->isoWeek();
-                return (int) ($year * 100 + $week);
+                $w = $date->format('W');
+                $y = $date->format('o');
+                return (int) ($y * 100 + (int) $w);
             });
 
         $weeks = [];
         for ($i = 0; $i < 12; $i++) {
             $start = $first->addWeeks($i);
-            $year = $start->isoWeekYear();
-            $week = $start->isoWeek();
-            $key = $year * 100 + $week;
+            $w = $start->format('W');
+            $y = $start->format('o');
+            $key = (int) ($y * 100 + (int) $w);
             $weeks[] = [
                 'start' => $start->toDateString(),
                 'label' => $start->format('d/m'),

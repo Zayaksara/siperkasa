@@ -46,8 +46,8 @@ test('the average completion time is the mean of closed reports', function () {
 
     $this->actingAs($this->admin)->get(route('admin.dashboard'))
         ->assertInertia(fn ($page) => $page
-            ->where('stats.avg_completion_hours', 48.0)
-            ->where('stats.avg_validation_hours', 6.0));
+            ->where('stats.avg_completion_hours', fn ($v) => is_numeric($v) && (float) $v === 48.0)
+            ->where('stats.avg_validation_hours', fn ($v) => is_numeric($v) && (float) $v === 6.0));
 });
 
 test('averages are null when there is nothing to average', function () {
