@@ -62,6 +62,17 @@
     --color-brand-accent: var(--brand-accent);
     --color-brand-accent-strong: var(--brand-accent-strong);
 
+    --color-accent-teal: var(--accent-teal);
+    --color-accent-teal-bg: var(--accent-teal-bg);
+    --color-accent-amber: var(--accent-amber);
+    --color-accent-amber-bg: var(--accent-amber-bg);
+    --color-accent-sky: var(--accent-sky);
+    --color-accent-sky-bg: var(--accent-sky-bg);
+    --color-accent-rose: var(--accent-rose);
+    --color-accent-rose-bg: var(--accent-rose-bg);
+    --color-accent-violet: var(--accent-violet);
+    --color-accent-violet-bg: var(--accent-violet-bg);
+
     --color-status-pending: var(--status-pending);
     --color-status-pending-bg: var(--status-pending-bg);
     --color-status-assigned: var(--status-assigned);
@@ -158,6 +169,18 @@
     --sidebar-ring: #bb8f32;
     --sidebar: #0f443e;
 
+    /* Accent set (decorative + chart series). Text on its -bg and on card passes WCAG AA (light). */
+    --accent-teal: #0f6b5e;
+    --accent-teal-bg: #dcf2ee;
+    --accent-amber: #8a5a00;
+    --accent-amber-bg: #fcefcf;
+    --accent-sky: #1d5f8a;
+    --accent-sky-bg: #dfeefa;
+    --accent-rose: #a8294a;
+    --accent-rose-bg: #fbe3ea;
+    --accent-violet: #5b3fa8;
+    --accent-violet-bg: #ece6fa;
+
     --status-pending: #565c59;
     --status-pending-bg: #eceeed;
     --status-assigned: #1d4e89;
@@ -239,6 +262,18 @@
     --sidebar-border: #1a3b34;
     --sidebar-ring: #d4a94a;
     --sidebar: #0a1f1b;
+
+    /* Accent set (decorative + chart series). Text on its -bg and on card passes WCAG AA (dark). */
+    --accent-teal: #5fd1bf;
+    --accent-teal-bg: #0f3530;
+    --accent-amber: #f0c35a;
+    --accent-amber-bg: #3a2c0c;
+    --accent-sky: #7cc0ee;
+    --accent-sky-bg: #12304a;
+    --accent-rose: #f394ae;
+    --accent-rose-bg: #43182a;
+    --accent-violet: #b9a2f2;
+    --accent-violet-bg: #2a1f4d;
 
     --status-pending: #c4cbc8;
     --status-pending-bg: #252c29;

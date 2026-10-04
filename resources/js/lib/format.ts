@@ -36,6 +36,15 @@ export function formatRupiah(value?: number | string | null): string {
     }).format(Number(value));
 }
 
+/** "2 hari" / "1,5 hari" from 48 h up, "5,5 jam" below; "–" when there is nothing to average. */
+export function formatHours(hours?: number | null): string {
+    if (hours === null || hours === undefined || isNaN(hours)) return '–';
+    const number = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 });
+    return hours >= 48
+        ? `${number.format(hours / 24)} hari`
+        : `${number.format(hours)} jam`;
+}
+
 /** "Sisa 2 hari 3 jam" / "Terlambat 5 jam" relative to `now` (ms). Null when no SLA. */
 export function formatSlaRemaining(
     iso: string | null | undefined,
