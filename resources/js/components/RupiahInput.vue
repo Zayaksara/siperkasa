@@ -25,10 +25,23 @@ watch(
 
 async function onInput(event: Event) {
     const el = event.target as HTMLInputElement;
-    const typed = el.value;
+    const input = event as InputEvent;
+    let typed = el.value;
     const caret = el.selectionStart ?? typed.length;
-    const raw = parseRupiah(typed);
-    const formatted = formatRupiahInput(raw);
+
+    // A typed dot is a decimal key on English keyboards: treat it as a comma.
+    if (input.data === '.' && typed[caret - 1] === '.') {
+        typed = `${typed.slice(0, caret - 1)},${typed.slice(caret)}`;
+    }
+
+    // Only pastes/drops may read a lone "1500000.50" as a decimal; deleting a
+    // digit from "1.500" must not turn it into "1.50".
+    const pasted = input.inputType?.startsWith('insertFrom') ?? false;
+    const raw = parseRupiah(typed, pasted);
+    let formatted = formatRupiahInput(raw);
+
+    // Keep a just-typed comma visible even though the raw value has no fraction yet.
+    if (typed.includes(',') && !raw.includes('.')) formatted += ',';
 
     display.value = formatted;
     // Same text can leave the DOM stale (e.g. a rejected letter), so force it.

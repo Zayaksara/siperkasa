@@ -253,6 +253,25 @@ test('only pending status counts toward the 5-report limit, not cancelled or rej
     expect(Report::where('user_id', $this->reporter->id)->count())->toBe(6);
 });
 
+test('other users pending reports do not count toward the cap', function () {
+    Report::factory()->pending()->count(5)->for(User::factory()->create(), 'user')->create();
+
+    $this->actingAs($this->reporter)->post(route('reports.store'), ReportInput::valid())
+        ->assertSessionHasNoErrors();
+
+    expect(Report::where('user_id', $this->reporter->id)->count())->toBe(1);
+});
+
+test('assigned reports do not count toward the pending cap', function () {
+    Report::factory()->pending()->count(4)->for($this->reporter, 'user')->create();
+    Report::factory()->assigned()->for($this->reporter, 'user')->create();
+
+    $this->actingAs($this->reporter)->post(route('reports.store'), ReportInput::valid())
+        ->assertSessionHasNoErrors();
+
+    expect(Report::where('user_id', $this->reporter->id)->count())->toBe(6);
+});
+
 test('11th report submission within an hour is throttled with Indonesian message', function () {
     $key = ReportSubmissionLimit::key($this->reporter);
 

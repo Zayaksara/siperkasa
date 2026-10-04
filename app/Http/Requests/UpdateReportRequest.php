@@ -25,6 +25,9 @@ class UpdateReportRequest extends StoreReportRequest
     }
 
     /**
+     * Deliberately does not call parent::after(): the 5-pending cap applies to
+     * new submissions only, so an owner can still edit one of their pending reports.
+     *
      * Early feedback only; UpdateReport rechecks the count under the row lock.
      *
      * @return array<int, callable(Validator): void>

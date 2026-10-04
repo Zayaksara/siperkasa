@@ -29,6 +29,7 @@ class ApproveReportRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'title.min' => 'Judul minimal 10 karakter. Sebut barang, kerusakan, dan lokasi singkat.',
             'sla_date.after' => 'SLA harus di masa depan.',
             'assigned_pic_id.exists' => 'PIC harus pengguna aktif dengan peran PIC.',
         ];

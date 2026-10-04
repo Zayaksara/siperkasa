@@ -164,9 +164,17 @@ function onKeydown(event: KeyboardEvent) {
     } else if (event.key === 'ArrowUp') {
         event.preventDefault();
         active.value = Math.max(active.value - 1, 0);
-    } else if (event.key === 'Enter' && active.value >= 0) {
+    } else if (event.key === 'Enter') {
+        // Never let Enter submit the parent form while the list is open.
         event.preventDefault();
-        choose(options.value[active.value]);
+
+        const option =
+            active.value >= 0
+                ? options.value[active.value]
+                : loading.value
+                  ? undefined
+                  : options.value[0];
+        if (option) choose(option);
     } else if (event.key === 'Escape') {
         event.preventDefault();
         open.value = false;

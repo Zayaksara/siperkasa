@@ -1,12 +1,31 @@
-/** Raw form value ("1500000.50") from what the user typed ("1.500.000,5"). */
-export function parseRupiah(input: string): string {
-    const cleaned = input.replace(/[^\d,]/g, '');
-    const [whole, ...rest] = cleaned.split(',');
+/**
+ * Raw form value ("1500000.50") from what the user typed ("1.500.000,5").
+ *
+ * Comma is the decimal separator. Without a comma, a lone trailing dot with
+ * 1-2 digits ("1500000.50") counts as a decimal point when `dotDecimal` is on
+ * (pastes); otherwise dots are thousands separators ("1.500.000").
+ */
+export function parseRupiah(input: string, dotDecimal = true): string {
+    const cleaned = input.replace(/[^\d,.]/g, '');
+    let whole: string;
+    let fraction: string | null = null;
+
+    if (cleaned.includes(',')) {
+        const [head, ...rest] = cleaned.split(',');
+        whole = head.replace(/\./g, '');
+        fraction = rest.join('').replace(/\./g, '');
+    } else if (dotDecimal && /^\d*\.\d{1,2}$/.test(cleaned)) {
+        [whole, fraction] = cleaned.split('.');
+    } else {
+        whole = cleaned.replace(/\./g, '');
+    }
+
     const digits = whole.replace(/^0+(?=\d)/, '');
+    const decimals = (fraction ?? '').slice(0, 2);
 
-    if (rest.length === 0) return digits;
+    if (decimals === '') return fraction === null ? digits : digits || '0';
 
-    return `${digits === '' ? '0' : digits}.${rest.join('').slice(0, 2)}`;
+    return `${digits === '' ? '0' : digits}.${decimals}`;
 }
 
 /** Display text ("1.500.000,5") from a raw value ("1500000.5"). */

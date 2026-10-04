@@ -104,8 +104,9 @@ watch(
                 ? picId
                 : null;
 
-        if (!picTouched.value && suggestedPicId.value !== null) {
-            approveForm.assigned_pic_id = suggestedPicId.value;
+        if (!picTouched.value) {
+            approveForm.assigned_pic_id =
+                suggestedPicId.value ?? props.suggested_pic_id ?? '';
         }
     },
 );

@@ -26,7 +26,7 @@ test('an asset name match returns its category with example names', function (st
         ->assertJsonPath('data.0.id', $elektronik->id)
         ->assertJsonPath('data.0.name', 'Elektronik Uji')
         ->assertJsonCount(2, 'data.0.examples');
-})->with(['reporter', 'admin']);
+})->with(['reporter', 'admin', 'pic']);
 
 test('examples are distinct and capped at 3', function () {
     $cat = Category::factory()->create();
