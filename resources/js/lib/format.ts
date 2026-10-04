@@ -1,36 +1,36 @@
-const zone = "Asia/Jakarta";
+const zone = 'Asia/Jakarta';
 
 export function formatDate(iso?: string | null): string {
-    if (!iso) return "-";
+    if (!iso) return '-';
     const d = new Date(iso);
-    if (isNaN(d.getTime())) return "-";
-    return new Intl.DateTimeFormat("id-ID", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
+    if (isNaN(d.getTime())) return '-';
+    return new Intl.DateTimeFormat('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
         timeZone: zone,
     }).format(d);
 }
 
 export function formatDateTime(iso?: string | null): string {
-    if (!iso) return "-";
+    if (!iso) return '-';
     const d = new Date(iso);
-    if (isNaN(d.getTime())) return "-";
-    return new Intl.DateTimeFormat("id-ID", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
+    if (isNaN(d.getTime())) return '-';
+    return new Intl.DateTimeFormat('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
         timeZone: zone,
     }).format(d);
 }
 
 export function formatRupiah(value?: number | string | null): string {
-    if (value === null || value === undefined || value === "") return "-";
-    return new Intl.NumberFormat("id-ID", {
-        style: "currency",
-        currency: "IDR",
+    if (value === null || value === undefined || value === '') return '-';
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
         maximumFractionDigits: 0,
     }).format(Number(value));
 }
@@ -53,5 +53,5 @@ export function formatSlaRemaining(
     else if (hours > 0) span = `${hours} jam`;
     else span = `${Math.max(1, minutes)} menit`;
 
-    return `${late ? "Terlambat" : "Sisa"} ${span}`;
+    return `${late ? 'Terlambat' : 'Sisa'} ${span}`;
 }

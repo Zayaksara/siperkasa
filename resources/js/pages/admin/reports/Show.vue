@@ -167,7 +167,9 @@ const details = computed<[string, string][]>(() => [
     <div class="mx-auto flex w-full max-w-4xl flex-col gap-6 p-4">
         <PageHeader :title="report.title" :description="report.ticket_number">
             <StatusBadge :status="report.status" :label="report.status_label" />
-            <HoldBadge v-if="report.status === 'On_Hold'" />
+            <HoldBadge
+                v-if="report.status === 'On_Hold' && report.is_overdue"
+            />
             <OverdueBadge v-if="report.is_overdue" />
         </PageHeader>
 

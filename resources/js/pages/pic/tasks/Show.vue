@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import { Head, router, useForm } from "@inertiajs/vue3";
-import { computed, onMounted, ref, watch } from "vue";
-import ConfirmDialog from "@/components/ConfirmDialog.vue";
-import HoldBadge from "@/components/HoldBadge.vue";
-import InputError from "@/components/InputError.vue";
-import OverdueBadge from "@/components/OverdueBadge.vue";
-import PageHeader from "@/components/PageHeader.vue";
-import PhotoUploader from "@/components/PhotoUploader.vue";
-import StatusBadge from "@/components/StatusBadge.vue";
-import Timeline from "@/components/Timeline.vue";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Head, router, useForm } from '@inertiajs/vue3';
+import { computed, onMounted, ref, watch } from 'vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import HoldBadge from '@/components/HoldBadge.vue';
+import InputError from '@/components/InputError.vue';
+import OverdueBadge from '@/components/OverdueBadge.vue';
+import PageHeader from '@/components/PageHeader.vue';
+import PhotoUploader from '@/components/PhotoUploader.vue';
+import StatusBadge from '@/components/StatusBadge.vue';
+import Timeline from '@/components/Timeline.vue';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
     formatDate,
     formatDateTime,
     formatRupiah,
     formatSlaRemaining,
-} from "@/lib/format";
-import { complete, hold, index, resume, start } from "@/routes/pic/tasks";
+} from '@/lib/format';
+import { complete, hold, index, resume, start } from '@/routes/pic/tasks';
 
 type Photo = { id: number; url: string };
 
@@ -62,20 +62,20 @@ const props = defineProps<{
 }>();
 
 defineOptions({
-    layout: { breadcrumbs: [{ title: "Tugas", href: index() }] },
+    layout: { breadcrumbs: [{ title: 'Tugas', href: index() }] },
 });
 
 // YYYY-MM-DD in Jakarta time (matches the server's "today").
 const jakartaDate = (date: Date) =>
-    new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(date);
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(date);
 const today = jakartaDate(new Date());
 const minDate = computed(() => jakartaDate(new Date(props.report.created_at)));
 
 const form = useForm({
-    repair_action: "",
+    repair_action: '',
     completed_on: today,
-    repair_cost: "" as string | number,
-    vendor_name: "",
+    repair_cost: '' as string | number,
+    vendor_name: '',
     photos: [] as File[],
 });
 
@@ -127,7 +127,7 @@ function submitComplete() {
 const photoError = computed(() => {
     const errors = form.errors as Record<string, string | undefined>;
     const key = Object.keys(errors).find(
-        (k) => k === "photos" || k.startsWith("photos."),
+        (k) => k === 'photos' || k.startsWith('photos.'),
     );
 
     return key ? errors[key] : undefined;
@@ -141,32 +141,32 @@ watch(
     () => (now.value = Date.now()),
 );
 const slaRemaining = computed(() =>
-    props.report.status === "Closed"
+    props.report.status === 'Closed'
         ? null
         : formatSlaRemaining(props.report.sla_date, now.value),
 );
 
 const details = computed<[string, string][]>(() => [
     [
-        "Pelapor",
+        'Pelapor',
         props.report.reporter
-            ? `${props.report.reporter} (${props.report.reporter_nim_nip ?? "-"})`
-            : "Pengguna dihapus",
+            ? `${props.report.reporter} (${props.report.reporter_nim_nip ?? '-'})`
+            : 'Pengguna dihapus',
     ],
-    ["Kategori", props.report.category ?? "-"],
-    ["Lokasi", `${props.report.building ?? "-"}, ${props.report.room ?? "-"}`],
+    ['Kategori', props.report.category ?? '-'],
+    ['Lokasi', `${props.report.building ?? '-'}, ${props.report.room ?? '-'}`],
     [
-        "Aset",
+        'Aset',
         props.report.asset
             ? `${props.report.asset.name} (${props.report.asset.asset_code})`
-            : "Tidak dipilih",
+            : 'Tidak dipilih',
     ],
-    ["Prioritas", props.report.admin_priority_label ?? "-"],
+    ['Prioritas', props.report.admin_priority_label ?? '-'],
     [
-        "Target selesai (SLA)",
+        'Target selesai (SLA)',
         props.report.sla_date
-            ? `${formatDateTime(props.report.sla_date)}${slaRemaining.value ? ` (${slaRemaining.value})` : ""}`
-            : "-",
+            ? `${formatDateTime(props.report.sla_date)}${slaRemaining.value ? ` (${slaRemaining.value})` : ''}`
+            : '-',
     ],
 ]);
 
@@ -181,7 +181,9 @@ const hasActions = computed(
     <div class="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 pb-24">
         <PageHeader :title="report.title" :description="report.ticket_number">
             <StatusBadge :status="report.status" :label="report.status_label" />
-            <HoldBadge v-if="report.status === 'On_Hold'" />
+            <HoldBadge
+                v-if="report.status === 'On_Hold' && report.is_overdue"
+            />
             <OverdueBadge v-if="report.is_overdue" />
         </PageHeader>
 
@@ -242,7 +244,7 @@ const hasActions = computed(
             <p class="text-sm break-words text-muted-foreground">
                 Selesai {{ formatDate(report.completed_on) }} · Biaya
                 {{ formatRupiah(report.repair_cost) }} · Vendor
-                {{ report.vendor_name ?? "-" }}
+                {{ report.vendor_name ?? '-' }}
             </p>
             <ul
                 v-if="report.completion_photos.length"
@@ -361,8 +363,12 @@ const hasActions = computed(
                     <InputError :message="form.errors.vendor_name" />
                 </div>
                 <div class="grid gap-2">
-                    <Label>Foto bukti pengerjaan (1-3)</Label>
+                    <Label id="c-photos-label"
+                        >Foto bukti pengerjaan (1-3)</Label
+                    >
                     <PhotoUploader
+                        role="group"
+                        aria-labelledby="c-photos-label"
                         v-model="form.photos"
                         :error="photoError"
                         @update:busy="compressing = $event"

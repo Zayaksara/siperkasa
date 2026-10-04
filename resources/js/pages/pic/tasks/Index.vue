@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { Head, Link } from "@inertiajs/vue3";
-import EmptyState from "@/components/EmptyState.vue";
-import HoldBadge from "@/components/HoldBadge.vue";
-import OverdueBadge from "@/components/OverdueBadge.vue";
-import PageHeader from "@/components/PageHeader.vue";
-import Pagination from "@/components/Pagination.vue";
-import StatusBadge from "@/components/StatusBadge.vue";
-import { Button } from "@/components/ui/button";
-import { formatDate, formatDateTime } from "@/lib/format";
-import { index, show } from "@/routes/pic/tasks";
+import { Head, Link } from '@inertiajs/vue3';
+import EmptyState from '@/components/EmptyState.vue';
+import HoldBadge from '@/components/HoldBadge.vue';
+import OverdueBadge from '@/components/OverdueBadge.vue';
+import PageHeader from '@/components/PageHeader.vue';
+import Pagination from '@/components/Pagination.vue';
+import StatusBadge from '@/components/StatusBadge.vue';
+import { Button } from '@/components/ui/button';
+import { formatDate, formatDateTime } from '@/lib/format';
+import { index, show } from '@/routes/pic/tasks';
 
 type Row = {
     id: number;
@@ -32,12 +32,12 @@ defineProps<{
         data: Row[];
         links: { url: string | null; label: string; active: boolean }[];
     };
-    tab: "active" | "done";
+    tab: 'active' | 'done';
     counts: { active: number; done: number };
 }>();
 
 defineOptions({
-    layout: { breadcrumbs: [{ title: "Tugas", href: index() }] },
+    layout: { breadcrumbs: [{ title: 'Tugas', href: index() }] },
 });
 </script>
 
@@ -105,9 +105,12 @@ defineOptions({
                         >
                         <span class="flex flex-wrap items-center gap-2">
                             <OverdueBadge v-if="task.is_overdue" />
-                            <HoldBadge v-if="task.status === 'On_Hold'" />
+                            <HoldBadge
+                                v-if="
+                                    task.status === 'On_Hold' && task.is_overdue
+                                "
+                            />
                             <StatusBadge
-                                v-else
                                 :status="task.status"
                                 :label="task.status_label"
                             />
@@ -115,8 +118,8 @@ defineOptions({
                     </div>
                     <p class="font-semibold break-words">{{ task.title }}</p>
                     <p class="text-sm break-words text-muted-foreground">
-                        {{ task.category ?? "-" }} · {{ task.building ?? "-" }},
-                        {{ task.room ?? "-" }}
+                        {{ task.category ?? '-' }} · {{ task.building ?? '-' }},
+                        {{ task.room ?? '-' }}
                     </p>
                     <p
                         class="text-sm"
@@ -128,7 +131,7 @@ defineOptions({
                     >
                         SLA:
                         {{
-                            task.sla_date ? formatDateTime(task.sla_date) : "-"
+                            task.sla_date ? formatDateTime(task.sla_date) : '-'
                         }}
                         · Dibuat {{ formatDate(task.created_at) }}
                     </p>

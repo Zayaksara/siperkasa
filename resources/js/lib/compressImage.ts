@@ -1,8 +1,8 @@
-export const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+export const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 export const MAX_BYTES = 2048 * 1024;
 
-export const TYPE_ERROR = "Foto harus berformat jpg, png, atau webp.";
-export const SIZE_ERROR = "Ukuran foto maksimal 2 MB.";
+export const TYPE_ERROR = 'Foto harus berformat jpg, png, atau webp.';
+export const SIZE_ERROR = 'Ukuran foto maksimal 2 MB.';
 
 const QUALITIES = (quality: number) => [quality, quality - 0.2, quality - 0.4];
 
@@ -27,12 +27,12 @@ export async function compressImage(
         return file;
     };
 
-    if (typeof createImageBitmap !== "function") return original();
+    if (typeof createImageBitmap !== 'function') return original();
 
     let bitmap: ImageBitmap;
     try {
         bitmap = await createImageBitmap(file, {
-            imageOrientation: "from-image",
+            imageOrientation: 'from-image',
         });
     } catch {
         return original();
@@ -72,11 +72,11 @@ async function encode(
     quality: number,
 ): Promise<Blob | null> {
     const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
-    const canvas = document.createElement("canvas");
+    const canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.round(bitmap.width * scale));
     canvas.height = Math.max(1, Math.round(bitmap.height * scale));
 
-    const context = canvas.getContext("2d");
+    const context = canvas.getContext('2d');
     if (!context) return null;
 
     context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
@@ -86,15 +86,22 @@ async function encode(
             canvas.toBlob(resolve, type, quality),
         );
 
-    const webp = await toBlob("image/webp");
+    const webp = await toBlob('image/webp');
 
     // Safari ignores WebP and returns PNG: fall back to JPEG at the same quality.
-    return webp?.type === "image/webp" ? webp : toBlob("image/jpeg");
+    if (webp?.type === 'image/webp') return webp;
+
+    // JPEG has no alpha: paint white behind transparent pixels so they do not turn black.
+    context.globalCompositeOperation = 'destination-over';
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    return toBlob('image/jpeg');
 }
 
 function renamed(name: string, type: string): string {
     const extension =
-        type === "image/png" ? "png" : type === "image/jpeg" ? "jpg" : "webp";
+        type === 'image/png' ? 'png' : type === 'image/jpeg' ? 'jpg' : 'webp';
 
-    return `${name.replace(/\.[^.]+$/, "")}.${extension}`;
+    return `${name.replace(/\.[^.]+$/, '')}.${extension}`;
 }
