@@ -224,17 +224,21 @@ function selectBucket(index: number, seriesIndex: number) {
 // Entrance motion: first mount only. Filter changes rely on the chart morph.
 const root = ref<HTMLElement | null>(null);
 let entered = false;
-useMotion(root, ({ gsap }) => {
-    if (entered) return; // a breakpoint re-run must not replay the entrance
-    entered = true;
-    gsap.from('[data-reveal]', {
-        autoAlpha: 0,
-        y: motion.rise,
-        duration: 0.5,
-        stagger: 0.06,
-        clearProps: 'transform,opacity,visibility',
-    });
-});
+useMotion(
+    root,
+    ({ gsap }) => {
+        if (entered) return; // a breakpoint re-run must not replay the entrance
+        entered = true;
+        gsap.from('[data-reveal]', {
+            autoAlpha: 0,
+            y: motion.rise,
+            duration: 0.5,
+            stagger: 0.06,
+            clearProps: 'transform,opacity,visibility',
+        });
+    },
+    { hideUntilReady: true },
+);
 </script>
 
 <template>

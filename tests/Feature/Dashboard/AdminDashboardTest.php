@@ -175,6 +175,19 @@ test('the weekly trend buckets reports correctly across the ISO year boundary', 
             ->where('stats.trend.11.closed', 1));
 });
 
+test('a range over one year is a validation error, 366 days is accepted', function () {
+    $this->actingAs($this->admin)->get(route('admin.dashboard', ['from' => '2025-10-13', 'to' => '2026-10-14'])) // 367 days
+        ->assertSessionHasErrors('to');
+    expect(session('errors')->first('to'))->toBe('Rentang tanggal maksimal 1 tahun.');
+
+    $this->actingAs($this->admin)->get(route('admin.dashboard', ['from' => '0001-01-01', 'to' => '9999-12-31']))
+        ->assertSessionHasErrors('to');
+
+    $this->actingAs($this->admin)->get(route('admin.dashboard', ['from' => '2025-10-14', 'to' => '2026-10-14'])) // 366 days
+        ->assertSessionHasNoErrors()
+        ->assertInertia(fn ($page) => $page->where('stats.trend_granularity', 'week'));
+});
+
 test('pic load lists active tasks per active pic', function () {
     $busy = User::factory()->pic()->create(['name' => 'Pak Sibuk']);
     User::factory()->pic()->inactive()->create();

@@ -44,6 +44,7 @@ let observer: MutationObserver | undefined;
 let motionQuery: MediaQueryList | undefined;
 let themeTimer: ReturnType<typeof setTimeout> | undefined;
 let dark = false;
+let builtSignature = '';
 
 /** ApexCharts renders tooltip and legend text as HTML; labels come from user-entered names. */
 const escapeHtml = (text: string) =>
@@ -58,6 +59,15 @@ const escapeHtml = (text: string) =>
                 "'": '&#39;',
             })[c] as string,
     );
+
+const dataSignature = () =>
+    JSON.stringify([props.series, props.categories, props.height]);
+
+/** Dense axis: daily trends have 8-31 points; fewer markers and straight segments keep them light. */
+const dense = () => props.type === 'line' && props.categories.length > 12;
+
+/** Dense category axis on a narrow chart: tilt labels instead of trimming them. */
+const tilt = () => dense() && (el.value?.clientWidth ?? 640) < 520;
 
 const token = (style: CSSStyleDeclaration, name: string) =>
     style.getPropertyValue(name.startsWith('--') ? name : `--${name}`).trim();
@@ -122,15 +132,15 @@ function buildOptions(): ApexCharts.ApexOptions {
         },
         stroke: {
             width: props.type === 'line' ? 3 : 0,
-            curve: 'smooth',
+            curve: dense() ? 'straight' : 'smooth',
             dashArray: props.type === 'line' ? props.dashArray : undefined,
         },
         markers: {
-            size: props.type === 'line' ? 6 : 0,
+            size: props.type === 'line' ? (dense() ? 3 : 6) : 0,
             shape: props.markerShapes,
             strokeWidth: 2,
             strokeColors: token(style, '--card'),
-            hover: { size: 7 },
+            hover: { size: dense() ? 6 : 7 },
         },
         xaxis: {
             categories: props.categories,
@@ -141,14 +151,13 @@ function buildOptions(): ApexCharts.ApexOptions {
                   )
                 : undefined,
             tickPlacement: 'on',
-            tickAmount:
-                props.type === 'line' && props.categories.length > 12
-                    ? 8
-                    : undefined,
+            // Dense axes on narrow screens: tilt the full d/m labels so none collide.
             labels: {
                 style: { fontSize: '12px', colors: muted },
-                trim: true,
-                rotate: 0,
+                trim: false,
+                rotate: tilt() ? -45 : 0,
+                rotateAlways: tilt(),
+                minHeight: tilt() ? 44 : undefined,
                 hideOverlappingLabels: true,
                 formatter: (value: string | number) =>
                     typeof value === 'number' && !Number.isInteger(value)
@@ -220,6 +229,7 @@ async function render() {
     if (!el.value) return;
     const { default: ApexCharts } = await import('apexcharts');
     if (disposed || !el.value) return;
+    builtSignature = dataSignature();
     const instance = new ApexCharts(el.value, buildOptions());
     chart = instance;
     ready = false;
@@ -230,6 +240,8 @@ async function render() {
     }
     ready = true;
     loaded.value = true;
+    // Props changed while the library loaded / first render ran: apply them now.
+    if (dataSignature() !== builtSignature) updateData();
 }
 
 /** Full option rebuild (theme / reduced motion / style props). No animation. */
@@ -240,7 +252,8 @@ function restyle() {
 
 /** Data change: morph the existing chart in place, no destroy or redraw. */
 function updateData() {
-    if (!chart || !ready || disposed) return;
+    if (!chart || !ready || disposed) return; // render() re-runs this once ready
+    builtSignature = dataSignature();
     const max = props.horizontal
         ? Math.ceil(Math.max(1, ...props.series.flatMap((s) => s.data)) * 1.15)
         : undefined;
@@ -276,10 +289,7 @@ onMounted(() => {
 
 // Parents often pass fresh inline arrays on every render (e.g. while typing in
 // a date input). Compare by content so only real data changes touch the chart.
-watch(
-    () => JSON.stringify([props.series, props.categories, props.height]),
-    updateData,
-);
+watch(dataSignature, updateData);
 watch(
     () => JSON.stringify([props.colors, props.dashArray, props.markerShapes]),
     restyle,

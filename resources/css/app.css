@@ -291,6 +291,11 @@
     --status-cancelled-bg: #26302c;
 }
 
+/* Set from JS only (useMotion hideUntilReady); cleared as soon as GSAP owns the state. */
+[data-motion-pending] [data-reveal] {
+    opacity: 0;
+}
+
 @layer base {
     * {
         @apply border-border outline-ring/50;

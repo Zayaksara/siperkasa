@@ -90,20 +90,32 @@ export interface MotionConditions extends MotionKit {
 export function useMotion(
     root: Readonly<Ref<HTMLElement | null>>,
     setup: (conditions: MotionConditions) => void | (() => void),
+    options: { hideUntilReady?: boolean } = {},
 ): void {
     let mm: gsap.MatchMedia | undefined;
     let unmounted = false;
 
     onMounted(async () => {
-        if (!root.value || typeof window === 'undefined') return;
+        const host = root.value;
+        if (!host || typeof window === 'undefined') return;
+        // The GSAP chunk loads async. Hide `[data-reveal]` children from JS (never
+        // from default CSS) until the tweens exist, so the entrance has no
+        // visible-then-vanish pop. Always cleared again below.
+        const hide = options.hideUntilReady && !prefersReducedMotion();
+        if (hide) host.setAttribute('data-motion-pending', '');
+        const show = () => host.removeAttribute('data-motion-pending');
         let loaded: MotionKit;
         try {
             loaded = await loadMotion();
         } catch {
+            show();
             return; // chunk failed to load: page keeps its static final state
         }
         // Component left (fast navigation) before the import resolved.
-        if (unmounted || !root.value) return;
+        if (unmounted || !root.value) {
+            show();
+            return;
+        }
         mm = loaded.gsap.matchMedia(root.value);
         mm.add(
             { motionOk: MOTION_OK, isDesktop: DESKTOP },
@@ -112,11 +124,14 @@ export function useMotion(
                     string,
                     boolean
                 >;
+                // Tweens read the live state, so reveal first, then hide via gsap.
+                show();
                 if (!motionOk) return;
                 return setup({ ...loaded, isDesktop, context });
             },
             root.value,
         );
+        show();
     });
 
     onBeforeUnmount(() => {
