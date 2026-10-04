@@ -66,3 +66,39 @@ test('seeding twice gives 30 reports (idempotent)', function () {
     $this->seed(DemoReportSeeder::class);
     expect(Report::count())->toBe(30, 'seeding twice should not add more reports');
 });
+
+test('demo report timestamps are ordered and never in the future', function () {
+    User::factory()->admin()->create();
+    User::factory()->pic()->count(2)->create();
+    User::factory()->count(3)->create();
+    Category::factory()->count(3)->create();
+    Room::factory()->count(3)->create();
+
+    $this->seed(DemoReportSeeder::class);
+
+    Report::with('statusLogs')->get()->each(function (Report $report) {
+        // No timestamp should be in the future
+        expect($report->created_at->lte(now()))->toBeTrue();
+        expect($report->validated_at?->lte(now()) ?? true)->toBeTrue();
+        expect($report->started_at?->lte(now()) ?? true)->toBeTrue();
+        expect($report->closed_at?->lte(now()) ?? true)->toBeTrue();
+        expect($report->cancelled_at?->lte(now()) ?? true)->toBeTrue();
+
+        // Maintain order: created_at ≤ validated_at ≤ started_at ≤ closed_at
+        if ($report->validated_at) {
+            expect($report->validated_at->gte($report->created_at))->toBeTrue('validated_at must be ≥ created_at');
+        }
+        if ($report->started_at) {
+            expect($report->started_at->gte($report->validated_at ?? $report->created_at))->toBeTrue('started_at must be ≥ validated_at');
+        }
+        if ($report->closed_at) {
+            expect($report->closed_at->gte($report->started_at ?? $report->validated_at ?? $report->created_at))->toBeTrue('closed_at must be ≥ started_at');
+        }
+
+        // Status logs should follow the same ordering
+        $report->statusLogs->each(function ($log) use ($report) {
+            expect($log->created_at->lte(now()))->toBeTrue('log timestamp must not be in future');
+            expect($log->created_at->gte($report->created_at))->toBeTrue('log must be ≥ created_at');
+        });
+    });
+});

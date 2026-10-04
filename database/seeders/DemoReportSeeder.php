@@ -54,7 +54,7 @@ class DemoReportSeeder extends Seeder
 
     private function createReport(string $state, User $admin, User $pic, User $reporter, Category $category, Room $room): void
     {
-        $createdAt = now()->subDays(random_int(0, 40))->subMinutes(random_int(0, 600));
+        $createdAt = now()->subDays(random_int(1, 40))->subMinutes(random_int(0, 600));
 
         $overrides = [
             'ticket_number' => TicketNumber::next($createdAt),
@@ -78,19 +78,22 @@ class DemoReportSeeder extends Seeder
 
         $report = $factory->create($overrides);
 
-        $validatedAt = $createdAt->copy()->addHours(random_int(1, 12));
-        $closedAt = $validatedAt->copy()->addDays(random_int(1, 5));
+        // Ensure all timestamps ≤ now() and maintain order: created_at ≤ validated_at ≤ started_at ≤ closed_at
+        $validatedAt = min($createdAt->copy()->addHours(random_int(1, 12)), now());
+        $startedAt = $state === 'assigned' ? null : min($validatedAt->copy()->addHours(2), now());
+        $closedAtCalc = ($startedAt ?? $validatedAt)->copy()->addDays(random_int(1, 5));
+        $closedAt = $state === 'closed' ? min($closedAtCalc, now()) : null;
 
         $attributes = match ($state) {
             'rejected', 'pending' => [],
-            'cancelled' => ['cancelled_at' => $createdAt->copy()->addHour()],
+            'cancelled' => ['cancelled_at' => min($createdAt->copy()->addHour(), now())],
             default => [
                 'admin_priority' => $report->user_priority,
                 'validated_at' => $validatedAt,
                 'sla_date' => $validatedAt->copy()->addDays($report->user_priority->slaDays()),
-                'started_at' => $state === 'assigned' ? null : $validatedAt->copy()->addHours(2),
-                'closed_at' => $state === 'closed' ? min($closedAt, now()) : null,
-                'completed_on' => $state === 'closed' ? min($closedAt, now())->toDateString() : null,
+                'started_at' => $startedAt,
+                'closed_at' => $closedAt,
+                'completed_on' => $closedAt ? $closedAt->toDateString() : null,
             ],
         };
 
