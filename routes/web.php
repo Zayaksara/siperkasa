@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserImportController;
 use App\Http\Controllers\AssetSearchController;
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\CategorySearchController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Pic\DashboardController as PicDashboardController;
@@ -37,6 +38,7 @@ Route::get('/', function () {
 Route::middleware(['auth', 'active'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::get('assets/search', AssetSearchController::class)->name('assets.search');
+    Route::get('categories/search', CategorySearchController::class)->name('categories.search');
     Route::get('attachments/{attachment}', AttachmentController::class)->name('attachments.show');
 
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');

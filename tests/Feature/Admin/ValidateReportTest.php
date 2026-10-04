@@ -153,3 +153,58 @@ test('a stale validate is refused and changes nothing', function () {
 test('only admins can validate', function (string $state) {
     $this->actingAs(User::factory()->{$state}()->create())->post(route('admin.reports.approve', $this->report), adminApprovePayload($this->pic))->assertForbidden();
 })->with(['reporter', 'pic']);
+
+test('validating with a new title and category updates the report and logs it in the note', function () {
+    $old = Category::factory()->create(['name' => 'Elektronik Lama']);
+    $new = Category::factory()->create(['name' => 'Bangunan Baru']);
+    $report = Report::factory()->create(['title' => 'Lampu kelas mati total', 'category_id' => $old->id]);
+
+    $this->actingAs($this->admin)->post(route('admin.reports.approve', $report), adminApprovePayload($this->pic, [
+        'title' => 'Plafon kelas bocor parah',
+        'category_id' => $new->id,
+    ]))->assertSessionHasNoErrors();
+
+    $report->refresh();
+    expect($report->title)->toBe('Plafon kelas bocor parah')
+        ->and($report->category_id)->toBe($new->id)
+        ->and($report->status)->toBe(ReportStatus::Assigned);
+
+    $note = $report->statusLogs()->latest('id')->first()->note;
+    expect($note)->toContain('Judul diubah: "Lampu kelas mati total" → "Plafon kelas bocor parah"')
+        ->toContain('Kategori diubah: Elektronik Lama → Bangunan Baru');
+});
+
+test('validating with the same title and category leaves them and the note untouched', function () {
+    $report = Report::factory()->create(['title' => 'Lampu kelas mati total']);
+    $category = $report->category_id;
+
+    $this->actingAs($this->admin)->post(route('admin.reports.approve', $report), adminApprovePayload($this->pic, [
+        'title' => 'Lampu kelas mati total',
+        'category_id' => $category,
+    ]))->assertSessionHasNoErrors();
+
+    expect($report->refresh()->title)->toBe('Lampu kelas mati total')
+        ->and($report->category_id)->toBe($category)
+        ->and($report->statusLogs()->latest('id')->first()->note)->not->toContain('diubah');
+});
+
+test('an unknown category or a bad title is rejected and nothing changes', function (array $override) {
+    $title = $this->report->title;
+
+    $this->actingAs($this->admin)->post(route('admin.reports.approve', $this->report), adminApprovePayload($this->pic, $override))
+        ->assertSessionHasErrors(array_key_first($override));
+
+    expect($this->report->refresh()->status)->toBe(ReportStatus::Pending)->and($this->report->title)->toBe($title);
+})->with([
+    'unknown category' => [['category_id' => 999999]],
+    'short title' => [['title' => 'pendek']],
+    'long title' => [['title' => str_repeat('x', 121)]],
+]);
+
+test('the detail page lists categories with their default pic', function () {
+    $category = Category::factory()->create(['default_pic_id' => $this->pic->id]);
+
+    $this->actingAs($this->admin)->get(route('admin.reports.show', $this->report))
+        ->assertInertia(fn ($page) => $page
+            ->where('categories', fn ($list) => collect($list)->contains(fn ($c) => $c['id'] === $category->id && $c['default_pic_id'] === $this->pic->id && $c['name'] === $category->name)));
+});

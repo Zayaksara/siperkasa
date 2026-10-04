@@ -7,13 +7,13 @@ use Illuminate\Database\Seeder;
 
 class CategorySeeder extends Seeder
 {
-    /** The 16 "Kelompok Aset" values found in the BMN export. */
+    /** The 16 "Kelompok Aset" values found in the BMN export, plus 'Bangunan & Sarana' for building parts. */
     public const NAMES = [
         'Furnitur', 'Komputer & Server', 'Alat Laboratorium', 'Alat Kantor',
         'Periferal & Storage', 'Elektronik', 'Alat Medis', 'Audio & Studio',
         'Perangkat Jaringan', 'Kabel & Infrastruktur', 'Keamanan & Sistem IT',
         'Fasilitas & Safety', 'Alat Ukur', 'Lain-lain', 'Mesin & Perkakas',
-        'Alat Komunikasi',
+        'Alat Komunikasi', 'Bangunan & Sarana',
     ];
 
     public function run(): void

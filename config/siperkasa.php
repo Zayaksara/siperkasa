@@ -8,6 +8,14 @@ return [
 
     'pdf_max_rows' => 1000,
 
+    // Manual search keywords per category, for items that are not in the BMN asset list (building parts).
+    'category_keywords' => [
+        'Bangunan & Sarana' => [
+            'pintu', 'jendela', 'plafon', 'atap', 'dinding', 'lantai', 'toilet', 'wc', 'keran', 'wastafel',
+            'pipa', 'saluran', 'stop kontak', 'saklar', 'listrik', 'lampu ruangan', 'kunci pintu', 'tangga', 'cat',
+        ],
+    ],
+
     // NIM/NIP of the seeded super admin; this account can never be deleted.
     'super_admin_nip' => env('SUPER_ADMIN_NIP', 'admin'),
 ];

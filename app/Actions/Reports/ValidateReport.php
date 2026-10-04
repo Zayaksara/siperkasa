@@ -4,6 +4,7 @@ namespace App\Actions\Reports;
 
 use App\Enums\Priority;
 use App\Enums\ReportStatus;
+use App\Models\Category;
 use App\Models\Report;
 use App\Models\User;
 use App\Notifications\ReportAssigned;
@@ -16,26 +17,37 @@ final class ValidateReport
 {
     public function __construct(private readonly ReportTransitioner $transitioner) {}
 
-    public function handle(Report $report, User $admin, Priority $priority, CarbonInterface $sla, User $pic): Report
+    /**
+     * Assigns the report. The admin may correct the title and category in the same step: a real change is
+     * saved together with the status change (same lock) and appended to the timeline note.
+     */
+    public function handle(Report $report, User $admin, Priority $priority, CarbonInterface $sla, User $pic, ?string $title = null, ?int $categoryId = null): Report
     {
-        $report = DB::transaction(fn () => $this->transitioner->transition(
-            $report,
-            ReportStatus::Assigned,
-            $admin,
-            sprintf(
-                'Ditugaskan ke %s · Prioritas %s · SLA %s',
-                $pic->name,
-                $priority->label(),
-                $sla->locale('id')->translatedFormat('d M Y H:i'),
-            ),
-            [
-                'admin_id' => $admin->id,
-                'admin_priority' => $priority,
-                'sla_date' => $sla,
-                'assigned_pic_id' => $pic->id,
-                'validated_at' => now(),
-            ],
-        ));
+        $note = sprintf(
+            'Ditugaskan ke %s · Prioritas %s · SLA %s',
+            $pic->name,
+            $priority->label(),
+            $sla->locale('id')->translatedFormat('d M Y H:i'),
+        );
+        $attributes = [
+            'admin_id' => $admin->id,
+            'admin_priority' => $priority,
+            'sla_date' => $sla,
+            'assigned_pic_id' => $pic->id,
+            'validated_at' => now(),
+        ];
+
+        if ($title !== null && $title !== $report->title) {
+            $note .= sprintf(' · Judul diubah: "%s" → "%s"', $report->title, $title);
+            $attributes['title'] = $title;
+        }
+
+        if ($categoryId !== null && $categoryId !== $report->category_id) {
+            $note .= sprintf(' · Kategori diubah: %s → %s', $report->category->name, Category::findOrFail($categoryId)->name);
+            $attributes['category_id'] = $categoryId;
+        }
+
+        $report = DB::transaction(fn () => $this->transitioner->transition($report, ReportStatus::Assigned, $admin, $note, $attributes));
 
         Notification::send($pic, new ReportAssigned($report));
         Notification::send($report->user, new ReportStatusChanged($report));
