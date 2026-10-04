@@ -12,6 +12,30 @@ export function formatDate(iso?: string | null): string {
     }).format(d);
 }
 
+/** "28 Sep – 4 Okt 2026", "4 Okt 2026" or "28 Des 2025 – 4 Jan 2026" from two YYYY-MM-DD dates. */
+export function formatDateRange(from: string, to: string): string {
+    const parts = (iso: string) => {
+        const d = new Date(`${iso}T00:00:00Z`);
+        const fmt = (o: Intl.DateTimeFormatOptions) =>
+            new Intl.DateTimeFormat('id-ID', { ...o, timeZone: 'UTC' }).format(
+                d,
+            );
+        return {
+            day: fmt({ day: 'numeric' }),
+            month: fmt({ month: 'short' }),
+            year: fmt({ year: 'numeric' }),
+        };
+    };
+    const a = parts(from);
+    const b = parts(to);
+    if (from === to) return `${b.day} ${b.month} ${b.year}`;
+    const start =
+        a.year === b.year
+            ? `${a.day} ${a.month}`
+            : `${a.day} ${a.month} ${a.year}`;
+    return `${start} – ${b.day} ${b.month} ${b.year}`;
+}
+
 export function formatDateTime(iso?: string | null): string {
     if (!iso) return '-';
     const d = new Date(iso);

@@ -57,15 +57,18 @@ test('averages are null when there is nothing to average', function () {
         ->assertInertia(fn ($page) => $page->where('stats.avg_completion_hours', null)->where('stats.avg_validation_hours', null));
 });
 
-test('an empty database shows zeros, empty lists and a 12-week trend', function () {
+test('an empty database shows zeros, empty lists and a zero-filled daily trend', function () {
     $this->actingAs($this->admin)->get(route('admin.dashboard'))
         ->assertInertia(fn ($page) => $page
             ->where('stats.total', 0)
             ->where('stats.overdue', 0)
             ->has('stats.by_category', 0)
             ->has('stats.by_building', 0)
-            ->has('stats.trend', 12)
-            ->where('stats.trend.11.created', 0));
+            ->where('stats.trend_granularity', 'day')
+            ->has('stats.trend', 30)
+            ->where('stats.trend.29.start', '2026-10-14')
+            ->where('stats.trend.29.created', 0)
+            ->where('stats.trend.29.closed', 0));
 });
 
 test('the date filter narrows every count and includes the whole last day', function () {
@@ -102,17 +105,57 @@ test('reports are grouped by category and building with ids for drill-down', fun
             ->where('stats.by_building.0.total', 3));
 });
 
-test('the weekly trend counts reports created and closed per ISO week', function () {
+test('a 7-day range yields one day bucket per day including a 23:30 report on the last day', function () {
+    Report::factory()->create(['created_at' => '2026-10-08 00:00:00']);                     // first minute of the range
+    Report::factory()->create(['created_at' => '2026-10-14 23:30:00']);                     // last day, late evening
+    Report::factory()->create(['created_at' => '2026-10-14 08:00:00']);
+    Report::factory()->closed()->create(['created_at' => '2026-10-09 10:00:00', 'closed_at' => '2026-10-10 23:59:00']);
+    Report::factory()->create(['created_at' => '2026-10-07 23:59:00']);                     // day before the range
+    Report::factory()->create(['created_at' => '2026-10-15 00:00:00']);                     // day after the range
+
+    $this->actingAs($this->admin)->get(route('admin.dashboard', ['from' => '2026-10-08', 'to' => '2026-10-14']))
+        ->assertInertia(fn ($page) => $page
+            ->where('stats.trend_granularity', 'day')
+            ->has('stats.trend', 7)
+            ->where('stats.trend.0.start', '2026-10-08')
+            ->where('stats.trend.0.label', '08/10')
+            ->where('stats.trend.0.created', 1)
+            ->where('stats.trend.1.start', '2026-10-09')
+            ->where('stats.trend.1.created', 1)
+            ->where('stats.trend.2.start', '2026-10-10')
+            ->where('stats.trend.2.closed', 1)
+            ->where('stats.trend.3.created', 0)
+            ->where('stats.trend.6.start', '2026-10-14')
+            ->where('stats.trend.6.label', '14/10')
+            ->where('stats.trend.6.created', 2));
+});
+
+test('a range of 31 days stays daily and 32 days switches to weekly', function () {
+    $this->actingAs($this->admin)->get(route('admin.dashboard', ['from' => '2026-09-14', 'to' => '2026-10-14']))
+        ->assertInertia(fn ($page) => $page->where('stats.trend_granularity', 'day')->has('stats.trend', 31));
+
+    $this->actingAs($this->admin)->get(route('admin.dashboard', ['from' => '2026-09-13', 'to' => '2026-10-14']))
+        ->assertInertia(fn ($page) => $page->where('stats.trend_granularity', 'week'));
+});
+
+test('a 90-day range yields one bucket per ISO week from the week of from to the week of to', function () {
+    Report::factory()->create(['created_at' => '2026-07-17 10:00:00']);                       // first day of range (Friday)
     Report::factory()->create(['created_at' => '2026-10-07 10:00:00']);                       // week of 5 Oct
     Report::factory()->closed()->create(['created_at' => '2026-10-13 10:00:00', 'closed_at' => '2026-10-13 15:00:00']); // week of 12 Oct
 
-    $this->actingAs($this->admin)->get(route('admin.dashboard'))
+    $this->actingAs($this->admin)->get(route('admin.dashboard', ['from' => '2026-07-17', 'to' => '2026-10-14']))
         ->assertInertia(fn ($page) => $page
-            ->where('stats.trend.10.start', '2026-10-05')
-            ->where('stats.trend.10.created', 1)
-            ->where('stats.trend.11.start', '2026-10-12')
-            ->where('stats.trend.11.created', 1)
-            ->where('stats.trend.11.closed', 1));
+            ->where('stats.trend_granularity', 'week')
+            ->has('stats.trend', 14)
+            ->where('stats.trend.0.start', '2026-07-13')
+            ->where('stats.trend.0.label', '13/07')
+            ->where('stats.trend.0.created', 1)
+            ->where('stats.trend.1.created', 0)
+            ->where('stats.trend.12.start', '2026-10-05')
+            ->where('stats.trend.12.created', 1)
+            ->where('stats.trend.13.start', '2026-10-12')
+            ->where('stats.trend.13.created', 1)
+            ->where('stats.trend.13.closed', 1));
 });
 
 test('the weekly trend buckets reports correctly across the ISO year boundary', function () {
@@ -121,7 +164,7 @@ test('the weekly trend buckets reports correctly across the ISO year boundary', 
     Report::factory()->create(['created_at' => '2027-01-03 23:00:00']);   // Sunday, still 2026-W53
     Report::factory()->closed()->create(['created_at' => '2026-12-01 10:00:00', 'closed_at' => '2027-01-04 08:00:00']); // 2027-W01
 
-    $this->actingAs($this->admin)->get(route('admin.dashboard'))
+    $this->actingAs($this->admin)->get(route('admin.dashboard', ['from' => '2026-10-19', 'to' => '2027-01-05']))
         ->assertInertia(fn ($page) => $page
             ->where('stats.trend.9.created', 0)
             ->where('stats.trend.10.start', '2026-12-28')

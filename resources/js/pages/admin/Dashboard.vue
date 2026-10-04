@@ -7,7 +7,7 @@ import {
     Timer,
     TriangleAlert,
 } from '@lucide/vue';
-import { computed, reactive, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import ApexChart from '@/components/charts/ApexChart.vue';
 import ChartLegendList from '@/components/charts/ChartLegendList.vue';
 import EmptyState from '@/components/EmptyState.vue';
@@ -16,7 +16,8 @@ import StatCard from '@/components/StatCard.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { formatHours } from '@/lib/format';
+import { formatDateRange, formatHours } from '@/lib/format';
+import { motion, useMotion } from '@/lib/motion';
 import { dashboard } from '@/routes/admin';
 import { index as reportsIndex } from '@/routes/admin/reports';
 
@@ -34,6 +35,7 @@ const props = defineProps<{
             created: number;
             closed: number;
         }[];
+        trend_granularity: 'day' | 'week';
         avg_completion_hours: number | null;
         avg_validation_hours: number | null;
         pic_load: { id: number; name: string; active_tasks: number }[];
@@ -60,17 +62,43 @@ function apply() {
     );
 }
 
+const PRESETS = [7, 30, 90] as const;
+const ZONE = 'Asia/Jakarta';
+
+const isoDate = (d: Date) =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: ZONE }).format(d);
+
+function addDays(date: string, days: number) {
+    const d = new Date(`${date}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + days);
+    return d.toISOString().slice(0, 10);
+}
+
 function lastDays(days: number) {
-    const to = new Date();
-    const from = new Date(to.getTime() - (days - 1) * 86_400_000);
-    const fmt = (d: Date) =>
-        new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(
-            d,
-        );
-    form.from = fmt(from);
-    form.to = fmt(to);
+    const to = isoDate(new Date());
+    form.from = addDays(to, -(days - 1));
+    form.to = to;
     apply();
 }
+
+/** A preset is active when the applied range ends today and spans exactly that many days. */
+const activePreset = computed(() => {
+    const to = isoDate(new Date());
+    return (
+        PRESETS.find(
+            (days) =>
+                props.range.to === to &&
+                props.range.from === addDays(to, -(days - 1)),
+        ) ?? null
+    );
+});
+
+const periodCaption = computed(() => {
+    const dates = formatDateRange(props.range.from, props.range.to);
+    return activePreset.value
+        ? `Periode: ${activePreset.value} hari terakhir · ${dates}`
+        : `Periode: ${dates}`;
+});
 
 const link = (query: Record<string, string | number>) =>
     reportsIndex.url({
@@ -172,34 +200,54 @@ const trendSeries = computed(() => [
     { name: 'Laporan selesai', data: props.stats.trend.map((w) => w.closed) },
 ]);
 
-function addDays(date: string, days: number) {
-    const d = new Date(`${date}T00:00:00Z`);
-    d.setUTCDate(d.getUTCDate() + days);
-    return d.toISOString().slice(0, 10);
-}
+const trendDaily = computed(() => props.stats.trend_granularity === 'day');
+const trendUnit = computed(() => (trendDaily.value ? 'hari' : 'minggu'));
+const trendScope = computed(() => {
+    const n = props.stats.trend.length;
+    return trendDaily.value
+        ? `per hari, ${n} hari${activePreset.value ? ' terakhir' : ''}`
+        : `per minggu, ${n} minggu`;
+});
 
-function selectWeek(index: number, seriesIndex: number) {
+function selectBucket(index: number, seriesIndex: number) {
     if (seriesIndex !== 0) return; // closed_at is not a list filter
-    const week = props.stats.trend[index];
-    if (!week) return;
+    const bucket = props.stats.trend[index];
+    if (!bucket) return;
+    const end = trendDaily.value ? bucket.start : addDays(bucket.start, 6);
     const query: Record<string, string> = {
-        from: week.start,
-        to: addDays(week.start, 6),
+        from: bucket.start < props.range.from ? props.range.from : bucket.start,
+        to: end > props.range.to ? props.range.to : end,
     };
     router.visit(reportsIndex.url({ query }));
 }
+
+// Entrance motion: first mount only. Filter changes rely on the chart morph.
+const root = ref<HTMLElement | null>(null);
+let entered = false;
+useMotion(root, ({ gsap }) => {
+    if (entered) return; // a breakpoint re-run must not replay the entrance
+    entered = true;
+    gsap.from('[data-reveal]', {
+        autoAlpha: 0,
+        y: motion.rise,
+        duration: 0.5,
+        stagger: 0.06,
+        clearProps: 'transform,opacity,visibility',
+    });
+});
 </script>
 
 <template>
     <Head title="Beranda" />
 
-    <div class="flex min-w-0 flex-col gap-6 p-4">
+    <div ref="root" class="flex min-w-0 flex-col gap-6 p-4">
         <PageHeader
             title="Beranda"
             description="Ringkasan laporan pada rentang tanggal yang dipilih."
         />
 
         <form
+            data-reveal
             class="flex flex-wrap items-end gap-3 rounded-xl border p-4"
             @submit.prevent="apply"
         >
@@ -225,30 +273,31 @@ function selectWeek(index: number, seriesIndex: number) {
             </div>
             <Button type="submit" class="h-11">Terapkan</Button>
             <Button
+                v-for="days in PRESETS"
+                :key="days"
                 type="button"
-                variant="outline"
+                :variant="activePreset === days ? 'secondary' : 'outline'"
+                :aria-pressed="activePreset === days"
                 class="h-11"
-                @click="lastDays(7)"
-                >7 hari</Button
+                :class="
+                    activePreset === days
+                        ? 'font-semibold ring-2 ring-primary'
+                        : ''
+                "
+                @click="lastDays(days)"
+                >{{ days }} hari</Button
             >
-            <Button
-                type="button"
-                variant="outline"
-                class="h-11"
-                @click="lastDays(30)"
-                >30 hari</Button
+            <p
+                class="basis-full text-sm text-muted-foreground"
+                aria-live="polite"
             >
-            <Button
-                type="button"
-                variant="outline"
-                class="h-11"
-                @click="lastDays(90)"
-                >90 hari</Button
-            >
+                {{ periodCaption }}
+            </p>
         </form>
 
         <div class="grid grid-cols-2 gap-3 lg:grid-cols-5">
             <StatCard
+                data-reveal
                 label="Menunggu validasi"
                 :value="stats.waiting_validation"
                 :icon="Hourglass"
@@ -257,6 +306,7 @@ function selectWeek(index: number, seriesIndex: number) {
                 :href="link({ status: 'Pending' })"
             />
             <StatCard
+                data-reveal
                 label="Terlambat saat ini"
                 :value="stats.overdue"
                 :icon="TriangleAlert"
@@ -265,6 +315,7 @@ function selectWeek(index: number, seriesIndex: number) {
                 :href="reportsIndex.url({ query: { overdue: 1 } })"
             />
             <StatCard
+                data-reveal
                 label="Total laporan"
                 :value="stats.total"
                 :icon="ClipboardList"
@@ -273,6 +324,7 @@ function selectWeek(index: number, seriesIndex: number) {
                 :href="link({})"
             />
             <StatCard
+                data-reveal
                 label="Rata-rata waktu validasi"
                 :value="formatHours(stats.avg_validation_hours)"
                 :icon="Timer"
@@ -280,6 +332,7 @@ function selectWeek(index: number, seriesIndex: number) {
                 hint="Sejak dilaporkan sampai divalidasi"
             />
             <StatCard
+                data-reveal
                 label="Rata-rata waktu penyelesaian"
                 :value="formatHours(stats.avg_completion_hours)"
                 :icon="CircleCheck"
@@ -289,6 +342,7 @@ function selectWeek(index: number, seriesIndex: number) {
         </div>
 
         <section
+            data-reveal
             class="min-w-0 rounded-xl border p-4"
             aria-labelledby="by-status"
         >
@@ -344,25 +398,29 @@ function selectWeek(index: number, seriesIndex: number) {
             </figure>
         </section>
 
-        <section class="min-w-0 rounded-xl border p-4" aria-labelledby="trend">
+        <section
+            data-reveal
+            class="min-w-0 rounded-xl border p-4"
+            aria-labelledby="trend"
+        >
             <h2 id="trend" class="font-semibold">
-                Laporan masuk dan selesai, 12 minggu terakhir
+                Laporan masuk dan selesai, {{ trendScope }}
             </h2>
             <p class="mb-3 text-sm text-muted-foreground">
                 Bandingkan laporan baru dengan yang selesai. Jika garis masuk di
                 atas garis selesai, antrean bertambah. Klik titik laporan masuk
-                untuk membuka laporan minggu itu.
+                untuk membuka laporan {{ trendUnit }} itu.
             </p>
             <EmptyState
                 v-if="!trendHasData"
                 :icon="ClipboardList"
                 accent="sky"
                 title="Belum ada data tren"
-                description="Belum ada laporan dalam 12 minggu terakhir."
+                description="Belum ada laporan masuk atau selesai pada rentang ini."
             />
             <figure v-else class="grid min-w-0 gap-3">
                 <figcaption class="sr-only">
-                    Laporan masuk dan selesai per minggu
+                    Laporan masuk dan selesai {{ trendScope }}
                 </figcaption>
                 <ApexChart
                     type="line"
@@ -372,16 +430,25 @@ function selectWeek(index: number, seriesIndex: number) {
                     :colors="['--accent-sky', '--chart-1']"
                     :dash-array="[0, 6]"
                     :marker-shapes="['circle', 'square']"
-                    x-title="Awal minggu (tanggal/bulan)"
-                    @select="selectWeek"
+                    :x-title="
+                        trendDaily
+                            ? 'Tanggal (tanggal/bulan)'
+                            : 'Awal minggu (tanggal/bulan)'
+                    "
+                    @select="selectBucket"
                 />
                 <table class="sr-only">
                     <caption>
-                        Laporan masuk dan selesai per minggu
+                        Laporan masuk dan selesai
+                        {{
+                            trendScope
+                        }}
                     </caption>
                     <thead>
                         <tr>
-                            <th scope="col">Minggu mulai</th>
+                            <th scope="col">
+                                {{ trendDaily ? 'Tanggal' : 'Minggu mulai' }}
+                            </th>
                             <th scope="col">Laporan masuk</th>
                             <th scope="col">Laporan selesai</th>
                         </tr>
@@ -401,6 +468,7 @@ function selectWeek(index: number, seriesIndex: number) {
             <section
                 v-for="spot in hotspots"
                 :key="spot.id"
+                data-reveal
                 class="min-w-0 rounded-xl border p-4"
                 :class="spot.id === 'load' ? 'lg:col-span-2' : ''"
                 :aria-labelledby="`h-${spot.id}`"

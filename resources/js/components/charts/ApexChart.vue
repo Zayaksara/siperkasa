@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type ApexChartsType from 'apexcharts';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Series = { name: string; data: number[] };
 
@@ -33,13 +34,16 @@ const props = withDefaults(
 const emit = defineEmits<{ select: [index: number, seriesIndex: number] }>();
 
 const el = ref<HTMLElement | null>(null);
-const minHeight = computed(() => `${props.height}px`);
+const loaded = ref(false);
+const boxHeight = computed(() => `${props.height}px`);
 
 let chart: ApexChartsType | undefined;
 let disposed = false;
 let ready = false;
 let observer: MutationObserver | undefined;
 let motionQuery: MediaQueryList | undefined;
+let themeTimer: ReturnType<typeof setTimeout> | undefined;
+let dark = false;
 
 /** ApexCharts renders tooltip and legend text as HTML; labels come from user-entered names. */
 const escapeHtml = (text: string) =>
@@ -61,7 +65,7 @@ const token = (style: CSSStyleDeclaration, name: string) =>
 function buildOptions(): ApexCharts.ApexOptions {
     const root = document.documentElement;
     const style = getComputedStyle(root);
-    const dark = root.classList.contains('dark');
+    dark = root.classList.contains('dark');
     const muted = token(style, '--muted-foreground');
     const grid = token(style, '--border');
     const fg = token(style, '--foreground');
@@ -79,7 +83,15 @@ function buildOptions(): ApexCharts.ApexOptions {
             background: 'transparent',
             toolbar: { show: false },
             zoom: { enabled: false },
-            animations: { enabled: animate },
+            // Short, decelerating morph: bars/lines grow together instead of
+            // one by one, and data updates reuse the same shapes.
+            animations: {
+                enabled: animate,
+                easing: 'easeout',
+                speed: 400,
+                animateGradually: { enabled: false },
+                dynamicAnimation: { enabled: animate, speed: 300 },
+            },
             events: {
                 dataPointSelection: (_event, _chart, config) =>
                     emit(
@@ -129,7 +141,10 @@ function buildOptions(): ApexCharts.ApexOptions {
                   )
                 : undefined,
             tickPlacement: 'on',
-            tickAmount: props.type === 'line' ? 6 : undefined,
+            tickAmount:
+                props.type === 'line' && props.categories.length > 12
+                    ? 8
+                    : undefined,
             labels: {
                 style: { fontSize: '12px', colors: muted },
                 trim: true,
@@ -214,42 +229,68 @@ async function render() {
         return;
     }
     ready = true;
+    loaded.value = true;
 }
 
-function refresh() {
+/** Full option rebuild (theme / reduced motion / style props). No animation. */
+function restyle() {
     if (!chart || !ready || disposed) return;
-    void chart.updateOptions(buildOptions(), false, true);
+    void chart.updateOptions(buildOptions(), false, false);
+}
+
+/** Data change: morph the existing chart in place, no destroy or redraw. */
+function updateData() {
+    if (!chart || !ready || disposed) return;
+    const max = props.horizontal
+        ? Math.ceil(Math.max(1, ...props.series.flatMap((s) => s.data)) * 1.15)
+        : undefined;
+    void chart.updateOptions(
+        {
+            chart: { height: props.height },
+            series: props.series,
+            xaxis: { categories: props.categories, max },
+        },
+        false,
+        true,
+    );
+}
+
+/** Theme flips fire several class mutations; coalesce them and ignore other class changes. */
+function onThemeMutation() {
+    const next = document.documentElement.classList.contains('dark');
+    if (next === dark) return;
+    clearTimeout(themeTimer);
+    themeTimer = setTimeout(restyle, 80);
 }
 
 onMounted(() => {
     void render();
-    observer = new MutationObserver(refresh);
+    observer = new MutationObserver(onThemeMutation);
     observer.observe(document.documentElement, {
         attributes: true,
         attributeFilter: ['class'],
     });
     motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    motionQuery.addEventListener('change', refresh);
+    motionQuery.addEventListener('change', restyle);
 });
 
+// Parents often pass fresh inline arrays on every render (e.g. while typing in
+// a date input). Compare by content so only real data changes touch the chart.
 watch(
-    () => [
-        props.series,
-        props.categories,
-        props.height,
-        props.colors,
-        props.dashArray,
-        props.markerShapes,
-    ],
-    refresh,
-    { deep: true },
+    () => JSON.stringify([props.series, props.categories, props.height]),
+    updateData,
+);
+watch(
+    () => JSON.stringify([props.colors, props.dashArray, props.markerShapes]),
+    restyle,
 );
 
 onBeforeUnmount(() => {
     disposed = true;
     ready = false;
     observer?.disconnect();
-    motionQuery?.removeEventListener('change', refresh);
+    motionQuery?.removeEventListener('change', restyle);
+    clearTimeout(themeTimer);
     chart?.destroy();
     chart = undefined;
 });
@@ -257,9 +298,14 @@ onBeforeUnmount(() => {
 
 <template>
     <div
-        ref="el"
-        class="w-full min-w-0"
+        class="relative w-full min-w-0"
         aria-hidden="true"
-        :style="{ minHeight }"
-    />
+        :style="{ height: boxHeight }"
+    >
+        <Skeleton
+            v-if="!loaded"
+            class="absolute inset-0 motion-reduce:animate-none"
+        />
+        <div ref="el" class="size-full" />
+    </div>
 </template>

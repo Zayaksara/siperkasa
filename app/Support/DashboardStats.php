@@ -6,6 +6,7 @@ use App\Enums\ReportStatus;
 use App\Enums\UserRole;
 use App\Models\Report;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -81,7 +82,7 @@ final class DashboardStats
                 ->selectRaw('buildings.id, buildings.name, COUNT(*) as total')
                 ->groupBy('buildings.id', 'buildings.name')->orderByDesc('total')->limit(10)->get())
                 ->map(fn ($row) => ['id' => (int) $row['id'], 'name' => (string) $row['name'], 'total' => (int) $row['total']])->all(),
-            'trend' => $this->weeklyTrend(),
+            ...$this->trend($from, $to),
             'avg_completion_hours' => $avgHours('closed_at', ReportStatus::Closed),
             'avg_validation_hours' => $avgHours('validated_at'),
             'pic_load' => User::query()
@@ -103,42 +104,56 @@ final class DashboardStats
         return $seconds === null ? null : (float) round($seconds / 3600.0, 1);
     }
 
-    /** @return list<array{start: string, label: string, created: int, closed: int}> */
-    private function weeklyTrend(): array
-    {
-        $first = now()->startOfWeek()->subWeeks(11);
-        $created = $this->weeklyCounts('created_at', $first);
-        $closed = $this->weeklyCounts('closed_at', $first);
+    /** Ranges up to this many days get one trend bucket per day, longer ones one per ISO week. */
+    private const DAILY_TREND_MAX_DAYS = 31;
 
-        $weeks = [];
-        for ($i = 0; $i < 12; $i++) {
-            $start = $first->addWeeks($i);
-            $key = $this->weekKey($start);
-            $weeks[] = [
-                'start' => $start->toDateString(),
-                'label' => $start->format('d/m'),
+    /**
+     * Created/closed trend over [$from, $to]: per day up to 31 days, else per ISO week.
+     * Buckets are zero-filled; counts are grouped in the DB and limited to the range.
+     *
+     * @return array{trend: list<array{start: string, label: string, created: int, closed: int}>, trend_granularity: 'day'|'week'}
+     */
+    private function trend(CarbonInterface $from, CarbonInterface $to): array
+    {
+        $first = CarbonImmutable::instance($from)->startOfDay();
+        $last = CarbonImmutable::instance($to)->endOfDay();
+        $daily = $first->diffInDays($last->startOfDay()) + 1 <= self::DAILY_TREND_MAX_DAYS;
+
+        $created = $this->trendCounts('created_at', $first, $last, $daily);
+        $closed = $this->trendCounts('closed_at', $first, $last, $daily);
+
+        $buckets = [];
+        $cursor = $daily ? $first : $first->startOfWeek();
+        while ($cursor <= $last) {
+            $key = $daily ? $cursor->toDateString() : $this->weekKey($cursor);
+            $buckets[] = [
+                'start' => $cursor->toDateString(),
+                'label' => $cursor->format('d/m'),
                 'created' => $created[$key] ?? 0,
                 'closed' => $closed[$key] ?? 0,
             ];
+            $cursor = $daily ? $cursor->addDay() : $cursor->addWeek();
         }
 
-        return $weeks;
+        return ['trend' => $buckets, 'trend_granularity' => $daily ? 'day' : 'week'];
     }
 
     /**
-     * Report count per ISO week (YEARWEEK mode 3) since $first, grouped in the DB.
+     * Report count per day (DATE) or per ISO week (YEARWEEK mode 3) within the range, grouped in the DB.
      *
      * @param  literal-string  $column
-     * @return array<int, int>
+     * @return array<int|string, int>
      */
-    private function weeklyCounts(string $column, CarbonInterface $first): array
+    private function trendCounts(string $column, CarbonInterface $first, CarbonInterface $last, bool $daily): array
     {
+        $bucket = $daily ? 'DATE('.$column.')' : 'YEARWEEK('.$column.', 3)';
+
         return Report::query()
-            ->whereNotNull($column)->where($column, '>=', $first)
-            ->selectRaw('YEARWEEK('.$column.', 3) as week_key, COUNT(*) as total')
-            ->groupBy('week_key')
-            ->pluck('total', 'week_key')
-            ->mapWithKeys(fn ($total, $key) => [(int) $key => (int) $total])
+            ->whereNotNull($column)->whereBetween($column, [$first, $last])
+            ->selectRaw($bucket.' as bucket_key, COUNT(*) as total')
+            ->groupBy('bucket_key')
+            ->pluck('total', 'bucket_key')
+            ->mapWithKeys(fn ($total, $key) => [$daily ? (string) $key : (int) $key => (int) $total])
             ->all();
     }
 
