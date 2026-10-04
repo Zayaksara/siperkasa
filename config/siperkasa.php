@@ -6,7 +6,7 @@ return [
 
     'photos' => ['min' => 1, 'max' => 3, 'max_kb' => 2048],
 
-    'pdf_max_rows' => 1000,
+    'pdf_max_rows' => 500,
 
     // Manual search keywords per category, for items that are not in the BMN asset list (building parts).
     'category_keywords' => [

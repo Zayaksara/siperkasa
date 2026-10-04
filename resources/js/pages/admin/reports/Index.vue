@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { computed, reactive, watch } from 'vue';
+import { FileSpreadsheet, FileText, Loader2 } from '@lucide/vue';
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import HoldBadge from '@/components/HoldBadge.vue';
 import InputError from '@/components/InputError.vue';
@@ -15,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { formatDate, formatDateTime } from '@/lib/format';
 import { index, show } from '@/routes/admin/reports';
+import { excel, pdf } from '@/routes/admin/reports/export';
 
 // Whole row opens the detail; links, buttons, inputs and text selection keep their own behaviour.
 function openRow(event: MouseEvent, id: number) {
@@ -111,6 +113,34 @@ const hasFilters = computed(() =>
     ),
 );
 
+// Same filters as the list; overdue is sent as 1 so the boolean rule accepts it.
+const exportQuery = computed(() =>
+    Object.fromEntries(
+        Object.entries(props.filters)
+            .filter(
+                ([, value]) =>
+                    value !== '' && value !== undefined && value !== false,
+            )
+            .map(([key, value]) => [key, value === true ? 1 : value]),
+    ),
+);
+const exportError = computed(() => errors.value?.export);
+
+// A file download keeps the page, so show "Menyiapkan…" for 5 s to stop double clicks.
+const preparing = ref<'excel' | 'pdf' | null>(null);
+let preparingTimer: ReturnType<typeof setTimeout> | undefined;
+
+function startExport(event: MouseEvent, kind: 'excel' | 'pdf') {
+    if (preparing.value) {
+        event.preventDefault();
+        return;
+    }
+    preparing.value = kind;
+    preparingTimer = setTimeout(() => (preparing.value = null), 5000);
+}
+
+onBeforeUnmount(() => clearTimeout(preparingTimer));
+
 function apply() {
     const query = Object.fromEntries(
         Object.entries(f)
@@ -143,7 +173,58 @@ function reset() {
         <PageHeader
             title="Laporan Kerusakan"
             description="Validasi laporan baru, pantau SLA, dan pindahkan PIC bila perlu."
-        />
+        >
+            <Button
+                as-child
+                variant="outline"
+                class="h-11 min-w-44"
+                :aria-disabled="preparing !== null"
+                :class="{ 'pointer-events-none opacity-60': preparing }"
+            >
+                <a
+                    :href="excel.url({ query: exportQuery })"
+                    :aria-disabled="preparing !== null"
+                    @click="startExport($event, 'excel')"
+                >
+                    <Loader2
+                        v-if="preparing === 'excel'"
+                        class="size-4 animate-spin"
+                    />
+                    <FileSpreadsheet v-else class="size-4" />
+                    {{ preparing === 'excel' ? 'Menyiapkan…' : 'Export Excel' }}
+                </a>
+            </Button>
+            <Button
+                as-child
+                variant="outline"
+                class="h-11 min-w-44"
+                :aria-disabled="preparing !== null"
+                :class="{ 'pointer-events-none opacity-60': preparing }"
+            >
+                <a
+                    :href="pdf.url({ query: exportQuery })"
+                    :aria-disabled="preparing !== null"
+                    @click="startExport($event, 'pdf')"
+                >
+                    <Loader2
+                        v-if="preparing === 'pdf'"
+                        class="size-4 animate-spin"
+                    />
+                    <FileText v-else class="size-4" />
+                    {{ preparing === 'pdf' ? 'Menyiapkan…' : 'Export PDF' }}
+                </a>
+            </Button>
+        </PageHeader>
+        <span class="sr-only" aria-live="polite">{{
+            preparing ? 'Menyiapkan file export' : ''
+        }}</span>
+        <p
+            v-if="exportError"
+            class="rounded-md border border-destructive/40 bg-status-rejected-bg p-3 text-sm text-status-rejected"
+            role="alert"
+        >
+            {{ exportError }}
+        </p>
 
         <form
             class="grid gap-3 rounded-xl border p-4 sm:grid-cols-2 lg:grid-cols-4"

@@ -7,6 +7,7 @@ use App\Enums\ReportStatus;
 use App\Models\Report;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Validation\Rule;
 
 /** The admin's report filters; shared by the list, dashboard drill-downs and exports. */
@@ -66,8 +67,8 @@ final class ReportFilter
             ->when($v['building_id'] ?? null, fn ($q, $id) => $q->whereHas('room', fn ($room) => $room->where('building_id', $id)))
             ->when($v['pic_id'] ?? null, fn ($q, $id) => $q->where('assigned_pic_id', $id))
             ->when($v['priority'] ?? null, fn ($q, $priority) => $q->whereRaw('COALESCE(admin_priority, user_priority) = ?', [$priority]))
-            ->when($v['from'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '>=', $date))
-            ->when($v['to'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '<=', $date))
+            ->when($v['from'] ?? null, fn ($q, $date) => $q->where('created_at', '>=', Date::parse($date)->startOfDay()))
+            ->when($v['to'] ?? null, fn ($q, $date) => $q->where('created_at', '<=', Date::parse($date)->endOfDay()))
             ->when($v['overdue'] ?? false, fn ($q) => $q->overdue())
             ->when($v['q'] ?? null, function ($q, string $term) {
                 $like = '%'.addcslashes($term, '%_\\').'%';

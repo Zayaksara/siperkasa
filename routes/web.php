@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AssetImportController;
 use App\Http\Controllers\Admin\BuildingController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\RoomController;
 use App\Http\Controllers\Admin\UserController;
@@ -82,6 +83,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::put('rooms/{room}', [RoomController::class, 'update'])->name('rooms.update');
         Route::delete('rooms/{room}', [RoomController::class, 'destroy'])->name('rooms.destroy');
         Route::get('reports', [AdminReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/export/excel', [ExportController::class, 'excel'])->middleware('throttle:10,1')->name('reports.export.excel');
+        Route::get('reports/export/pdf', [ExportController::class, 'pdf'])->middleware('throttle:10,1')->name('reports.export.pdf');
         Route::get('reports/{report}', [AdminReportController::class, 'show'])->name('reports.show');
         Route::post('reports/{report}/approve', [AdminReportController::class, 'approve'])->name('reports.approve');
         Route::post('reports/{report}/reject', [AdminReportController::class, 'reject'])->name('reports.reject');

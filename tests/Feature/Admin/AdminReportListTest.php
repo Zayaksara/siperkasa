@@ -132,3 +132,11 @@ test('reports of a soft-deleted reporter and PIC stay listed and the PIC stays f
     $this->actingAs($this->admin)->get(route('admin.reports.index', ['pic_id' => $pic->id]))
         ->assertInertia(fn ($page) => $page->has('reports.data', 1)->where('reports.data.0.id', $report->id));
 });
+
+test('a report created at 23:30 on the to date is included', function () {
+    $in = Report::factory()->create(['created_at' => '2026-10-05 23:30:00']);
+    Report::factory()->create(['created_at' => '2026-10-06 00:00:00']);
+
+    $this->actingAs($this->admin)->get(route('admin.reports.index', ['from' => '2026-10-05', 'to' => '2026-10-05']))
+        ->assertInertia(fn ($page) => $page->has('reports.data', 1)->where('reports.data.0.id', $in->id));
+});

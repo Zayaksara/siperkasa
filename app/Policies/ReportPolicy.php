@@ -14,6 +14,11 @@ class ReportPolicy
         return true; // lists are narrowed with Report::visibleTo()
     }
 
+    public function export(User $user): bool
+    {
+        return $user->hasRole(UserRole::Admin);
+    }
+
     public function view(User $user, Report $report): bool
     {
         return match ($user->role) {
