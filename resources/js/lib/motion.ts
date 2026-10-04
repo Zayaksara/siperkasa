@@ -15,13 +15,21 @@ import { onBeforeUnmount, onMounted } from 'vue';
 import type { Ref } from 'vue';
 // Type-only: erased at build time, so gsap stays out of the main chunk.
 import type { gsap } from 'gsap';
+import type { ScrambleTextPlugin as ScrambleTextPluginType } from 'gsap/ScrambleTextPlugin';
 import type { ScrollTrigger as ScrollTriggerPlugin } from 'gsap/ScrollTrigger';
+import type { SplitText as SplitTextPlugin } from 'gsap/SplitText';
 
 /** The lazily loaded GSAP kit. Never import gsap statically outside this file. */
 export interface MotionKit {
     gsap: typeof gsap;
     ScrollTrigger: typeof ScrollTriggerPlugin;
+    /** Present only when requested through the `plugins` option. */
+    SplitText?: typeof SplitTextPlugin;
+    ScrambleTextPlugin?: typeof ScrambleTextPluginType;
 }
+
+/** Opt-in plugins: their chunks load only on pages that ask for them. */
+export type MotionPluginName = 'SplitText' | 'ScrambleTextPlugin';
 
 export const MOTION_OK = '(prefers-reduced-motion: no-preference)';
 export const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
@@ -62,6 +70,29 @@ export function loadMotion(): Promise<MotionKit> {
     return kit;
 }
 
+const pluginLoads: Partial<Record<MotionPluginName, Promise<unknown>>> = {};
+
+/** Lazy-loads and registers one opt-in plugin once (memoised). */
+function loadPlugin(name: MotionPluginName): Promise<unknown> {
+    pluginLoads[name] ??= (
+        name === 'SplitText'
+            ? import('gsap/SplitText').then((m) => m.SplitText)
+            : import('gsap/ScrambleTextPlugin').then(
+                  (m) => m.ScrambleTextPlugin,
+              )
+    )
+        .then(async (plugin) => {
+            const { gsap } = await loadMotion();
+            gsap.registerPlugin(plugin as object);
+            return plugin;
+        })
+        .catch((error) => {
+            delete pluginLoads[name];
+            throw error;
+        });
+    return pluginLoads[name]!;
+}
+
 /** Max wait for the GSAP chunk before content is revealed without motion. */
 const READY_TIMEOUT_MS = 1200;
 
@@ -93,7 +124,7 @@ export interface MotionConditions extends MotionKit {
 export function useMotion(
     root: Readonly<Ref<HTMLElement | null>>,
     setup: (conditions: MotionConditions) => void | (() => void),
-    options: { hideUntilReady?: boolean } = {},
+    options: { hideUntilReady?: boolean; plugins?: MotionPluginName[] } = {},
 ): void {
     let mm: gsap.MatchMedia | undefined;
     let unmounted = false;
@@ -118,7 +149,11 @@ export function useMotion(
             : undefined;
         let loaded: MotionKit;
         try {
-            loaded = await loadMotion();
+            loaded = { ...(await loadMotion()) };
+            for (const name of options.plugins ?? []) {
+                (loaded as unknown as Record<string, unknown>)[name] =
+                    await loadPlugin(name);
+            }
         } catch {
             clearTimeout(timer);
             show();

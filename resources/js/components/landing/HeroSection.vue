@@ -12,14 +12,52 @@ const root = useTemplateRef<HTMLElement>('root');
 
 // Load moment, part 1: copy settles in. The mockup (part 2) starts while
 // this is still running, see JourneyMockup's own timeline and its delay.
-useMotion(root, ({ gsap }) => {
-    gsap.from(gsap.utils.selector(root.value)('.hero-in'), {
-        autoAlpha: 0,
-        y: motion.rise,
-        duration: 0.7,
-        stagger: motion.stagger,
-    });
-});
+useMotion(
+    root,
+    ({ gsap, SplitText, context }) => {
+        const host = root.value;
+        const title = host?.querySelector<HTMLElement>('#hero-title');
+
+        gsap.from(gsap.utils.selector(host)('.hero-in'), {
+            autoAlpha: 0,
+            y: motion.rise,
+            duration: 0.7,
+            stagger: motion.stagger,
+        });
+
+        if (!title || !SplitText) return;
+
+        // Headline: words rise in on load (readable at once, ~0.8s), then as
+        // the hero scrolls out the characters dim in a left-to-right wave,
+        // scrubbed to scroll and fully reversible. Opacity and transform only.
+        // Words and characters animate on different layers so both can run.
+        const split = SplitText.create(title, {
+            type: 'words,chars',
+            aria: 'auto',
+        });
+        context.add(() => {
+            gsap.from(split.words, {
+                autoAlpha: 0,
+                y: motion.rise,
+                duration: 0.5,
+                stagger: 0.035,
+            });
+            gsap.to(split.chars, {
+                opacity: 0.18,
+                ease: 'none',
+                stagger: { each: 0.02 },
+                scrollTrigger: {
+                    trigger: title,
+                    start: 'top 18%',
+                    end: 'bottom top',
+                    scrub: 0.6,
+                },
+            });
+        });
+        return () => split.revert();
+    },
+    { hideUntilReady: true, plugins: ['SplitText'] },
+);
 </script>
 
 <template>
@@ -35,7 +73,8 @@ useMotion(root, ({ gsap }) => {
             </p>
             <h1
                 id="hero-title"
-                class="hero-in mt-4 max-w-5xl text-[40px] leading-[1.05] font-semibold tracking-[-0.03em] text-balance text-landing-fg sm:text-[56px] lg:text-[68px] lg:leading-[1]"
+                data-reveal
+                class="mt-4 max-w-5xl text-[40px] leading-[1.05] font-semibold tracking-[-0.03em] text-balance text-landing-fg sm:text-[56px] lg:text-[68px] lg:leading-[1]"
             >
                 Laporkan kerusakan fasilitas kampus, pantau sampai selesai.
             </h1>

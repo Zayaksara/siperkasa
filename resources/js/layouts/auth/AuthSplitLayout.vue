@@ -18,6 +18,8 @@ const steps = [
     { label: 'Selesai', icon: Check },
 ];
 
+const brandLine = 'Satu akun untuk melapor dan memantau perbaikan.';
+
 const root = useTemplateRef<HTMLElement>('root');
 
 /*
@@ -25,41 +27,68 @@ const root = useTemplateRef<HTMLElement>('root');
  * is usable within ~0.5s. On lg the brand panel's journey line draws across
  * at the same time. Markup is final without JS or with reduced motion.
  */
-useMotion(root, ({ gsap, isDesktop }) => {
-    const q = gsap.utils.selector(root.value);
-    const tl = gsap.timeline();
+useMotion(
+    root,
+    ({ gsap, isDesktop, ScrambleTextPlugin }) => {
+        const q = gsap.utils.selector(root.value);
+        const tl = gsap.timeline();
 
-    // opacity only (never visibility:hidden) on the form: autofocus ran
-    // before this and a hidden element would drop focus to <body>.
-    tl.from(q('.auth-card'), {
-        opacity: 0,
-        y: motion.rise,
-        duration: 0.6,
-    }).from(
-        q('.auth-head > *, .auth-body > *'),
-        { opacity: 0, y: 8, duration: 0.45, stagger: 0.06 },
-        '<0.1',
-    );
+        // opacity only (never visibility:hidden) on the form: autofocus ran
+        // before this and a hidden element would drop focus to <body>.
+        tl.from(q('.auth-card'), {
+            opacity: 0,
+            y: motion.rise,
+            duration: 0.6,
+        }).from(
+            q('.auth-head > *, .auth-body > *'),
+            { opacity: 0, y: 8, duration: 0.45, stagger: 0.06 },
+            '<0.1',
+        );
 
-    if (isDesktop) {
-        tl.from(
-            q('.auth-brand-in'),
-            { autoAlpha: 0, y: motion.rise, duration: 0.7, stagger: 0.1 },
-            0,
-        )
-            .fromTo(
-                q('.auth-line'),
-                { scaleX: 0 },
-                { scaleX: 1, duration: 1.2, ease: 'power2.inOut' },
-                0.3,
+        if (isDesktop) {
+            tl.from(
+                q('.auth-brand-in'),
+                { autoAlpha: 0, y: motion.rise, duration: 0.7, stagger: 0.1 },
+                0,
             )
-            .from(
-                q('.auth-dot'),
-                { scale: 0.6, autoAlpha: 0, duration: 0.35, stagger: 0.3 },
-                0.3,
-            );
-    }
-});
+                .fromTo(
+                    q('.auth-line'),
+                    { scaleX: 0 },
+                    { scaleX: 1, duration: 1.2, ease: 'power2.inOut' },
+                    0.3,
+                )
+                .from(
+                    q('.auth-dot'),
+                    { scale: 0.6, autoAlpha: 0, duration: 0.35, stagger: 0.3 },
+                    0.3,
+                );
+
+            // Brand sentence scrambles into the real text once per mount. The
+            // sizer holds the final text (invisible), so the panel never shifts.
+            const scramble = q('.auth-scramble')[0] as HTMLElement | undefined;
+            if (scramble && ScrambleTextPlugin) {
+                tl.to(
+                    scramble,
+                    {
+                        duration: 1.2,
+                        ease: 'none',
+                        scrambleText: {
+                            text: brandLine,
+                            chars: 'lowerCase',
+                            speed: 0.6,
+                            revealDelay: 0.15,
+                        },
+                    },
+                    0.1,
+                );
+                return () => {
+                    scramble.textContent = brandLine;
+                };
+            }
+        }
+    },
+    { plugins: ['ScrambleTextPlugin'] },
+);
 </script>
 
 <template>
@@ -93,9 +122,17 @@ useMotion(root, ({ gsap, isDesktop }) => {
 
             <div class="max-w-lg">
                 <p
-                    class="auth-brand-in text-[44px] leading-[1.05] font-semibold tracking-[-0.03em] text-balance text-landing-fg xl:text-[56px]"
+                    class="auth-brand-in relative text-[44px] leading-[1.05] font-semibold tracking-[-0.03em] text-balance text-landing-fg xl:text-[56px]"
                 >
-                    Satu akun untuk melapor dan memantau perbaikan.
+                    <span class="sr-only">{{ brandLine }}</span>
+                    <span class="invisible" aria-hidden="true">{{
+                        brandLine
+                    }}</span>
+                    <span
+                        class="auth-scramble absolute inset-0 break-words"
+                        aria-hidden="true"
+                        >{{ brandLine }}</span
+                    >
                 </p>
                 <p
                     class="auth-brand-in mt-5 max-w-md text-[17.5px] leading-relaxed text-pretty text-landing-muted"
