@@ -19,6 +19,7 @@ const steps = [
 ];
 
 const brandLine = 'Satu akun untuk melapor dan memantau perbaikan.';
+const brandWords = brandLine.split(' ');
 
 const root = useTemplateRef<HTMLElement>('root');
 
@@ -63,26 +64,36 @@ useMotion(
                     0.3,
                 );
 
-            // Brand sentence scrambles into the real text once per mount. The
-            // sizer holds the final text (invisible), so the panel never shifts.
-            const scramble = q('.auth-scramble')[0] as HTMLElement | undefined;
-            if (scramble && ScrambleTextPlugin) {
-                tl.to(
-                    scramble,
-                    {
-                        duration: 1.2,
-                        ease: 'none',
-                        scrambleText: {
-                            text: brandLine,
-                            chars: 'lowerCase',
-                            speed: 0.6,
-                            revealDelay: 0.15,
+            // Brand sentence scrambles into the real text once per mount, word
+            // by word. Real spaces stay in the DOM and each word box is pinned
+            // to its final width, so line breaks never move. The sizer holds
+            // the final text (invisible), so the panel never shifts.
+            const words = q('.auth-scramble-word') as HTMLElement[];
+            if (words.length && ScrambleTextPlugin) {
+                words.forEach((word, i) => {
+                    const final = brandWords[i];
+                    word.style.width = `${word.getBoundingClientRect().width}px`;
+                    tl.to(
+                        word,
+                        {
+                            duration: 0.9,
+                            ease: 'none',
+                            scrambleText: {
+                                text: final,
+                                chars: 'lowerCase',
+                                speed: 0.6,
+                                revealDelay: 0.1,
+                            },
                         },
-                    },
-                    0.1,
-                );
+                        // After the parent fade-in has started to show.
+                        0.3 + i * 0.07,
+                    );
+                });
                 return () => {
-                    scramble.textContent = brandLine;
+                    words.forEach((word, i) => {
+                        word.textContent = brandWords[i];
+                        word.style.width = '';
+                    });
                 };
             }
         }
@@ -128,10 +139,15 @@ useMotion(
                     <span class="invisible" aria-hidden="true">{{
                         brandLine
                     }}</span>
-                    <span
-                        class="auth-scramble absolute inset-0 break-words"
-                        aria-hidden="true"
-                        >{{ brandLine }}</span
+                    <span class="absolute inset-0" aria-hidden="true"
+                        ><template v-for="(word, i) in brandWords" :key="i"
+                            ><span
+                                class="auth-scramble-word inline-block align-top whitespace-nowrap"
+                                >{{ word }}</span
+                            ><template v-if="i < brandWords.length - 1">{{
+                                ' '
+                            }}</template></template
+                        ></span
                     >
                 </p>
                 <p

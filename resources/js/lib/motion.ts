@@ -150,10 +150,12 @@ export function useMotion(
         let loaded: MotionKit;
         try {
             loaded = { ...(await loadMotion()) };
-            for (const name of options.plugins ?? []) {
+            const names = options.plugins ?? [];
+            const plugins = await Promise.all(names.map(loadPlugin));
+            names.forEach((name, i) => {
                 (loaded as unknown as Record<string, unknown>)[name] =
-                    await loadPlugin(name);
-            }
+                    plugins[i];
+            });
         } catch {
             clearTimeout(timer);
             show();
