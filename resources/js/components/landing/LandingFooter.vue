@@ -13,8 +13,8 @@ const year = new Date().getFullYear();
 const cta = useTemplateRef<HTMLElement>('cta');
 
 // Closing panel settles in (scale 0.98 to 1) once.
-useMotion(cta, () => {
-    revealOnScroll(cta.value ?? undefined, { y: 0, scale: 0.98 });
+useMotion(cta, (kit) => {
+    revealOnScroll(kit, cta.value ?? undefined, { y: 0, scale: 0.98 });
 });
 const nav = [
     { id: 'cara-kerja', label: 'Cara kerja' },

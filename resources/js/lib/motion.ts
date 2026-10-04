@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Shared GSAP setup for every page.
  *
  * Rules (see .superpowers/sdd/implementer-instructions.md, "Animation rules"):
@@ -11,12 +11,17 @@
  * - prefers-reduced-motion: reduce means no animation at all; the page keeps
  *   its natural, final state.
  */
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { onBeforeUnmount, onMounted } from 'vue';
 import type { Ref } from 'vue';
+// Type-only: erased at build time, so gsap stays out of the main chunk.
+import type { gsap } from 'gsap';
+import type { ScrollTrigger as ScrollTriggerPlugin } from 'gsap/ScrollTrigger';
 
-export { gsap, ScrollTrigger };
+/** The lazily loaded GSAP kit. Never import gsap statically outside this file. */
+export interface MotionKit {
+    gsap: typeof gsap;
+    ScrollTrigger: typeof ScrollTriggerPlugin;
+}
 
 export const MOTION_OK = '(prefers-reduced-motion: no-preference)';
 export const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
@@ -31,17 +36,30 @@ export const motion = {
     stagger: 0.08,
 } as const;
 
-let registered = false;
+let kit: Promise<MotionKit> | undefined;
 
-/** Registers plugins and defaults once. Safe to call repeatedly; client only. */
-export function setupMotion(): boolean {
-    if (typeof window === 'undefined') return false;
-    if (!registered) {
-        gsap.registerPlugin(ScrollTrigger);
-        gsap.defaults({ ease: motion.ease, duration: motion.duration });
-        registered = true;
+/**
+ * Loads GSAP and ScrollTrigger once (memoised), registers the plugin and house
+ * defaults. Client only: the dynamic import never runs during SSR.
+ */
+export function loadMotion(): Promise<MotionKit> {
+    if (typeof window === 'undefined') {
+        return Promise.reject(new Error('GSAP is client only'));
     }
-    return true;
+    kit ??= Promise.all([import('gsap'), import('gsap/ScrollTrigger')])
+        .then(([core, st]) => {
+            core.gsap.registerPlugin(st.ScrollTrigger);
+            core.gsap.defaults({
+                ease: motion.ease,
+                duration: motion.duration,
+            });
+            return { gsap: core.gsap, ScrollTrigger: st.ScrollTrigger };
+        })
+        .catch((error) => {
+            kit = undefined; // allow a retry after a failed chunk load
+            throw error;
+        });
+    return kit;
 }
 
 /** True when the visitor has asked for reduced motion (client only). */
@@ -52,7 +70,7 @@ export function prefersReducedMotion(): boolean {
     );
 }
 
-export interface MotionConditions {
+export interface MotionConditions extends MotionKit {
     /** Viewport is at least lg (1024px). */
     isDesktop: boolean;
     /**
@@ -74,10 +92,19 @@ export function useMotion(
     setup: (conditions: MotionConditions) => void | (() => void),
 ): void {
     let mm: gsap.MatchMedia | undefined;
+    let unmounted = false;
 
-    onMounted(() => {
-        if (!root.value || !setupMotion()) return;
-        mm = gsap.matchMedia(root.value);
+    onMounted(async () => {
+        if (!root.value || typeof window === 'undefined') return;
+        let loaded: MotionKit;
+        try {
+            loaded = await loadMotion();
+        } catch {
+            return; // chunk failed to load: page keeps its static final state
+        }
+        // Component left (fast navigation) before the import resolved.
+        if (unmounted || !root.value) return;
+        mm = loaded.gsap.matchMedia(root.value);
         mm.add(
             { motionOk: MOTION_OK, isDesktop: DESKTOP },
             (context) => {
@@ -86,13 +113,14 @@ export function useMotion(
                     boolean
                 >;
                 if (!motionOk) return;
-                return setup({ isDesktop, context });
+                return setup({ ...loaded, isDesktop, context });
             },
             root.value,
         );
     });
 
     onBeforeUnmount(() => {
+        unmounted = true;
         mm?.revert();
         mm = undefined;
     });
@@ -103,18 +131,22 @@ export function useMotion(
  * entirely with reduced motion. Transform only, ends at x: 0.
  */
 export function shake(el: Element | null | undefined): void {
-    if (!el || !setupMotion() || prefersReducedMotion()) return;
-    gsap.fromTo(
-        el,
-        { x: 0 },
-        {
-            keyframes: { x: [0, -6, 6, -4, 4, 0] },
-            duration: 0.4,
-            ease: 'power1.inOut',
-            clearProps: 'transform',
-            overwrite: 'auto',
-        },
-    );
+    if (!el || typeof window === 'undefined' || prefersReducedMotion()) return;
+    void loadMotion()
+        .then(({ gsap }) => {
+            gsap.fromTo(
+                el,
+                { x: 0 },
+                {
+                    keyframes: { x: [0, -6, 6, -4, 4, 0] },
+                    duration: 0.4,
+                    ease: 'power1.inOut',
+                    clearProps: 'transform',
+                    overwrite: 'auto',
+                },
+            );
+        })
+        .catch(() => {});
 }
 
 /**
@@ -123,6 +155,7 @@ export function shake(el: Element | null | undefined): void {
  * JS. Call inside a useMotion setup.
  */
 export function revealBatch(
+    { gsap, ScrollTrigger }: MotionKit,
     targets: Element[],
     context: gsap.Context,
     vars: { y?: number; stagger?: number; start?: string } = {},
@@ -147,6 +180,7 @@ export function revealBatch(
 
 /** Single element entrance when it scrolls into view. Plays once. */
 export function revealOnScroll(
+    { gsap }: MotionKit,
     target: Element | undefined,
     vars: { y?: number; scale?: number; start?: string } = {},
 ): void {

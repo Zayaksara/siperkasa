@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Bell, Camera, FileSpreadsheet, History, Timer } from '@lucide/vue';
 import { useTemplateRef } from 'vue';
-import { gsap, revealBatch, revealOnScroll, useMotion } from '@/lib/motion';
+import { revealBatch, revealOnScroll, useMotion } from '@/lib/motion';
 
 const features = [
     {
@@ -34,10 +34,11 @@ const features = [
 const root = useTemplateRef<HTMLElement>('root');
 
 // Heading settles, then rows arrive with a light stagger as they enter.
-useMotion(root, ({ context }) => {
+useMotion(root, (kit) => {
+    const { gsap, context } = kit;
     const q = gsap.utils.selector(root.value);
-    revealOnScroll(q('.ft-head')[0]);
-    revealBatch(q('.ft-row'), context, { stagger: 0.1 });
+    revealOnScroll(kit, q('.ft-head')[0]);
+    revealBatch(kit, q('.ft-row'), context, { stagger: 0.1 });
 });
 </script>
 

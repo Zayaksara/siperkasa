@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { Link } from "@inertiajs/vue3";
-import { ArrowLeft, Check, ClipboardCheck, Send, Wrench } from "@lucide/vue";
-import { useTemplateRef } from "vue";
-import BrandLogo from "@/components/BrandLogo.vue";
-import { gsap, motion, useMotion } from "@/lib/motion";
-import { home } from "@/routes";
+import { Link } from '@inertiajs/vue3';
+import { ArrowLeft, Check, ClipboardCheck, Send, Wrench } from '@lucide/vue';
+import { useTemplateRef } from 'vue';
+import BrandLogo from '@/components/BrandLogo.vue';
+import { motion, useMotion } from '@/lib/motion';
+import { home } from '@/routes';
 
 defineProps<{
     title?: string;
@@ -12,49 +12,49 @@ defineProps<{
 }>();
 
 const steps = [
-    { label: "Dilaporkan", icon: Send },
-    { label: "Divalidasi", icon: ClipboardCheck },
-    { label: "Dikerjakan", icon: Wrench },
-    { label: "Selesai", icon: Check },
+    { label: 'Dilaporkan', icon: Send },
+    { label: 'Divalidasi', icon: ClipboardCheck },
+    { label: 'Dikerjakan', icon: Wrench },
+    { label: 'Selesai', icon: Check },
 ];
 
-const root = useTemplateRef<HTMLElement>("root");
+const root = useTemplateRef<HTMLElement>('root');
 
 /*
  * Entrance: the form card rises and its parts settle in order, so the field
  * is usable within ~0.5s. On lg the brand panel's journey line draws across
  * at the same time. Markup is final without JS or with reduced motion.
  */
-useMotion(root, ({ isDesktop }) => {
+useMotion(root, ({ gsap, isDesktop }) => {
     const q = gsap.utils.selector(root.value);
     const tl = gsap.timeline();
 
     // opacity only (never visibility:hidden) on the form: autofocus ran
     // before this and a hidden element would drop focus to <body>.
-    tl.from(q(".auth-card"), {
+    tl.from(q('.auth-card'), {
         opacity: 0,
         y: motion.rise,
         duration: 0.6,
     }).from(
-        q(".auth-head > *, .auth-body > *"),
+        q('.auth-head > *, .auth-body > *'),
         { opacity: 0, y: 8, duration: 0.45, stagger: 0.06 },
-        "<0.1",
+        '<0.1',
     );
 
     if (isDesktop) {
         tl.from(
-            q(".auth-brand-in"),
+            q('.auth-brand-in'),
             { autoAlpha: 0, y: motion.rise, duration: 0.7, stagger: 0.1 },
             0,
         )
             .fromTo(
-                q(".auth-line"),
+                q('.auth-line'),
                 { scaleX: 0 },
-                { scaleX: 1, duration: 1.2, ease: "power2.inOut" },
+                { scaleX: 1, duration: 1.2, ease: 'power2.inOut' },
                 0.3,
             )
             .from(
-                q(".auth-dot"),
+                q('.auth-dot'),
                 { scale: 0.6, autoAlpha: 0, duration: 0.35, stagger: 0.3 },
                 0.3,
             );

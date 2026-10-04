@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { useTemplateRef } from 'vue';
-import { gsap, motion, useMotion } from '@/lib/motion';
+import { motion, useMotion } from '@/lib/motion';
 import { dashboard, login } from '@/routes';
 import JourneyMockup from './JourneyMockup.vue';
 import { scrollToSection } from './scrollTo';
@@ -12,7 +12,7 @@ const root = useTemplateRef<HTMLElement>('root');
 
 // Load moment, part 1: copy settles in. The mockup (part 2) starts while
 // this is still running, see JourneyMockup's own timeline and its delay.
-useMotion(root, () => {
+useMotion(root, ({ gsap }) => {
     gsap.from(gsap.utils.selector(root.value)('.hero-in'), {
         autoAlpha: 0,
         y: motion.rise,

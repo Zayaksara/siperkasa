@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useTemplateRef } from 'vue';
-import { gsap, revealBatch, revealOnScroll, useMotion } from '@/lib/motion';
+import { revealBatch, revealOnScroll, useMotion } from '@/lib/motion';
 
 const roles = [
     {
@@ -35,10 +35,11 @@ const roles = [
 const root = useTemplateRef<HTMLElement>('root');
 
 // Three columns enter together with a light left-to-right stagger.
-useMotion(root, ({ context }) => {
+useMotion(root, (kit) => {
+    const { gsap, context } = kit;
     const q = gsap.utils.selector(root.value);
-    revealOnScroll(q('.rl-head')[0]);
-    revealBatch(q('.rl-col'), context, { stagger: 0.12 });
+    revealOnScroll(kit, q('.rl-head')[0]);
+    revealBatch(kit, q('.rl-col'), context, { stagger: 0.12 });
 });
 </script>
 

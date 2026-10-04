@@ -22,17 +22,18 @@ use App\Http\Controllers\User\ReportController;
 use App\Http\Middleware\ThrottleReportSubmissions;
 use App\Models\Asset;
 use App\Models\Report;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return inertia('Welcome', [
-        'stats' => [
-            'total_reports' => Report::count(),
-            'total_completed' => Report::where('status', ReportStatus::Closed)->count(),
-            'total_in_progress' => Report::whereIn('status', [ReportStatus::Assigned, ReportStatus::InProgress])->count(),
-            'total_assets' => Asset::count(),
-        ],
+    $stats = Cache::remember('landing.stats', now()->addMinutes(10), fn () => [
+        'total_reports' => Report::count(),
+        'total_completed' => Report::where('status', ReportStatus::Closed)->count(),
+        'total_in_progress' => Report::whereIn('status', [ReportStatus::Assigned, ReportStatus::InProgress])->count(),
+        'total_assets' => Asset::count(),
     ]);
+
+    return inertia('Welcome', ['stats' => $stats]);
 })->name('home');
 
 Route::middleware(['auth', 'active'])->group(function () {

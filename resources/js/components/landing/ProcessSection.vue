@@ -1,58 +1,59 @@
 <script setup lang="ts">
-import { computed, useTemplateRef } from "vue";
-import { gsap, revealOnScroll, useMotion } from "@/lib/motion";
+import { computed, useTemplateRef } from 'vue';
+import { revealOnScroll, useMotion } from '@/lib/motion';
 
 const props = defineProps<{ totalAssets: number }>();
 
-const fmt = new Intl.NumberFormat("id-ID");
+const fmt = new Intl.NumberFormat('id-ID');
 
 // A zero count says nothing useful, so the figure only appears when > 0.
 const pickAsset = computed(() =>
     Number(props.totalAssets) > 0
         ? `Pilih dari ${fmt.format(props.totalAssets)} aset yang sudah tercatat`
-        : "Pilih aset dan lokasinya",
+        : 'Pilih aset dan lokasinya',
 );
 
 const steps = computed(() => [
     {
-        title: "Lapor",
-        who: "Pelapor",
+        title: 'Lapor',
+        who: 'Pelapor',
         text: `${pickAsset.value}, jelaskan kerusakannya, lalu lampirkan foto dari kamera HP.`,
     },
     {
-        title: "Validasi",
-        who: "Admin Sarpras",
-        text: "Laporan diperiksa, diberi prioritas dan target selesai, lalu ditugaskan ke teknisi. Laporan yang tidak sesuai ditolak dengan alasan.",
+        title: 'Validasi',
+        who: 'Admin Sarpras',
+        text: 'Laporan diperiksa, diberi prioritas dan target selesai, lalu ditugaskan ke teknisi. Laporan yang tidak sesuai ditolak dengan alasan.',
     },
     {
-        title: "Dikerjakan",
-        who: "PIC teknisi",
-        text: "Teknisi menandai laporan sedang dikerjakan dan mencatat kendala bila perbaikan harus ditunda.",
+        title: 'Dikerjakan',
+        who: 'PIC teknisi',
+        text: 'Teknisi menandai laporan sedang dikerjakan dan mencatat kendala bila perbaikan harus ditunda.',
     },
     {
-        title: "Selesai",
-        who: "PIC teknisi",
-        text: "Teknisi menutup laporan dengan foto hasil perbaikan, dan pelapor menerima notifikasi.",
+        title: 'Selesai',
+        who: 'PIC teknisi',
+        text: 'Teknisi menutup laporan dengan foto hasil perbaikan, dan pelapor menerima notifikasi.',
     },
 ]);
 
-const root = useTemplateRef<HTMLElement>("root");
+const root = useTemplateRef<HTMLElement>('root');
 
 // Step text is always fully readable (no scroll-bound visibility, so a jump
 // via the nav lands on legible copy). Scroll only scrubs the decorative gold
 // bars across, in order, both ways.
-useMotion(root, ({ isDesktop }) => {
+useMotion(root, (kit) => {
+    const { gsap, isDesktop } = kit;
     const q = gsap.utils.selector(root.value);
-    const bars = q(".ps-bar");
+    const bars = q('.ps-bar');
 
-    revealOnScroll(q(".ps-head")[0]);
+    revealOnScroll(kit, q('.ps-head')[0]);
 
     if (isDesktop) {
         const tl = gsap.timeline({
             scrollTrigger: {
-                trigger: q(".ps-steps")[0],
-                start: "top 85%",
-                end: "top 45%",
+                trigger: q('.ps-steps')[0],
+                start: 'top 85%',
+                end: 'top 45%',
                 scrub: 0.6,
             },
         });
@@ -60,8 +61,8 @@ useMotion(root, ({ isDesktop }) => {
             tl.fromTo(
                 bar,
                 { scaleX: 0 },
-                { scaleX: 1, duration: 1, ease: "none" },
-                i === 0 ? 0 : ">-0.2",
+                { scaleX: 1, duration: 1, ease: 'none' },
+                i === 0 ? 0 : '>-0.2',
             );
         });
         return;
@@ -73,11 +74,11 @@ useMotion(root, ({ isDesktop }) => {
             { scaleX: 0 },
             {
                 scaleX: 1,
-                ease: "none",
+                ease: 'none',
                 scrollTrigger: {
                     trigger: bar.parentElement,
-                    start: "top 90%",
-                    end: "top 60%",
+                    start: 'top 90%',
+                    end: 'top 60%',
                     scrub: 0.6,
                 },
             },

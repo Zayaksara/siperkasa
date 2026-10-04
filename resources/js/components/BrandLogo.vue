@@ -4,7 +4,7 @@ withDefaults(defineProps<{ size?: number }>(), { size: 40 });
 
 <template>
     <img
-        src="/images/logo-uinssc.png"
+        src="/images/logo-uinssc.webp"
         alt="Logo UIN Siber Syekh Nurjati Cirebon"
         :width="size"
         :height="Math.round(size * 1.286)"
