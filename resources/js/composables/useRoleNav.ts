@@ -1,4 +1,4 @@
-import { usePage } from "@inertiajs/vue3";
+import { usePage } from '@inertiajs/vue3';
 import {
     Boxes,
     Building2,
@@ -8,41 +8,41 @@ import {
     Tags,
     Upload,
     Users,
-} from "@lucide/vue";
-import { computed } from "vue";
-import { dashboard as adminDashboard } from "@/routes/admin";
-import { index as assetImportsIndex } from "@/routes/admin/asset-imports";
-import { index as assetsIndex } from "@/routes/admin/assets";
-import { index as buildingsIndex } from "@/routes/admin/buildings";
-import { index as categoriesIndex } from "@/routes/admin/categories";
-import { index as adminReportsIndex } from "@/routes/admin/reports";
-import { index as usersIndex } from "@/routes/admin/users";
-import { dashboard as picDashboard } from "@/routes/pic";
+} from '@lucide/vue';
+import { computed } from 'vue';
+import { dashboard as adminDashboard } from '@/routes/admin';
+import { index as assetImportsIndex } from '@/routes/admin/asset-imports';
+import { index as assetsIndex } from '@/routes/admin/assets';
+import { index as buildingsIndex } from '@/routes/admin/buildings';
+import { index as categoriesIndex } from '@/routes/admin/categories';
+import { index as adminReportsIndex } from '@/routes/admin/reports';
+import { index as usersIndex } from '@/routes/admin/users';
+import { dashboard as picDashboard } from '@/routes/pic';
 import {
     create as reportsCreate,
     index as reportsIndex,
-} from "@/routes/reports";
-import { dashboard as userDashboard } from "@/routes/user";
-import type { NavItem } from "@/types";
+} from '@/routes/reports';
+import { dashboard as userDashboard } from '@/routes/user';
+import type { NavItem } from '@/types';
 
 const userNav: NavItem[] = [
-    { title: "Beranda", href: userDashboard(), icon: Home },
-    { title: "Laporan Saya", href: reportsIndex(), icon: ClipboardList },
-    { title: "Buat Laporan", href: reportsCreate(), icon: FilePlus },
+    { title: 'Beranda', href: userDashboard(), icon: Home },
+    { title: 'Laporan Saya', href: reportsIndex(), icon: ClipboardList },
+    { title: 'Buat Laporan', href: reportsCreate(), icon: FilePlus },
 ];
 
 const adminNav: NavItem[] = [
-    { title: "Beranda", href: adminDashboard(), icon: Home },
-    { title: "Laporan", href: adminReportsIndex(), icon: ClipboardList },
-    { title: "Pengguna", href: usersIndex(), icon: Users },
-    { title: "Aset", href: assetsIndex(), icon: Boxes },
-    { title: "Kategori", href: categoriesIndex(), icon: Tags },
-    { title: "Gedung & Ruang", href: buildingsIndex(), icon: Building2 },
-    { title: "Impor Aset", href: assetImportsIndex(), icon: Upload },
+    { title: 'Beranda', href: adminDashboard(), icon: Home },
+    { title: 'Laporan', href: adminReportsIndex(), icon: ClipboardList },
+    { title: 'Pengguna', href: usersIndex(), icon: Users },
+    { title: 'Aset', href: assetsIndex(), icon: Boxes },
+    { title: 'Kategori', href: categoriesIndex(), icon: Tags },
+    { title: 'Gedung & Ruang', href: buildingsIndex(), icon: Building2 },
+    { title: 'Impor Aset', href: assetImportsIndex(), icon: Upload },
 ];
 
 const picNav: NavItem[] = [
-    { title: "Beranda", href: picDashboard(), icon: Home },
+    { title: 'Beranda', href: picDashboard(), icon: Home },
 ];
 
 export function useRoleNav() {
@@ -50,9 +50,9 @@ export function useRoleNav() {
 
     const items = computed<NavItem[]>(() => {
         switch (page.props.auth.user?.role) {
-            case "admin":
+            case 'admin':
                 return adminNav;
-            case "pic":
+            case 'pic':
                 return picNav;
             default:
                 return userNav;

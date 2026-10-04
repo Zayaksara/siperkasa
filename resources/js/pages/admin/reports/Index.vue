@@ -1,19 +1,20 @@
 <script setup lang="ts">
-import { Head, Link, router, usePage } from "@inertiajs/vue3";
-import { computed, reactive } from "vue";
-import EmptyState from "@/components/EmptyState.vue";
-import HoldBadge from "@/components/HoldBadge.vue";
-import InputError from "@/components/InputError.vue";
-import OverdueBadge from "@/components/OverdueBadge.vue";
-import PageHeader from "@/components/PageHeader.vue";
-import Pagination from "@/components/Pagination.vue";
-import StatusBadge from "@/components/StatusBadge.vue";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
-import { formatDate, formatDateTime } from "@/lib/format";
-import { index, show } from "@/routes/admin/reports";
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { computed, reactive } from 'vue';
+import EmptyState from '@/components/EmptyState.vue';
+import HoldBadge from '@/components/HoldBadge.vue';
+import InputError from '@/components/InputError.vue';
+import OverdueBadge from '@/components/OverdueBadge.vue';
+import PageHeader from '@/components/PageHeader.vue';
+import Pagination from '@/components/Pagination.vue';
+import StatusBadge from '@/components/StatusBadge.vue';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
+import { formatDate, formatDateTime } from '@/lib/format';
+import { index, show } from '@/routes/admin/reports';
 
 type Row = {
     id: number;
@@ -54,37 +55,37 @@ const props = defineProps<{
 }>();
 
 defineOptions({
-    layout: { breadcrumbs: [{ title: "Laporan", href: index() }] },
+    layout: { breadcrumbs: [{ title: 'Laporan', href: index() }] },
 });
 
 const page = usePage();
 const errors = computed(() => page.props.errors as Record<string, string>);
 
 const f = reactive({
-    q: String(props.filters.q ?? ""),
-    status: String(props.filters.status ?? ""),
-    category_id: String(props.filters.category_id ?? ""),
-    building_id: String(props.filters.building_id ?? ""),
-    pic_id: String(props.filters.pic_id ?? ""),
-    priority: String(props.filters.priority ?? ""),
-    from: String(props.filters.from ?? ""),
-    to: String(props.filters.to ?? ""),
+    q: String(props.filters.q ?? ''),
+    status: String(props.filters.status ?? ''),
+    category_id: String(props.filters.category_id ?? ''),
+    building_id: String(props.filters.building_id ?? ''),
+    pic_id: String(props.filters.pic_id ?? ''),
+    priority: String(props.filters.priority ?? ''),
+    from: String(props.filters.from ?? ''),
+    to: String(props.filters.to ?? ''),
     overdue:
         props.filters.overdue === true ||
-        props.filters.overdue === "1" ||
+        props.filters.overdue === '1' ||
         props.filters.overdue === 1,
 });
 
 const hasFilters = computed(() =>
     Object.values(props.filters).some(
-        (value) => value !== undefined && value !== "" && value !== false,
+        (value) => value !== undefined && value !== '' && value !== false,
     ),
 );
 
 function apply() {
     const query = Object.fromEntries(
         Object.entries(f)
-            .filter(([, value]) => value !== "" && value !== false)
+            .filter(([, value]) => value !== '' && value !== false)
             .map(([key, value]) => [key, value === true ? 1 : value]),
     );
     router.get(index.url(), query, { preserveState: true, replace: true });
@@ -92,14 +93,14 @@ function apply() {
 
 function reset() {
     Object.assign(f, {
-        q: "",
-        status: "",
-        category_id: "",
-        building_id: "",
-        pic_id: "",
-        priority: "",
-        from: "",
-        to: "",
+        q: '',
+        status: '',
+        category_id: '',
+        building_id: '',
+        pic_id: '',
+        priority: '',
+        from: '',
+        to: '',
         overdue: false,
     });
     apply();
@@ -230,11 +231,11 @@ function reset() {
                 <InputError :message="errors.to" />
             </div>
             <Label for="f-overdue" class="flex min-h-11 items-center gap-3">
-                <input
+                <Checkbox
                     id="f-overdue"
-                    v-model="f.overdue"
-                    type="checkbox"
+                    :model-value="f.overdue"
                     class="size-5"
+                    @update:model-value="f.overdue = $event === true"
                 />
                 <span>Hanya yang terlambat</span>
             </Label>
@@ -291,16 +292,16 @@ function reset() {
                         </div>
                         <p class="font-semibold">{{ r.title }}</p>
                         <p class="text-sm text-muted-foreground">
-                            {{ r.reporter ?? "-" }} · {{ r.category ?? "-" }} ·
-                            {{ r.building ?? "-" }}, {{ r.room ?? "-" }}
+                            {{ r.reporter ?? '-' }} · {{ r.category ?? '-' }} ·
+                            {{ r.building ?? '-' }}, {{ r.room ?? '-' }}
                         </p>
                         <p class="text-sm text-muted-foreground">
                             Urgensi: {{ r.user_priority_label }} · Prioritas:
-                            {{ r.admin_priority_label ?? "-" }}
+                            {{ r.admin_priority_label ?? '-' }}
                         </p>
                         <p class="text-sm text-muted-foreground">
-                            PIC: {{ r.pic ?? "-" }} · SLA:
-                            {{ r.sla_date ? formatDateTime(r.sla_date) : "-" }}
+                            PIC: {{ r.pic ?? '-' }} · SLA:
+                            {{ r.sla_date ? formatDateTime(r.sla_date) : '-' }}
                         </p>
                     </Link>
                 </li>
@@ -344,21 +345,21 @@ function reset() {
                             <td class="p-3">
                                 {{ r.title
                                 }}<span class="block text-muted-foreground">{{
-                                    r.reporter ?? "-"
+                                    r.reporter ?? '-'
                                 }}</span>
                             </td>
                             <td class="p-3">
-                                {{ r.category ?? "-"
+                                {{ r.category ?? '-'
                                 }}<span class="block text-muted-foreground"
-                                    >{{ r.building ?? "-" }},
-                                    {{ r.room ?? "-" }}</span
+                                    >{{ r.building ?? '-' }},
+                                    {{ r.room ?? '-' }}</span
                                 >
                             </td>
                             <td class="p-3 whitespace-nowrap">
                                 {{ r.user_priority_label }}
                             </td>
                             <td class="p-3 whitespace-nowrap">
-                                {{ r.admin_priority_label ?? "-" }}
+                                {{ r.admin_priority_label ?? '-' }}
                             </td>
                             <td class="p-3">
                                 <span class="flex flex-wrap items-center gap-2">
@@ -369,12 +370,12 @@ function reset() {
                                     <HoldBadge v-if="r.status === 'On_Hold'" />
                                 </span>
                             </td>
-                            <td class="p-3">{{ r.pic ?? "-" }}</td>
+                            <td class="p-3">{{ r.pic ?? '-' }}</td>
                             <td class="p-3 whitespace-nowrap">
                                 {{
                                     r.sla_date
                                         ? formatDateTime(r.sla_date)
-                                        : "-"
+                                        : '-'
                                 }}<OverdueBadge
                                     v-if="r.is_overdue"
                                     class="mt-1 block w-fit"

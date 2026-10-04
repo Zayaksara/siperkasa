@@ -108,3 +108,9 @@ test('the detail page shows the full report with the allowed actions', function 
             ->where('can.reject', true)
             ->where('can.reassign', false));
 });
+
+test('filter validation errors use Indonesian field names', function () {
+    $response = $this->actingAs($this->admin)->get(route('admin.reports.index', ['to' => '2026-01-01', 'from' => '2026-02-01']));
+
+    $response->assertSessionHasErrors(['to' => 'Tanggal akhir harus sama dengan atau setelah tanggal mulai.']);
+});

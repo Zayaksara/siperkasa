@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { Head, router, useForm } from "@inertiajs/vue3";
-import { computed, ref, watch } from "vue";
-import ConfirmDialog from "@/components/ConfirmDialog.vue";
-import HoldBadge from "@/components/HoldBadge.vue";
-import InputError from "@/components/InputError.vue";
-import OverdueBadge from "@/components/OverdueBadge.vue";
-import PageHeader from "@/components/PageHeader.vue";
-import StatusBadge from "@/components/StatusBadge.vue";
-import Timeline from "@/components/Timeline.vue";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
-import { formatDate, formatDateTime, formatRupiah } from "@/lib/format";
-import { approve, index, reassign, reject } from "@/routes/admin/reports";
+import { Head, router, useForm } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import HoldBadge from '@/components/HoldBadge.vue';
+import InputError from '@/components/InputError.vue';
+import OverdueBadge from '@/components/OverdueBadge.vue';
+import PageHeader from '@/components/PageHeader.vue';
+import StatusBadge from '@/components/StatusBadge.vue';
+import Timeline from '@/components/Timeline.vue';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
+import { formatDate, formatDateTime, formatRupiah } from '@/lib/format';
+import { approve, index, reassign, reject } from '@/routes/admin/reports';
 
 type Photo = { id: number; url: string };
 
@@ -66,13 +66,13 @@ const props = defineProps<{
 }>();
 
 defineOptions({
-    layout: { breadcrumbs: [{ title: "Laporan", href: index() }] },
+    layout: { breadcrumbs: [{ title: 'Laporan', href: index() }] },
 });
 
 const approveForm = useForm({
     admin_priority: props.report.user_priority,
-    sla_date: props.sla_defaults[props.report.user_priority] ?? "",
-    assigned_pic_id: (props.suggested_pic_id ?? "") as string | number,
+    sla_date: props.sla_defaults[props.report.user_priority] ?? '',
+    assigned_pic_id: (props.suggested_pic_id ?? '') as string | number,
 });
 
 const slaTouched = ref(false);
@@ -86,18 +86,24 @@ watch(
     },
 );
 
+const busy = computed(
+    () => approveForm.processing || reassignForm.processing || rejectBusy.value,
+);
+const noPics = computed(() => props.pics.length === 0);
+const noOtherPics = computed(() => otherPics.value.length === 0);
+
 function submitApprove() {
-    if (approveForm.processing) return;
+    if (busy.value || noPics.value) return;
     approveForm.post(approve.url(props.report.id), { preserveScroll: true });
 }
 
-const reassignForm = useForm({ assigned_pic_id: "" as string | number });
+const reassignForm = useForm({ assigned_pic_id: '' as string | number });
 const otherPics = computed(() =>
     props.pics.filter((pic) => pic.id !== props.current_pic_id),
 );
 
 function submitReassign() {
-    if (reassignForm.processing) return;
+    if (busy.value || noOtherPics.value) return;
     reassignForm.post(reassign.url(props.report.id), {
         preserveScroll: true,
         onSuccess: () => reassignForm.reset(),
@@ -109,7 +115,7 @@ const rejectError = ref<string | undefined>();
 const rejectBusy = ref(false);
 
 function doReject(reason?: string) {
-    if (rejectBusy.value) return;
+    if (busy.value) return;
     rejectBusy.value = true;
     rejectError.value = undefined;
     router.post(
@@ -126,30 +132,32 @@ function doReject(reason?: string) {
 
 const details = computed<[string, string][]>(() => [
     [
-        "Pelapor",
-        `${props.report.reporter ?? "-"} (${props.report.reporter_nim_nip ?? "-"})`,
+        'Pelapor',
+        props.report.reporter
+            ? `${props.report.reporter} (${props.report.reporter_nim_nip ?? '-'})`
+            : '-',
     ],
-    ["Kategori", props.report.category ?? "-"],
-    ["Lokasi", `${props.report.building ?? "-"}, ${props.report.room ?? "-"}`],
+    ['Kategori', props.report.category ?? '-'],
+    ['Lokasi', `${props.report.building ?? '-'}, ${props.report.room ?? '-'}`],
     [
-        "Aset",
+        'Aset',
         props.report.asset
             ? `${props.report.asset.name} (${props.report.asset.asset_code})`
-            : "Tidak dipilih",
+            : 'Tidak dipilih',
     ],
-    ["Urgensi pelapor", props.report.user_priority_label],
+    ['Urgensi pelapor', props.report.user_priority_label],
     [
-        "Prioritas admin",
-        props.report.admin_priority_label ?? "Belum ditentukan",
+        'Prioritas admin',
+        props.report.admin_priority_label ?? 'Belum ditentukan',
     ],
-    ["PIC", props.report.pic ?? "Belum ditugaskan"],
+    ['PIC', props.report.pic ?? 'Belum ditugaskan'],
     [
-        "Target selesai (SLA)",
+        'Target selesai (SLA)',
         props.report.sla_date
             ? formatDateTime(props.report.sla_date)
-            : "Belum ditentukan",
+            : 'Belum ditentukan',
     ],
-    ["Dibuat", formatDateTime(props.report.created_at)],
+    ['Dibuat', formatDateTime(props.report.created_at)],
 ]);
 </script>
 
@@ -226,7 +234,7 @@ const details = computed<[string, string][]>(() => [
             <p class="text-sm text-muted-foreground">
                 Selesai {{ formatDate(report.completed_on) }} · Biaya
                 {{ formatRupiah(report.repair_cost) }} · Vendor
-                {{ report.vendor_name ?? "-" }}
+                {{ report.vendor_name ?? '-' }}
             </p>
             <ul
                 v-if="report.completion_photos.length"
@@ -258,6 +266,12 @@ const details = computed<[string, string][]>(() => [
             <h2 id="approve-h" class="text-lg font-semibold">
                 Validasi laporan
             </h2>
+            <p
+                v-if="noPics"
+                class="rounded-lg border border-dashed p-3 text-sm text-muted-foreground"
+            >
+                Belum ada PIC aktif. Tambahkan PIC di menu Pengguna.
+            </p>
             <form class="grid gap-4" @submit.prevent="submitApprove">
                 <div class="grid gap-2">
                     <Label for="a-priority">Prioritas</Label>
@@ -309,8 +323,8 @@ const details = computed<[string, string][]>(() => [
                             {{ pic.name }} ({{ pic.active_tasks }} tugas
                             aktif){{
                                 pic.id === suggested_pic_id
-                                    ? " - disarankan"
-                                    : ""
+                                    ? ' - disarankan'
+                                    : ''
                             }}
                         </option>
                     </NativeSelect>
@@ -320,7 +334,7 @@ const details = computed<[string, string][]>(() => [
                     <Button
                         type="submit"
                         class="h-11"
-                        :disabled="approveForm.processing"
+                        :disabled="busy || noPics"
                         data-test="approve-button"
                         >Validasi dan tugaskan</Button
                     >
@@ -329,7 +343,7 @@ const details = computed<[string, string][]>(() => [
                         type="button"
                         variant="outline"
                         class="h-11 text-destructive"
-                        :disabled="approveForm.processing"
+                        :disabled="busy"
                         @click="rejecting = true"
                         >Tolak laporan</Button
                     >
@@ -343,6 +357,12 @@ const details = computed<[string, string][]>(() => [
             aria-labelledby="reassign-h"
         >
             <h2 id="reassign-h" class="font-semibold">Pindahkan PIC</h2>
+            <p
+                v-if="noOtherPics"
+                class="rounded-lg border border-dashed p-3 text-sm text-muted-foreground"
+            >
+                Belum ada PIC aktif lain. Tambahkan PIC di menu Pengguna.
+            </p>
             <form
                 class="grid gap-3 sm:grid-cols-[1fr_auto]"
                 @submit.prevent="submitReassign"
@@ -371,7 +391,7 @@ const details = computed<[string, string][]>(() => [
                 <Button
                     type="submit"
                     class="h-11 self-start sm:mt-6"
-                    :disabled="reassignForm.processing"
+                    :disabled="busy || noOtherPics"
                     >Pindahkan PIC</Button
                 >
             </form>

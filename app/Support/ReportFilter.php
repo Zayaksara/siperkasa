@@ -31,9 +31,25 @@ final class ReportFilter
         ];
     }
 
+    /** @return array<string, string> */
+    public static function attributes(): array
+    {
+        return [
+            'status' => 'status',
+            'category_id' => 'kategori',
+            'building_id' => 'gedung',
+            'pic_id' => 'PIC',
+            'priority' => 'prioritas',
+            'from' => 'tanggal mulai',
+            'to' => 'tanggal akhir',
+            'overdue' => 'filter terlambat',
+            'q' => 'kata kunci',
+        ];
+    }
+
     public static function fromRequest(Request $request): self
     {
-        return new self($request->validate(self::rules()));
+        return new self($request->validate(self::rules(), [], self::attributes()));
     }
 
     /**
