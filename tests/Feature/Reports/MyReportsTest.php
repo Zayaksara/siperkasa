@@ -83,3 +83,8 @@ test('a report whose PIC was soft-deleted stays in the list with the PIC name', 
     $this->actingAs($this->me)->get(route('reports.index'))
         ->assertInertia(fn ($page) => $page->has('reports.data', 1)->where('reports.data.0.pic', 'Pak Teknisi'));
 });
+
+test('an invalid status filter returns an Indonesian message', function () {
+    $this->actingAs($this->me)->get(route('reports.index', ['status' => 'Bogus']))
+        ->assertSessionHasErrors(['status' => 'Status yang dipilih tidak valid.']);
+});

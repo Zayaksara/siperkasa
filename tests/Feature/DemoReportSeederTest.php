@@ -102,3 +102,16 @@ test('demo report timestamps are ordered and never in the future', function () {
         });
     });
 });
+
+test('the demo seeder does nothing outside local and testing', function () {
+    User::factory()->admin()->create();
+    User::factory()->pic()->create();
+    User::factory()->create();
+    Category::factory()->create();
+    Room::factory()->create();
+
+    app()->detectEnvironment(fn () => 'production');
+    (new DemoReportSeeder)->run();
+
+    expect(Report::count())->toBe(0);
+});

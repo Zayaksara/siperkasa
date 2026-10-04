@@ -123,7 +123,7 @@ final class DashboardStats
         $closed = $this->trendCounts('closed_at', $first, $last, $daily);
 
         $buckets = [];
-        $cursor = $daily ? $first : $first->startOfWeek();
+        $cursor = $daily ? $first : $first->startOfWeek(CarbonInterface::MONDAY);
         while ($cursor <= $last) {
             $key = $daily ? $cursor->toDateString() : $this->weekKey($cursor);
             $buckets[] = [

@@ -32,7 +32,7 @@ class ReportController extends Controller
             'status' => ['nullable', 'string', 'max:100', function (string $attribute, mixed $value, \Closure $fail) {
                 foreach (explode(',', (string) $value) as $status) {
                     if (ReportStatus::tryFrom($status) === null) {
-                        $fail('The selected status is invalid.');
+                        $fail('Status yang dipilih tidak valid.');
 
                         return;
                     }

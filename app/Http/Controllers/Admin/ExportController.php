@@ -27,6 +27,10 @@ class ExportController extends Controller
         $filter = ReportFilter::fromRequest($request);
 
         return response()->streamDownload(function () use ($filter) {
+            if (function_exists('set_time_limit')) {
+                @set_time_limit(120);
+            }
+
             $writer = new Writer;
             $writer->openToFile('php://output');
             $writer->addRow(ReportExport::headerRow());
@@ -59,12 +63,15 @@ class ExportController extends Controller
         $total = (clone $query)->count();
 
         if ($total > (int) config('siperkasa.pdf_max_rows')) {
-            return back()->withErrors([
+            return back(302, [], route('admin.reports.index'))->withErrors([
                 'export' => "Terlalu banyak data ({$total} baris) untuk PDF. Gunakan Excel atau persempit filter.",
             ]);
         }
 
-        set_time_limit(120);
+        // Shared hosts may disable the function; never let that break the export.
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(120);
+        }
 
         $counts = (clone $query)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
         $summary = [];

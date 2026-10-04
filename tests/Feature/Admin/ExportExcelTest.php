@@ -119,7 +119,7 @@ test('values that look like formulas are exported as exact text, never a formula
     // exact text, no visible apostrophe (the reader itself maps a leading "=" to a formula, so the XML is the proof)
     expect($titles)->toHaveCount(4)
         ->toContain('=HYPERLINK("http://evil.example","klik")', '+1 AC rusak', '@SUM(A1)', '- ganti kabel');
-    expect($book['xml'])->not->toContain('<f>');
+    expect($book['xml'])->not->toMatch('/<f[ >]/');
 });
 
 test('a trashed reporter and PIC do not break the export', function () {

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Shared GSAP setup for every page.
  *
  * Rules (see .superpowers/sdd/implementer-instructions.md, "Animation rules"):
@@ -62,6 +62,9 @@ export function loadMotion(): Promise<MotionKit> {
     return kit;
 }
 
+/** Max wait for the GSAP chunk before content is revealed without motion. */
+const READY_TIMEOUT_MS = 1200;
+
 /** True when the visitor has asked for reduced motion (client only). */
 export function prefersReducedMotion(): boolean {
     return (
@@ -104,15 +107,27 @@ export function useMotion(
         const hide = options.hideUntilReady && !prefersReducedMotion();
         if (hide) host.setAttribute('data-motion-pending', '');
         const show = () => host.removeAttribute('data-motion-pending');
+        // Decorative motion must never block content: if the chunk is not
+        // ready in time, reveal and skip the entrance for good.
+        let timedOut = false;
+        const timer = hide
+            ? setTimeout(() => {
+                  timedOut = true;
+                  show();
+              }, READY_TIMEOUT_MS)
+            : undefined;
         let loaded: MotionKit;
         try {
             loaded = await loadMotion();
         } catch {
+            clearTimeout(timer);
             show();
             return; // chunk failed to load: page keeps its static final state
         }
-        // Component left (fast navigation) before the import resolved.
-        if (unmounted || !root.value) {
+        clearTimeout(timer);
+        // Component left (fast navigation) before the import resolved, or the
+        // chunk arrived after the timeout already revealed the content.
+        if (unmounted || !root.value || timedOut) {
             show();
             return;
         }

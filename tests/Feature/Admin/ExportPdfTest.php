@@ -90,3 +90,12 @@ test('the filter text shows readable priority and a trashed PIC name', function 
 test('only admins can export a pdf', function (string $state) {
     $this->actingAs(User::factory()->{$state}()->create())->get(route('admin.reports.export.pdf'))->assertForbidden();
 })->with(['reporter', 'pic']);
+
+test('the over-limit refusal still shows the message when there is no referer', function () {
+    config(['siperkasa.pdf_max_rows' => 2]);
+    Report::factory()->count(3)->create();
+
+    $this->actingAs($this->admin)->get(route('admin.reports.export.pdf'))
+        ->assertRedirect(route('admin.reports.index'))
+        ->assertSessionHasErrors(['export' => 'Terlalu banyak data (3 baris) untuk PDF. Gunakan Excel atau persempit filter.']);
+});

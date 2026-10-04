@@ -30,6 +30,11 @@ class DemoReportSeeder extends Seeder
 
     public function run(): void
     {
+        // Fake data: never write it outside local dev (or the test suite).
+        if (! app()->environment(['local', 'testing'])) {
+            return;
+        }
+
         $admin = User::where('role', UserRole::Admin)->first();
         $pics = User::where('role', UserRole::Pic)->where('is_active', true)->get();
         $reporters = User::where('role', UserRole::User)->where('is_active', true)->get();

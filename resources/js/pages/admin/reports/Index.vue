@@ -188,7 +188,7 @@ function reset() {
                 >
                     <Loader2
                         v-if="preparing === 'excel'"
-                        class="size-4 animate-spin"
+                        class="size-4 animate-spin motion-reduce:animate-none"
                     />
                     <FileSpreadsheet v-else class="size-4" />
                     {{ preparing === 'excel' ? 'Menyiapkan…' : 'Export Excel' }}
@@ -208,7 +208,7 @@ function reset() {
                 >
                     <Loader2
                         v-if="preparing === 'pdf'"
-                        class="size-4 animate-spin"
+                        class="size-4 animate-spin motion-reduce:animate-none"
                     />
                     <FileText v-else class="size-4" />
                     {{ preparing === 'pdf' ? 'Menyiapkan…' : 'Export PDF' }}

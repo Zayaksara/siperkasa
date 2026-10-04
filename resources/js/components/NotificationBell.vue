@@ -24,6 +24,9 @@ import {
 import type { NotificationItem } from '@/types/notification';
 
 const POLL_MS = 60_000;
+// Stop polling after this long without input so an idle tab can expire its session.
+const IDLE_MS = 30 * 60_000;
+const ACTIVITY_EVENTS = ['pointerdown', 'keydown', 'touchstart'] as const;
 
 const page = usePage();
 const count = ref(page.props.unreadNotificationsCount ?? 0);
@@ -74,20 +77,64 @@ async function refreshCount() {
     }
 }
 
-function onVisibility() {
-    if (!document.hidden) void refreshCount();
+let timer: ReturnType<typeof setInterval> | undefined;
+let lastActivity = Date.now();
+let paused = false;
+
+function startPolling() {
+    if (timer === undefined) timer = setInterval(poll, POLL_MS);
 }
 
-let timer: ReturnType<typeof setInterval> | undefined;
+function stopPolling() {
+    clearInterval(timer);
+    timer = undefined;
+}
+
+function poll() {
+    if (Date.now() - lastActivity >= IDLE_MS) {
+        paused = true;
+        stopPolling();
+        return;
+    }
+
+    void refreshCount();
+}
+
+function resume() {
+    lastActivity = Date.now();
+    if (paused) {
+        paused = false;
+        startPolling();
+        void refreshCount();
+    }
+}
+
+function onActivity() {
+    resume();
+}
+
+function onVisibility() {
+    if (!document.hidden) {
+        resume();
+        void refreshCount();
+    }
+}
 
 onMounted(() => {
-    timer = setInterval(refreshCount, POLL_MS);
+    lastActivity = Date.now();
+    startPolling();
     document.addEventListener('visibilitychange', onVisibility);
+    ACTIVITY_EVENTS.forEach((name) =>
+        window.addEventListener(name, onActivity, { passive: true }),
+    );
 });
 
 onBeforeUnmount(() => {
-    clearInterval(timer);
+    stopPolling();
     document.removeEventListener('visibilitychange', onVisibility);
+    ACTIVITY_EVENTS.forEach((name) =>
+        window.removeEventListener(name, onActivity),
+    );
 });
 </script>
 

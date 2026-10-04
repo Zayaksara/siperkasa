@@ -230,3 +230,20 @@ test('statistics are cached for five minutes', function () {
 test('only admins see admin statistics', function (string $state) {
     $this->actingAs(User::factory()->{$state}()->create())->get(route('admin.dashboard'))->assertForbidden();
 })->with(['reporter', 'pic']);
+
+test('weekly buckets start on Monday whatever the Carbon locale', function () {
+    $previous = Carbon::getLocale();
+    Carbon::setLocale('en_US');
+
+    try {
+        Report::factory()->create(['created_at' => '2026-10-07 10:00:00']);
+
+        $this->actingAs($this->admin)->get(route('admin.dashboard', ['from' => '2026-07-17', 'to' => '2026-10-14']))
+            ->assertInertia(fn ($page) => $page
+                ->where('stats.trend.0.start', '2026-07-13')
+                ->where('stats.trend.12.start', '2026-10-05')
+                ->where('stats.trend.12.created', 1));
+    } finally {
+        Carbon::setLocale($previous);
+    }
+});
