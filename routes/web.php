@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AssetController;
 use App\Http\Controllers\Admin\AssetImportController;
 use App\Http\Controllers\Admin\BuildingController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\RoomController;
 use App\Http\Controllers\Admin\UserController;
@@ -13,7 +14,9 @@ use App\Http\Controllers\AssetSearchController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Pic\DashboardController as PicDashboardController;
 use App\Http\Controllers\Pic\TaskController;
+use App\Http\Controllers\User\DashboardController as UserDashboardController;
 use App\Http\Controllers\User\ReportController;
 use App\Models\Asset;
 use App\Models\Report;
@@ -52,11 +55,11 @@ Route::middleware(['auth', 'active'])->group(function () {
     });
 
     Route::middleware('role:user')->prefix('user')->name('user.')->group(function () {
-        Route::inertia('dashboard', 'user/Dashboard')->name('dashboard');
+        Route::get('dashboard', UserDashboardController::class)->name('dashboard');
     });
 
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
-        Route::inertia('dashboard', 'admin/Dashboard')->name('dashboard');
+        Route::get('dashboard', AdminDashboardController::class)->name('dashboard');
         Route::post('users/import', [UserImportController::class, 'store'])->name('users.import');
         Route::get('users', [UserController::class, 'index'])->name('users.index');
         Route::post('users', [UserController::class, 'store'])->name('users.store');
@@ -82,7 +85,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     });
 
     Route::middleware('role:pic')->prefix('pic')->name('pic.')->group(function () {
-        Route::inertia('dashboard', 'pic/Dashboard')->name('dashboard');
+        Route::get('dashboard', PicDashboardController::class)->name('dashboard');
         Route::get('tasks', [TaskController::class, 'index'])->name('tasks.index');
         Route::get('tasks/{report}', [TaskController::class, 'show'])->name('tasks.show');
         Route::post('tasks/{report}/start', [TaskController::class, 'start'])->name('tasks.start');
