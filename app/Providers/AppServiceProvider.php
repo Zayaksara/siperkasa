@@ -4,13 +4,11 @@ namespace App\Providers;
 
 use App\Models\User;
 use Carbon\CarbonImmutable;
-use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
@@ -32,7 +30,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
-        $this->configureLimiters();
 
         Fortify::authenticateUsing(function (Request $request) {
             $user = User::where('nim_nip', trim((string) $request->input('nim_nip')))->first();
@@ -75,15 +72,5 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
-    }
-
-    /**
-     * Configure rate limiters.
-     */
-    protected function configureLimiters(): void
-    {
-        RateLimiter::for('reports', function (Request $request) {
-            return Limit::perHour(10)->by($request->user()->id ?? $request->ip());
-        });
     }
 }

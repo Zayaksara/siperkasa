@@ -7,6 +7,7 @@ use App\Models\Asset;
 use App\Models\Report;
 use App\Models\User;
 use App\Notifications\ReportSubmitted;
+use App\Support\ReportSubmissionLimit;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -253,11 +254,11 @@ test('only pending status counts toward the 5-report limit, not cancelled or rej
 });
 
 test('11th report submission within an hour is throttled with Indonesian message', function () {
-    $rateLimiterKey = 'reports'.$this->reporter->id;
+    $key = ReportSubmissionLimit::key($this->reporter);
 
     // Simulate 10 successful submissions by hitting the rate limiter
     for ($i = 0; $i < 10; $i++) {
-        RateLimiter::hit($rateLimiterKey, 3600);
+        RateLimiter::hit($key, ReportSubmissionLimit::DECAY_SECONDS);
     }
 
     // 11th attempt should be throttled
@@ -296,7 +297,7 @@ test('10 successful real submissions then 11th is throttled', function () {
     // Cancel the 5 reports to free up slots for more submissions
     $reports = Report::where('user_id', $this->reporter->id)->get();
     foreach ($reports as $report) {
-        $report->update(['status' => 'Cancelled']);
+        $report->update(['status' => ReportStatus::Cancelled]);
     }
 
     // Submit 5 more (total 10)
@@ -312,4 +313,16 @@ test('10 successful real submissions then 11th is throttled', function () {
         ->assertSessionHasErrors(['title' => 'Terlalu banyak laporan dalam satu jam. Coba lagi nanti.']);
 
     expect(Report::where('user_id', $this->reporter->id)->count())->toBe(10);
+});
+
+test('rate limit uses hourly decay not minute-level decay', function () {
+    $key = ReportSubmissionLimit::key($this->reporter);
+
+    // One successful submission
+    $this->actingAs($this->reporter)->post(route('reports.store'), ReportInput::valid(['title' => str_repeat('x', 10)]))
+        ->assertSessionHasNoErrors();
+
+    // After one submission, availableIn should be > 60 seconds (hourly, not minute-level)
+    $availableIn = RateLimiter::availableIn($key);
+    expect($availableIn)->toBeGreaterThan(60);
 });

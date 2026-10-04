@@ -14,10 +14,10 @@ use App\Models\Building;
 use App\Models\Category;
 use App\Models\Report;
 use App\Support\ReportPresenter;
+use App\Support\ReportSubmissionLimit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -72,7 +72,7 @@ class ReportController extends Controller
         );
 
         // Increment rate limiter only after successful report creation
-        RateLimiter::hit('reports'.$request->user()->id);
+        ReportSubmissionLimit::hit($request->user());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => "Laporan {$report->ticket_number} berhasil dikirim."]);
 

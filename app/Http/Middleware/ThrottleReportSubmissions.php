@@ -2,9 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\ReportSubmissionLimit;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\RateLimiter;
 use Symfony\Component\HttpFoundation\Response;
 
 class ThrottleReportSubmissions
@@ -14,9 +14,7 @@ class ThrottleReportSubmissions
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $key = 'reports'.$request->user()?->id;
-
-        if (RateLimiter::tooManyAttempts($key, 10)) {
+        if (ReportSubmissionLimit::tooMany($request->user())) {
             return back()->withErrors([
                 'title' => 'Terlalu banyak laporan dalam satu jam. Coba lagi nanti.',
             ]);
