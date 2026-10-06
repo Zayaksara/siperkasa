@@ -56,20 +56,27 @@ const focusRing =
         >
             <a
                 href="#beranda"
-                class="flex min-h-11 items-center gap-2.5 rounded-md"
+                class="flex min-h-11 min-w-0 items-center gap-2.5 rounded-md"
                 :class="focusRing"
-                aria-label="SiPerkasa, kembali ke atas"
+                aria-label="SiPerkasa, Sistem Pelaporan Kerusakan Alat dan Prasarana, kembali ke atas"
                 @click="scrollToSection($event, 'beranda')"
             >
                 <span
-                    class="flex size-9 items-center justify-center rounded-full bg-landing-fg"
+                    class="flex size-9 shrink-0 items-center justify-center rounded-full bg-landing-fg"
                 >
                     <BrandLogo :size="20" />
                 </span>
-                <span
-                    class="hidden text-[17.5px] font-semibold tracking-tight text-landing-fg min-[400px]:inline"
-                >
-                    SiPerkasa
+                <span class="hidden min-w-0 flex-col min-[400px]:flex">
+                    <span
+                        class="text-[17.5px] leading-tight font-semibold tracking-tight text-landing-fg"
+                    >
+                        SiPerkasa
+                    </span>
+                    <span
+                        class="truncate text-[12px] leading-tight text-landing-muted"
+                    >
+                        Sistem Pelaporan Kerusakan Alat dan Prasarana
+                    </span>
                 </span>
             </a>
 

@@ -36,6 +36,6 @@ const authed = computed(() => Boolean(page.props.auth?.user));
             <RolesSection />
         </main>
 
-        <LandingFooter :authed="authed" />
+        <LandingFooter />
     </div>
 </template>
