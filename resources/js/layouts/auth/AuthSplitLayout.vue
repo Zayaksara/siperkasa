@@ -72,7 +72,9 @@ useMotion(
             if (words.length && ScrambleTextPlugin) {
                 words.forEach((word, i) => {
                     const final = brandWords[i];
-                    word.style.width = `${word.getBoundingClientRect().width}px`;
+                    gsap.set(word, {
+                        width: `${word.getBoundingClientRect().width}px`,
+                    });
                     tl.to(
                         word,
                         {
@@ -84,6 +86,7 @@ useMotion(
                                 speed: 0.6,
                                 revealDelay: 0.1,
                             },
+                            clearProps: 'width',
                         },
                         // After the parent fade-in has started to show.
                         0.3 + i * 0.07,
@@ -92,7 +95,6 @@ useMotion(
                 return () => {
                     words.forEach((word, i) => {
                         word.textContent = brandWords[i];
-                        word.style.width = '';
                     });
                 };
             }
