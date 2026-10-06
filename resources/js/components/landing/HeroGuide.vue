@@ -10,9 +10,9 @@ import {
     Plug,
     Speaker,
     Wifi,
-} from "@lucide/vue";
-import { useTemplateRef } from "vue";
-import { motion, useMotion } from "@/lib/motion";
+} from '@lucide/vue';
+import { useTemplateRef } from 'vue';
+import { motion, useMotion } from '@/lib/motion';
 
 /**
  * Hero guide: what to prepare before reporting, and what can be reported.
@@ -24,42 +24,42 @@ const props = withDefaults(defineProps<{ delay?: number }>(), { delay: 0 });
 const prepare = [
     {
         icon: Camera,
-        title: "Foto kerusakan",
-        text: "Satu foto yang jelas, langsung dari HP.",
+        title: 'Foto kerusakan',
+        text: 'Satu foto yang jelas, langsung dari HP.',
     },
     {
         icon: MapPin,
-        title: "Lokasi",
-        text: "Nama gedung dan ruangannya.",
+        title: 'Lokasi',
+        text: 'Nama gedung dan ruangannya.',
     },
     {
         icon: PenLine,
-        title: "Keterangan singkat",
-        text: "Apa yang rusak dan sejak kapan.",
+        title: 'Keterangan singkat',
+        text: 'Apa yang rusak dan sejak kapan.',
     },
 ];
 
 const categories = [
-    { icon: Plug, label: "Elektronik" },
-    { icon: Monitor, label: "Komputer" },
-    { icon: Wifi, label: "Jaringan" },
-    { icon: Speaker, label: "Audio & Studio" },
-    { icon: Armchair, label: "Furnitur" },
-    { icon: Building2, label: "Bangunan & Sarana" },
+    { icon: Plug, label: 'Elektronik' },
+    { icon: Monitor, label: 'Komputer' },
+    { icon: Wifi, label: 'Jaringan' },
+    { icon: Speaker, label: 'Audio & Studio' },
+    { icon: Armchair, label: 'Furnitur' },
+    { icon: Building2, label: 'Bangunan & Sarana' },
 ];
 
-const root = useTemplateRef<HTMLElement>("root");
+const root = useTemplateRef<HTMLElement>('root');
 
 useMotion(
     root,
     ({ gsap }) => {
-        gsap.from(gsap.utils.selector(root.value)(".hg-in"), {
+        gsap.from(gsap.utils.selector(root.value)('.hg-in'), {
             autoAlpha: 0,
             y: motion.rise,
             duration: 0.5,
             stagger: motion.stagger,
             delay: props.delay,
-            clearProps: "transform,opacity,visibility",
+            clearProps: 'transform,opacity,visibility',
         });
     },
     { hideUntilReady: true },
