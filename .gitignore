@@ -43,3 +43,6 @@ yarn-error.log
 /opencode.json
 /opencode.jsonc
 /data/*.xlsx
+
+# Confidential source data (BMN asset export). Never commit or deploy.
+/data/
