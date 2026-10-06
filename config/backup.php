@@ -9,7 +9,6 @@ use Spatie\Backup\Notifications\Notifications\HealthyBackupWasFoundNotification;
 use Spatie\Backup\Notifications\Notifications\UnhealthyBackupWasFoundNotification;
 use Spatie\Backup\Tasks\Cleanup\Strategies\DefaultStrategy;
 use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumAgeInDays;
-use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumStorageInMegabytes;
 
 // The offsite copy is enabled only when host, host fingerprint and archive password are ALL set:
 // no unverified host (MITM) and no unencrypted archive leaving this server.
@@ -157,7 +156,7 @@ return [
              *
              * Setting of 0 for some algorithms may switch to the strongest compression.
              */
-            'compression_level' => 9,
+            'compression_level' => 1, // photos are already JPEG: higher levels only burn CPU
 
             /*
              * The filename prefix used for the backup zip file.
@@ -311,7 +310,6 @@ return [
             ]),
             'health_checks' => [
                 MaximumAgeInDays::class => 1,
-                MaximumStorageInMegabytes::class => 5000,
             ],
         ],
     ],
@@ -365,7 +363,7 @@ return [
              * this amount of megabytes has been reached.
              * Set null for unlimited size.
              */
-            'delete_oldest_backups_when_using_more_megabytes_than' => 5000,
+            'delete_oldest_backups_when_using_more_megabytes_than' => (int) env('BACKUP_MAX_MB', 5000),
         ],
 
         /*

@@ -48,7 +48,7 @@ test('SSR is off under testing', function () {
 test('the production example lists the required backup keys', function () {
     $content = file_get_contents(base_path('.env.production.example'));
 
-    foreach (['BACKUP_NOTIFY_MAIL', 'BACKUP_OFFSITE_HOST_FINGERPRINT', 'BACKUP_ARCHIVE_PASSWORD'] as $key) {
+    foreach (['BACKUP_NOTIFY_MAIL', 'BACKUP_OFFSITE_HOST_FINGERPRINT', 'BACKUP_ARCHIVE_PASSWORD', 'BACKUP_MAX_MB', 'HEALTH_CHECK_BACKUP'] as $key) {
         expect(productionEnv())->toHaveKey($key);
     }
 
@@ -57,4 +57,8 @@ test('the production example lists the required backup keys', function () {
 (?:#[^
 ]*
 )*BACKUP_NOTIFY_MAIL=/');
+});
+
+test('the production example turns the backup health check on', function () {
+    expect(productionEnv()['HEALTH_CHECK_BACKUP'])->toBe('true');
 });

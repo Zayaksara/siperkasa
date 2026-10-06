@@ -14,6 +14,9 @@ return [
     // /up fails when free disk space under storage/ drops below this (MB).
     'health_min_free_mb' => (int) env('HEALTH_MIN_FREE_MB', 1024),
 
+    // In production /up also fails when the newest backup is older than 26 h or BACKUP_NOTIFY_MAIL is unset.
+    'health_check_backup' => (bool) env('HEALTH_CHECK_BACKUP', true),
+
     // Manual search keywords per category, for items that are not in the BMN asset list (building parts).
     'category_keywords' => [
         'Bangunan & Sarana' => [

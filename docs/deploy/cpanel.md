@@ -38,8 +38,10 @@ Catatan: dokumen ini hanya persiapan. Belum ada yang di-deploy.
 
    ```bash
    cd /home/<user>/siperkasa
-   composer install --no-dev -o
+   /opt/cpanel/ea-php84/root/usr/bin/php /path/ke/composer.phar install --no-dev -o
    ```
+
+   Pakai PHP 8.4 yang sama dengan cron. Cek dengan `/opt/cpanel/ea-php84/root/usr/bin/php -v` (harus tampil 8.4). Jika `composer` biasa sudah memakai PHP 8.4, `composer install --no-dev -o` juga boleh.
 3. Build aset di komputer sendiri (Node biasanya tidak ada di cPanel):
 
    ```bash
@@ -83,11 +85,12 @@ Catatan: dokumen ini hanya persiapan. Belum ada yang di-deploy.
 9. Pasang cron. cPanel, Cron Jobs, interval "Once Per Minute" (`* * * * *`), perintah:
 
    ```
-   * * * * * cd /home/<user>/siperkasa && php artisan schedule:run >> /dev/null 2>&1
+   * * * * * cd /home/<user>/siperkasa && /opt/cpanel/ea-php84/root/usr/bin/php artisan schedule:run >> /dev/null 2>&1
    ```
 
-   Ini satu-satunya cron yang dibutuhkan. Jika `php` tidak ketemu, pakai path lengkap, misalnya `/usr/local/bin/ea-php84`.
-10. Buka `https://siperkasa.example.ac.id` dan login sebagai admin (NIP dari `SUPER_ADMIN_NIP`, password dari `SUPER_ADMIN_PASSWORD`).
+   Ini satu-satunya cron yang dibutuhkan. Pakai path PHP lengkap, bukan `php` saja: `php` biasa sering menunjuk ke PHP lama dan cron gagal tanpa pesan. Cek path dengan `/opt/cpanel/ea-php84/root/usr/bin/php -v` (harus 8.4). Jika path berbeda di hosting Anda, tanyakan ke penyedia hosting.
+10. Jalankan `php artisan backup:run` satu kali sekarang (harus selesai tanpa error), sebelum memasang monitor `/up` di bagian 10. Tanpa backup pertama, `/up` akan merah.
+11. Buka `https://siperkasa.example.ac.id` dan login sebagai admin (NIP dari `SUPER_ADMIN_NIP`, password dari `SUPER_ADMIN_PASSWORD`).
 
 ## 4. php.ini (cPanel, MultiPHP INI Editor)
 
@@ -137,7 +140,9 @@ Backup otomatis jalan lewat cron yang sama:
 
 Isi backup: dump database (`db-dumps/`) dan folder `storage/app/private` (foto laporan). Kode tidak ikut karena bisa diambil dari git. Hasil disimpan di `storage/app/backups` (privat, tidak bisa diakses dari web).
 
-Retensi: semua backup 3 hari terakhir, satu per hari untuk 14 hari, satu per minggu untuk 8 minggu. Jika total melebihi 5000 MB, backup tertua dihapus.
+Retensi: semua backup 3 hari terakhir, satu per hari untuk 14 hari, satu per minggu untuk 8 minggu. Jika total melebihi `BACKUP_MAX_MB` (bawaan 5000 MB), backup tertua dihapus.
+
+Ukuran: satu backup berisi semua foto, jadi makin lama makin besar. Naikkan `BACKUP_MAX_MB` setiap tahun, kira-kira 5 kali ukuran satu backup. Kuota hosting harus cukup untuk foto + `BACKUP_MAX_MB` + 1 backup sementara (folder `storage/app/backup-temp`). Jika kuota kurang, backup gagal atau backup lama terhapus lebih cepat dari rencana.
 
 ### Lokasi kedua (off-site)
 
@@ -164,7 +169,17 @@ BACKUP_OFFSITE_PASSWORD=...
 BACKUP_OFFSITE_ROOT=/backups/siperkasa
 ```
 
-Alternatif: pakai kunci SSH lewat `BACKUP_OFFSITE_PRIVATE_KEY` (isi kunci) dan `BACKUP_OFFSITE_PASSPHRASE`. Kosongkan `BACKUP_OFFSITE_HOST` jika tidak memakai lokasi kedua. Jalankan `php artisan optimize` lagi setelah mengubah `.env`.
+Alternatif: pakai kunci SSH lewat `BACKUP_OFFSITE_PRIVATE_KEY`. Isi dengan path file kunci, misalnya `/home/<user>/.ssh/siperkasa_backup` (atur `chmod 600`), bukan isi kunci. Jika kunci punya passphrase, isi `BACKUP_OFFSITE_PASSPHRASE`. Kosongkan `BACKUP_OFFSITE_HOST` jika tidak memakai lokasi kedua. Jalankan `php artisan optimize` lagi setelah mengubah `.env`.
+
+Cek lokasi kedua benar-benar aktif (jika salah satu dari tiga isian kosong, lokasi kedua diam-diam mati):
+
+```bash
+php artisan config:show backup.backup.destination.disks
+php artisan backup:run
+php artisan backup:list
+```
+
+Perintah pertama harus menampilkan `backups` dan `offsite`. `backup:list` harus menampilkan kedua lokasi.
 
 Pengaturan lain: `MYSQLDUMP_PATH=/usr/bin` (folder `mysqldump`, cek dengan `which mysqldump`), `BACKUP_NOTIFY_MAIL` (WAJIB: email admin penerima kabar backup gagal; jangan pakai alamat noreply karena kabar tidak akan terbaca).
 
@@ -186,23 +201,24 @@ php artisan backup:list
 1. Unduh file zip backup terbaru ke komputer. Lokasinya `storage/app/backups/<APP_NAME>/` (nama folder mengikuti `APP_NAME`) atau lokasi kedua. Ekstrak dengan password dari `BACKUP_ARCHIVE_PASSWORD`:
 
    ```bash
-   unzip -P 'password-zip-anda' nama-file-backup.zip -d hasil-backup
+   7z x nama-file-backup.zip -ohasil-backup
    ```
 
-   Hapus riwayat terminal setelahnya karena password tertulis di perintah. Tanpa password, zip tidak bisa dibuka.
+   7z menanyakan password; jangan menulis password di perintah. Di Windows pakai 7-Zip (klik kanan, 7-Zip, Extract), bukan ekstrak bawaan Windows. Di Linux pasang `p7zip`. Perintah `unzip` biasa dan ekstrak bawaan Windows tidak bisa membuka zip terenkripsi AES-256 ini. Tanpa password, zip tidak bisa dibuka.
 2. Buat database kosong baru untuk uji coba (jangan timpa database produksi), lalu impor:
 
    ```bash
-   mysql siperkasa_uji < hasil-backup/db-dumps/mysql-siperkasa.sql
+   mysql -u <user>_dbuji -p <user>_siperkasa_uji < hasil-backup/db-dumps/mysql-<user>_siperkasa.sql
    ```
 
-   Nama file dump mengikuti nama database. Cek isi folder `db-dumps/`.
+   cPanel menambahkan awalan akun (`<user>_`) pada nama database dan pengguna database. Buat database uji dan pengguna uji lewat cPanel, "MySQL Databases", lalu beri hak akses penuh ke database uji. Nama file dump mengikuti nama database asal. Cek isi folder `db-dumps/`.
 3. Folder foto tersimpan di dalam zip dengan path lengkap server asal, yaitu path yang berakhir dengan `storage/app/private` (misalnya `hasil-backup/home/<user>/siperkasa/storage/app/private`). Cari dengan `find hasil-backup -path '*storage/app/private' -type d`, lalu salin isinya ke `storage/app/private` pada aplikasi uji.
 4. Arahkan `.env` aplikasi uji ke database uji, login, dan buka satu foto laporan. Foto harus tampil.
 5. Catat tanggal latihan di sini:
 
    - Tanggal latihan restore terakhir: ____________________
    - Dilakukan oleh: ____________________
+6. Setelah selesai, hapus file zip hasil unduhan, folder `hasil-backup`, dan database uji (di komputer dan di server). Isinya data pribadi dan hash password.
 
 Untuk restore produksi yang sebenarnya, urutan sama, tetapi aktifkan mode perawatan dulu (`php artisan down`) dan impor ke database produksi setelah memastikan backup yang dipakai benar.
 
@@ -238,6 +254,8 @@ SSR mati secara bawaan (`INERTIA_SSR_ENABLED=false`) dan situs tetap berjalan no
 ## 10. Pemantauan
 
 - Pasang monitor (misalnya UptimeRobot) ke `https://siperkasa.example.ac.id/up`. Halaman ini mengecek database dan sisa disk. Jika sisa disk kurang dari `HEALTH_MIN_FREE_MB` (bawaan 1024 MB) atau database tidak terjangkau, halaman mengembalikan 500.
+- `/up` juga merah jika backup terakhir lebih tua dari 26 jam, atau `BACKUP_NOTIFY_MAIL` belum diisi. Artinya cron mati atau backup gagal. Cek path `php` di cron (bagian 3.9) dan folder `storage/app/backups`. Matikan pengecekan ini hanya jika perlu dengan `HEALTH_CHECK_BACKUP=false`.
+- Sisa disk di `/up` mengukur partisi server, bukan kuota akun cPanel. Pada shared hosting kuota biasanya penuh lebih dulu dan `/up` tidak melihatnya. Aktifkan email peringatan kuota di cPanel (Contact Information, pilih peringatan penggunaan disk).
 - Log ada di `storage/logs/laravel-YYYY-MM-DD.log`, disimpan 14 hari. Hanya level `warning` ke atas yang dicatat.
 - Foto bertambah sekitar 3 sampai 4 GB per tahun. Pantau kuota disk hosting dan ruang backup.
 

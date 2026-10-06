@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Env;
+use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumStorageInMegabytes;
 
 function backupConfigWith(array $env): array
 {
@@ -80,6 +81,29 @@ test('the failure alert mail has no fallback address', function () {
         ->toBe('admin@example.ac.id')
         ->and(backupConfigWith(['MAIL_FROM_ADDRESS' => 'noreply@example.ac.id'])['notifications']['mail']['to'])
         ->toEndWith('.invalid');
+});
+
+test('the storage cap reads BACKUP_MAX_MB and is not a monitor health check', function () {
+    expect(backupConfigWith(['BACKUP_MAX_MB' => '8000'])['cleanup']['default_strategy']['delete_oldest_backups_when_using_more_megabytes_than'])->toBe(8000)
+        ->and(backupConfigWith([])['cleanup']['default_strategy']['delete_oldest_backups_when_using_more_megabytes_than'])->toBe(5000)
+        ->and(array_keys(config('backup.monitor_backups.0.health_checks')))->not->toContain(MaximumStorageInMegabytes::class);
+});
+
+test('blank offsite credentials become null so key auth is not attempted with an empty key', function () {
+    $repository = Env::getRepository();
+    foreach (['BACKUP_OFFSITE_PRIVATE_KEY', 'BACKUP_OFFSITE_PASSPHRASE', 'BACKUP_OFFSITE_PASSWORD'] as $key) {
+        $repository->set($key, '');
+    }
+
+    try {
+        $disk = (require config_path('filesystems.php'))['disks']['offsite'];
+    } finally {
+        foreach (['BACKUP_OFFSITE_PRIVATE_KEY', 'BACKUP_OFFSITE_PASSPHRASE', 'BACKUP_OFFSITE_PASSWORD'] as $key) {
+            $repository->clear($key);
+        }
+    }
+
+    expect($disk['privateKey'])->toBeNull()->and($disk['passphrase'])->toBeNull()->and($disk['password'])->toBeNull();
 });
 
 test('retention is 3 days, 14 daily, 8 weekly and capped at 5000 MB', function () {
