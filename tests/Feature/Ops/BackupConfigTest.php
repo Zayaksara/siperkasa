@@ -28,6 +28,11 @@ test('private storage is backed up and the backups folder is not', function () {
         ->and(config('backup.backup.source.files.exclude'))->toContain(storage_path('app/backups'));
 });
 
+test('the filesystems config keeps the backups disk and the offsite host fingerprint control', function () {
+    expect(config('filesystems.disks.backups'))->toBeArray()
+        ->and(config('filesystems.disks.offsite'))->toHaveKey('hostFingerprint');
+});
+
 test('the backups disk is local and not public', function () {
     $disk = config('filesystems.disks.backups');
 
