@@ -14,8 +14,8 @@ class ImportAssetsJob implements ShouldQueue
 {
     use Queueable;
 
-    /** Must stay below the queue connection's retry_after (config/queue.php). */
-    public int $timeout = 900;
+    /** Must stay below the scheduled worker's --max-time (routes/console.php) and retry_after (config/queue.php). */
+    public int $timeout = 780;
 
     public int $tries = 1;
 

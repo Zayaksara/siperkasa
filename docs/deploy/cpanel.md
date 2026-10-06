@@ -53,7 +53,7 @@ Catatan: dokumen ini hanya persiapan. Belum ada yang di-deploy.
    cp .env.production.example .env
    ```
 
-   Edit `.env`: isi `APP_URL`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, pengaturan `MAIL_*`, `BACKUP_NOTIFY_MAIL`, dan `SUPER_ADMIN_PASSWORD` (password panjang, minimal 12 karakter, huruf besar, kecil, angka, simbol). Lalu:
+   Edit `.env`: isi `APP_URL`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, pengaturan `MAIL_*`, `BACKUP_NOTIFY_MAIL` (WAJIB, email admin yang membaca kabar backup gagal), dan `SUPER_ADMIN_PASSWORD` (password panjang, minimal 12 karakter, huruf besar, kecil, angka, simbol). Lalu:
 
    ```bash
    php artisan key:generate --force
@@ -106,7 +106,8 @@ Ekspor PDF sampai 500 baris memakai sekitar 192 MB memori dan sekitar 6 detik. D
 
 - Aktifkan AutoSSL (cPanel, SSL/TLS Status) untuk domain.
 - Di `.env`: `APP_URL=https://...` (passkey hanya jalan di HTTPS) dan `SESSION_SECURE_COOKIE=true`.
-- Isi `TRUSTED_PROXIES` hanya jika situs berada di belakang proxy atau load balancer (isi daftar IP dipisah koma, atau `*`). Jika tidak yakin, biarkan kosong.
+- `TRUSTED_PROXIES` (daftar IP "perantara" yang boleh dipercaya, misalnya layanan CDN): biarkan kosong jika situs langsung diakses tanpa perantara. Isi hanya dengan IP perantara yang sebenarnya, dipisah koma.
+- Peringatan: jangan isi `*` kecuali server hanya bisa dijangkau lewat perantara. Jika tidak, siapa pun bisa memalsukan alamat IP dan skema (http/https) pengunjung.
 - Setelah mengubah `.env`, jalankan `php artisan optimize` lagi.
 
 ## 6. Pekerjaan latar belakang (antrean)
@@ -140,10 +141,23 @@ Retensi: semua backup 3 hari terakhir, satu per hari untuk 14 hari, satu per min
 
 ### Lokasi kedua (off-site)
 
-Backup yang hanya ada di server yang sama tidak aman jika server rusak. Siapkan server lain yang bisa diakses lewat SFTP, lalu isi di `.env`:
+Backup yang hanya ada di server yang sama tidak aman jika server rusak. Siapkan server lain yang bisa diakses lewat SFTP (transfer file lewat SSH).
+
+Lokasi kedua menyala HANYA jika tiga isian ini semuanya terisi: `BACKUP_OFFSITE_HOST`, `BACKUP_OFFSITE_HOST_FINGERPRINT`, dan `BACKUP_ARCHIVE_PASSWORD`. Jika salah satu kosong, backup hanya disimpan di server ini. Alasannya: tanpa sidik jari, koneksi bisa dibelokkan ke server palsu. Tanpa password, backup (berisi data pribadi, hash password, dan foto) keluar dari server dalam keadaan terbuka.
+
+Cara mendapat sidik jari (fingerprint) server tujuan. Jalankan di komputer yang bisa menjangkau server tujuan, lalu bandingkan hasilnya dengan yang diberikan pengelola server tujuan:
+
+```bash
+ssh-keyscan -t ed25519 server-backup.example.org | ssh-keygen -lf -
+```
+
+Hasilnya mirip `256 SHA256:AbCdEf... server-backup.example.org (ED25519)`. Salin bagian `SHA256:AbCdEf...` apa adanya ke `BACKUP_OFFSITE_HOST_FINGERPRINT`. Aplikasi menerima format ini.
+
+Password zip: buat password panjang di `BACKUP_ARCHIVE_PASSWORD`, lalu simpan salinannya di tempat terpisah di luar server (misalnya brankas password milik pengelola). Tanpa password ini backup tidak bisa dibuka dan restore tidak mungkin dilakukan. Jika password diganti, catat password lama: backup lama tetap memakai password lama.
 
 ```
 BACKUP_OFFSITE_HOST=server-backup.example.org
+BACKUP_OFFSITE_HOST_FINGERPRINT=SHA256:AbCdEf...
 BACKUP_OFFSITE_PORT=22
 BACKUP_OFFSITE_USERNAME=...
 BACKUP_OFFSITE_PASSWORD=...
@@ -152,7 +166,11 @@ BACKUP_OFFSITE_ROOT=/backups/siperkasa
 
 Alternatif: pakai kunci SSH lewat `BACKUP_OFFSITE_PRIVATE_KEY` (isi kunci) dan `BACKUP_OFFSITE_PASSPHRASE`. Kosongkan `BACKUP_OFFSITE_HOST` jika tidak memakai lokasi kedua. Jalankan `php artisan optimize` lagi setelah mengubah `.env`.
 
-Pengaturan lain: `MYSQLDUMP_PATH=/usr/bin` (folder `mysqldump`, cek dengan `which mysqldump`), `BACKUP_NOTIFY_MAIL` (alamat email penerima kabar gagal; wajib alamat email yang valid), `BACKUP_ARCHIVE_PASSWORD` (opsional, mengenkripsi zip).
+Pengaturan lain: `MYSQLDUMP_PATH=/usr/bin` (folder `mysqldump`, cek dengan `which mysqldump`), `BACKUP_NOTIFY_MAIL` (WAJIB: email admin penerima kabar backup gagal; jangan pakai alamat noreply karena kabar tidak akan terbaca).
+
+### Tes alarm backup (wajib sebelum go-live)
+
+Pastikan kabar gagal benar-benar sampai. Isi `BACKUP_NOTIFY_MAIL`, jalankan `php artisan optimize`, lalu ubah `MYSQLDUMP_PATH` sementara ke folder yang salah (misalnya `/tmp`). Jalankan `php artisan backup:run` dan pastikan email kabar gagal masuk ke kotak masuk admin. Setelah itu kembalikan `MYSQLDUMP_PATH` yang benar dan jalankan `php artisan optimize` lagi. Jika email tidak masuk, jangan go-live sebelum diperbaiki.
 
 ### Jalankan manual
 
@@ -165,15 +183,21 @@ php artisan backup:list
 
 ### Latihan restore (wajib sebelum go-live)
 
-1. Unduh file zip backup terbaru (dari `storage/app/backups` atau lokasi kedua) ke komputer, lalu ekstrak.
+1. Unduh file zip backup terbaru ke komputer. Lokasinya `storage/app/backups/<APP_NAME>/` (nama folder mengikuti `APP_NAME`) atau lokasi kedua. Ekstrak dengan password dari `BACKUP_ARCHIVE_PASSWORD`:
+
+   ```bash
+   unzip -P 'password-zip-anda' nama-file-backup.zip -d hasil-backup
+   ```
+
+   Hapus riwayat terminal setelahnya karena password tertulis di perintah. Tanpa password, zip tidak bisa dibuka.
 2. Buat database kosong baru untuk uji coba (jangan timpa database produksi), lalu impor:
 
    ```bash
-   mysql siperkasa_uji < db-dumps/mysql-siperkasa.sql
+   mysql siperkasa_uji < hasil-backup/db-dumps/mysql-siperkasa.sql
    ```
 
    Nama file dump mengikuti nama database. Cek isi folder `db-dumps/`.
-3. Salin folder `storage/app/private` dari zip ke `storage/app/private` pada aplikasi uji.
+3. Folder foto tersimpan di dalam zip dengan path lengkap server asal, yaitu path yang berakhir dengan `storage/app/private` (misalnya `hasil-backup/home/<user>/siperkasa/storage/app/private`). Cari dengan `find hasil-backup -path '*storage/app/private' -type d`, lalu salin isinya ke `storage/app/private` pada aplikasi uji.
 4. Arahkan `.env` aplikasi uji ke database uji, login, dan buka satu foto laporan. Foto harus tampil.
 5. Catat tanggal latihan di sini:
 
@@ -221,10 +245,10 @@ SSR mati secara bawaan (`INERTIA_SSR_ENABLED=false`) dan situs tetap berjalan no
 
 **Impor aset macet di status `queued`.** Cron tidak jalan. Cek halaman Cron Jobs di cPanel, pastikan baris di langkah 3.9 ada dan path `php` benar. Cek juga `proc_open` (bagian 1). Jalankan `php artisan queue:work --once` untuk memproses manual.
 
-**Cek awal bila ada masalah (preflight C12).**
+**Gejala lain yang mungkin muncul.**
 
-- Error 500 setelah suatu aksi, tetapi status data sudah berubah (misalnya laporan sudah pindah status). Penyebab: penyimpanan notifikasi gagal setelah data tersimpan. Solusi: muat ulang halaman. Data aman. Cek `storage/logs` untuk penyebab gagalnya notifikasi.
-- Tampilan tidak cocok antara server dan browser (peringatan `Date.now`): hanya terjadi bila SSR menyala. Dengan SSR mati (bawaan), masalah ini tidak ada.
+- Error 500 setelah suatu aksi, tetapi status data sudah berubah (misalnya laporan sudah pindah status). Penyebab: penyimpanan notifikasi (pesan pemberitahuan di dalam aplikasi) gagal setelah data tersimpan. Solusi: muat ulang halaman. Data aman. Cek `storage/logs` untuk penyebab gagalnya notifikasi.
+- Tampilan tidak cocok antara server dan browser (peringatan hydration mismatch di konsol browser): hanya terjadi bila SSR menyala. Dengan SSR mati (bawaan), masalah ini tidak ada.
 
 **419 (Page Expired) setelah deploy.** Bersihkan cache dan cookie browser, atau login ulang. Pastikan `APP_URL` dan `SESSION_SECURE_COOKIE` sesuai (HTTPS).
 

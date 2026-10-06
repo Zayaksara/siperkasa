@@ -38,11 +38,48 @@ test('the backups disk is local and not public', function () {
         ->and(config('backup.backup.destination.disks'))->toBe(['backups']);
 });
 
-test('the offsite disk is a destination only when the host is set', function () {
+const OFFSITE_ALL = [
+    'BACKUP_OFFSITE_HOST' => 'backup.example.org',
+    'BACKUP_OFFSITE_HOST_FINGERPRINT' => 'SHA256:abc123',
+    'BACKUP_ARCHIVE_PASSWORD' => 'rahasia-panjang',
+];
+
+test('the offsite disk is a destination only when host, fingerprint and archive password are all set', function () {
     expect(backupConfigWith([])['backup']['destination']['disks'])->toBe(['backups'])
-        ->and(backupConfigWith(['BACKUP_OFFSITE_HOST' => 'backup.example.org'])['backup']['destination']['disks'])
-        ->toBe(['backups', 'offsite'])
+        ->and(backupConfigWith(OFFSITE_ALL)['backup']['destination']['disks'])->toBe(['backups', 'offsite'])
         ->and(config('filesystems.disks.offsite.driver'))->toBe('sftp');
+
+    foreach (array_keys(OFFSITE_ALL) as $missing) {
+        $partial = collect(OFFSITE_ALL)->except($missing)->all();
+
+        expect(backupConfigWith($partial)['backup']['destination']['disks'])->toBe(['backups'], "without $missing")
+            ->and(backupConfigWith($partial)['monitor_backups'][0]['disks'])->toBe(['backups'], "monitor without $missing");
+    }
+});
+
+test('the offsite disk is monitored when all three are set', function () {
+    expect(backupConfigWith(OFFSITE_ALL)['monitor_backups'][0]['disks'])->toBe(['backups', 'offsite']);
+});
+
+test('the offsite sftp disk verifies the host fingerprint', function () {
+    $repository = Env::getRepository();
+    $repository->set('BACKUP_OFFSITE_HOST_FINGERPRINT', 'SHA256:abc123');
+
+    try {
+        $disks = (require config_path('filesystems.php'))['disks'];
+    } finally {
+        $repository->clear('BACKUP_OFFSITE_HOST_FINGERPRINT');
+    }
+
+    expect($disks['offsite'])->toHaveKey('hostFingerprint')
+        ->and($disks['offsite']['hostFingerprint'])->toBe('SHA256:abc123');
+});
+
+test('the failure alert mail has no fallback address', function () {
+    expect(backupConfigWith(['BACKUP_NOTIFY_MAIL' => 'admin@example.ac.id', 'MAIL_FROM_ADDRESS' => 'noreply@example.ac.id'])['notifications']['mail']['to'])
+        ->toBe('admin@example.ac.id')
+        ->and(backupConfigWith(['MAIL_FROM_ADDRESS' => 'noreply@example.ac.id'])['notifications']['mail']['to'])
+        ->toEndWith('.invalid');
 });
 
 test('retention is 3 days, 14 daily, 8 weekly and capped at 5000 MB', function () {

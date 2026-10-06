@@ -36,11 +36,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configureHealthCheck();
 
-        // Read from config (not env) so it keeps working after `php artisan optimize`.
-        if (filled(config('siperkasa.trusted_proxies'))) {
-            $proxies = (string) config('siperkasa.trusted_proxies');
-            TrustProxies::at($proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)));
-        }
+        $this->configureTrustedProxies();
 
         Fortify::authenticateUsing(function (Request $request) {
             $user = User::where('nim_nip', trim((string) $request->input('nim_nip')))->first();
@@ -76,6 +72,19 @@ class AppServiceProvider extends ServiceProvider
                 throw new RuntimeException('Free disk space below threshold.');
             }
         });
+    }
+
+    /**
+     * Read from config (not env) so it keeps working after `php artisan optimize`.
+     */
+    protected function configureTrustedProxies(): void
+    {
+        if (! filled(config('siperkasa.trusted_proxies'))) {
+            return;
+        }
+
+        $proxies = (string) config('siperkasa.trusted_proxies');
+        TrustProxies::at($proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)));
     }
 
     /**

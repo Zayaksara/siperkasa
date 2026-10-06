@@ -44,3 +44,17 @@ test('the production example holds no secrets', function () {
 test('SSR is off under testing', function () {
     expect(config('inertia.ssr.enabled'))->toBeFalse();
 });
+
+test('the production example lists the required backup keys', function () {
+    $content = file_get_contents(base_path('.env.production.example'));
+
+    foreach (['BACKUP_NOTIFY_MAIL', 'BACKUP_OFFSITE_HOST_FINGERPRINT', 'BACKUP_ARCHIVE_PASSWORD'] as $key) {
+        expect(productionEnv())->toHaveKey($key);
+    }
+
+    expect($content)->toMatch('/WAJIB[^
+]*
+(?:#[^
+]*
+)*BACKUP_NOTIFY_MAIL=/');
+});

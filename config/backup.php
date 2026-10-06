@@ -11,6 +11,12 @@ use Spatie\Backup\Tasks\Cleanup\Strategies\DefaultStrategy;
 use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumAgeInDays;
 use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumStorageInMegabytes;
 
+// The offsite copy is enabled only when host, host fingerprint and archive password are ALL set:
+// no unverified host (MITM) and no unencrypted archive leaving this server.
+$offsiteEnabled = filled(env('BACKUP_OFFSITE_HOST'))
+    && filled(env('BACKUP_OFFSITE_HOST_FINGERPRINT'))
+    && filled(env('BACKUP_ARCHIVE_PASSWORD'));
+
 return [
 
     'backup' => [
@@ -163,7 +169,7 @@ return [
              */
             'disks' => array_filter([
                 'backups',
-                env('BACKUP_OFFSITE_HOST') ? 'offsite' : null,
+                $offsiteEnabled ? 'offsite' : null,
             ]),
 
             /*
@@ -235,8 +241,10 @@ return [
         'notifiable' => Notifiable::class,
 
         'mail' => [
-            // Must be a valid address: the package validates it on every boot.
-            'to' => env('BACKUP_NOTIFY_MAIL') ?: env('MAIL_FROM_ADDRESS', 'hello@example.com'),
+            // REQUIRED in production (BACKUP_NOTIFY_MAIL). No fallback to MAIL_FROM_ADDRESS: that is a noreply box.
+            // The package validates this address on every boot, so an unset value needs a syntactically valid
+            // placeholder. The reserved `.invalid` TLD never delivers, so a missing value bounces loudly in the mail log.
+            'to' => env('BACKUP_NOTIFY_MAIL') ?: 'backup-notify-not-set@example.invalid',
 
             'from' => [
                 'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
@@ -299,7 +307,7 @@ return [
             'name' => env('APP_NAME', 'laravel-backup'),
             'disks' => array_filter([
                 'backups',
-                env('BACKUP_OFFSITE_HOST') ? 'offsite' : null,
+                $offsiteEnabled ? 'offsite' : null,
             ]),
             'health_checks' => [
                 MaximumAgeInDays::class => 1,

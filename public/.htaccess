@@ -14,7 +14,7 @@
     RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
 
     # Mark hashed Vite assets so they can be cached for a year (see Header rule below)
-    RewriteRule ^build/ - [E=IMMUTABLE_ASSET:1]
+    RewriteRule ^build/assets/ - [E=IMMUTABLE_ASSET:1]
 
     # Redirect Trailing Slashes If Not A Folder...
     RewriteCond %{REQUEST_FILENAME} !-d

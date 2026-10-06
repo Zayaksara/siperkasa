@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\ImportAssetsJob;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Console\Scheduling\Schedule;
 
@@ -52,4 +53,15 @@ test('backup:run runs after backup:clean', function () {
     expect(scheduled('backup:clean')->expression)->toBe('0 1 * * *')
         ->and(scheduled('backup:run')->expression)->toBe('30 1 * * *')
         ->and(scheduledIndex('backup:run'))->toBeGreaterThan(scheduledIndex('backup:clean'));
+});
+
+test('import job timeout is below queue max-time, which is below the mutex', function () {
+    $event = scheduled('queue:work');
+    preg_match('/--max-time=(\d+)/', (string) $event->command, $m);
+    $maxTime = (int) $m[1];
+    $timeout = (new ImportAssetsJob(1, 'x'))->timeout;
+
+    expect($timeout)->toBeLessThan($maxTime)
+        ->and($maxTime)->toBeLessThan($event->expiresAt * 60)
+        ->and($timeout)->toBeLessThan(config('queue.connections.database.retry_after'));
 });

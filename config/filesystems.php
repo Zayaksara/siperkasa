@@ -47,7 +47,7 @@ return [
             'report' => false,
         ],
 
-        // Second location for backups (another server over SFTP). Used only when BACKUP_OFFSITE_HOST is set.
+        // Second location for backups (another server over SFTP). Used only when host, fingerprint and archive password are all set (see config/backup.php).
         'offsite' => [
             'driver' => 'sftp',
             'host' => env('BACKUP_OFFSITE_HOST'),
@@ -56,6 +56,7 @@ return [
             'password' => env('BACKUP_OFFSITE_PASSWORD'),
             'privateKey' => env('BACKUP_OFFSITE_PRIVATE_KEY'),
             'passphrase' => env('BACKUP_OFFSITE_PASSPHRASE'),
+            'hostFingerprint' => env('BACKUP_OFFSITE_HOST_FINGERPRINT'),
             'root' => env('BACKUP_OFFSITE_ROOT', '/backups/siperkasa'),
             'timeout' => 30,
             'throw' => true,
