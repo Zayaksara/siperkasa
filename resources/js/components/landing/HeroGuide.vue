@@ -10,9 +10,9 @@ import {
     Plug,
     Speaker,
     Wifi,
-} from '@lucide/vue';
-import { useTemplateRef } from 'vue';
-import { motion, useMotion } from '@/lib/motion';
+} from "@lucide/vue";
+import { useTemplateRef } from "vue";
+import { motion, useMotion } from "@/lib/motion";
 
 /**
  * Hero guide: what to prepare before reporting, and what can be reported.
@@ -24,42 +24,46 @@ const props = withDefaults(defineProps<{ delay?: number }>(), { delay: 0 });
 const prepare = [
     {
         icon: Camera,
-        title: 'Foto kerusakan',
-        text: 'Satu foto yang jelas, langsung dari HP.',
+        title: "Foto kerusakan",
+        text: "Satu foto yang jelas, langsung dari HP.",
     },
     {
         icon: MapPin,
-        title: 'Lokasi',
-        text: 'Nama gedung dan ruangannya.',
+        title: "Lokasi",
+        text: "Nama gedung dan ruangannya.",
     },
     {
         icon: PenLine,
-        title: 'Keterangan singkat',
-        text: 'Apa yang rusak dan sejak kapan.',
+        title: "Keterangan singkat",
+        text: "Apa yang rusak dan sejak kapan.",
     },
 ];
 
 const categories = [
-    { icon: Plug, label: 'Elektronik' },
-    { icon: Monitor, label: 'Komputer' },
-    { icon: Wifi, label: 'Jaringan' },
-    { icon: Speaker, label: 'Audio & Studio' },
-    { icon: Armchair, label: 'Furnitur' },
-    { icon: Building2, label: 'Bangunan & Sarana' },
+    { icon: Plug, label: "Elektronik" },
+    { icon: Monitor, label: "Komputer" },
+    { icon: Wifi, label: "Jaringan" },
+    { icon: Speaker, label: "Audio & Studio" },
+    { icon: Armchair, label: "Furnitur" },
+    { icon: Building2, label: "Bangunan & Sarana" },
 ];
 
-const root = useTemplateRef<HTMLElement>('root');
+const root = useTemplateRef<HTMLElement>("root");
 
-useMotion(root, ({ gsap }) => {
-    gsap.from(gsap.utils.selector(root.value)('.hg-in'), {
-        autoAlpha: 0,
-        y: motion.rise,
-        duration: 0.5,
-        stagger: motion.stagger,
-        delay: props.delay,
-        clearProps: 'transform,opacity,visibility',
-    });
-});
+useMotion(
+    root,
+    ({ gsap }) => {
+        gsap.from(gsap.utils.selector(root.value)(".hg-in"), {
+            autoAlpha: 0,
+            y: motion.rise,
+            duration: 0.5,
+            stagger: motion.stagger,
+            delay: props.delay,
+            clearProps: "transform,opacity,visibility",
+        });
+    },
+    { hideUntilReady: true },
+);
 </script>
 
 <template>
@@ -71,6 +75,7 @@ useMotion(root, ({ gsap }) => {
             <h2
                 id="hg-prepare-title"
                 class="hg-in text-xl font-semibold tracking-[-0.01em] text-landing-fg sm:text-2xl"
+                data-reveal
             >
                 Siapkan sebelum melapor
             </h2>
@@ -79,6 +84,7 @@ useMotion(root, ({ gsap }) => {
                     v-for="(item, i) in prepare"
                     :key="item.title"
                     class="hg-in flex items-start gap-4"
+                    data-reveal
                 >
                     <span
                         class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-landing-glow text-landing-gold"
@@ -105,6 +111,7 @@ useMotion(root, ({ gsap }) => {
             <h2
                 id="hg-categories-title"
                 class="hg-in text-xl font-semibold tracking-[-0.01em] text-landing-fg sm:text-2xl"
+                data-reveal
             >
                 Yang bisa dilaporkan
             </h2>
@@ -113,6 +120,7 @@ useMotion(root, ({ gsap }) => {
                     v-for="cat in categories"
                     :key="cat.label"
                     class="hg-in flex flex-col items-center gap-2 text-center"
+                    data-reveal
                 >
                     <span
                         class="flex size-11 items-center justify-center rounded-xl bg-landing-glow text-landing-gold"
@@ -129,6 +137,7 @@ useMotion(root, ({ gsap }) => {
             </ul>
             <p
                 class="hg-in mt-6 flex items-center gap-2 text-[15px] text-landing-muted"
+                data-reveal
             >
                 <Ellipsis class="size-5 text-landing-gold" aria-hidden="true" />
                 dan kerusakan fasilitas kampus lainnya.
