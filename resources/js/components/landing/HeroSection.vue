@@ -54,7 +54,7 @@ useMotion(
     <section
         id="beranda"
         ref="root"
-        class="relative scroll-mt-24 pt-28 pb-12 sm:pt-32 sm:pb-16"
+        class="relative scroll-mt-24 pt-28 pb-12 sm:pt-32 sm:pb-14"
         aria-labelledby="hero-title"
     >
         <div class="mx-auto max-w-6xl px-4 sm:px-6">

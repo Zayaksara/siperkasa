@@ -91,7 +91,7 @@ useMotion(root, (kit) => {
     <section
         id="cara-kerja"
         ref="root"
-        class="scroll-mt-20 pt-12 sm:pt-16 lg:pt-20"
+        class="scroll-mt-20 pt-12 sm:pt-16 lg:pt-14"
         aria-labelledby="proses-title"
     >
         <div class="mx-auto max-w-6xl px-4 sm:px-6">
