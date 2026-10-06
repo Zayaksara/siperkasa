@@ -3,15 +3,15 @@ import { Link } from '@inertiajs/vue3';
 import { useTemplateRef } from 'vue';
 import { motion, useMotion } from '@/lib/motion';
 import { dashboard, login } from '@/routes';
-import JourneyMockup from './JourneyMockup.vue';
+import HeroGuide from './HeroGuide.vue';
 import { scrollToSection } from './scrollTo';
 
 defineProps<{ authed: boolean }>();
 
 const root = useTemplateRef<HTMLElement>('root');
 
-// Load moment, part 1: copy settles in. The mockup (part 2) starts while
-// this is still running, see JourneyMockup's own timeline and its delay.
+// Load moment, part 1: copy settles in. The guide card (part 2) starts while
+// this is still running, see HeroGuide's delay.
 useMotion(
     root,
     ({ gsap, SplitText }) => {
@@ -97,7 +97,7 @@ useMotion(
                 </div>
             </div>
 
-            <JourneyMockup class="mt-12 sm:mt-16" :delay="0.35" />
+            <HeroGuide class="mt-12 sm:mt-16" :delay="0.35" />
         </div>
     </section>
 </template>
