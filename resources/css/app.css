@@ -27,6 +27,7 @@
 
     --color-primary: var(--primary);
     --color-primary-foreground: var(--primary-foreground);
+    --color-primary-soft: var(--primary-soft);
 
     --color-secondary: var(--secondary);
     --color-secondary-foreground: var(--secondary-foreground);
@@ -136,22 +137,22 @@
     --card-foreground: #07110b;
     --popover: #ffffff;
     --popover-foreground: #07110b;
-    --primary: #0a5e3d;
+    --primary: #216320;
     --primary-foreground: #ffffff;
-    --secondary: #eef2f0;
-    --secondary-foreground: #0f443e;
+    --secondary: #e1ffe0;
+    --secondary-foreground: #216320;
     --muted: #f5f7f6;
     --muted-foreground: #565c59;
-    --accent: #f6efe0;
+    --accent: #e1ffe0;
     --accent-foreground: #07110b;
     --destructive: #b42318;
     --destructive-foreground: #ffffff;
     --border: #e6e8e7;
     --input: #d5dad7;
-    --ring: #0a5e3d;
-    --chart-1: #0a5e3d;
+    --ring: #149612;
+    --chart-1: #149612;
     --chart-2: #bb8f32;
-    --chart-3: #0f443e;
+    --chart-3: #216320;
     --chart-4: #8a5e3c;
     --chart-5: #3b82a0;
     --radius: 0.625rem;
@@ -159,15 +160,15 @@
     --brand-accent: #bb8f32;
     --brand-accent-strong: #8a5e3c;
 
-    --sidebar-background: #0f443e;
-    --sidebar-foreground: #e7efec;
+    --sidebar-background: #216320;
+    --sidebar-foreground: #e1ffe0;
     --sidebar-primary: #bb8f32;
     --sidebar-primary-foreground: #07110b;
-    --sidebar-accent: #16574f;
+    --sidebar-accent: #1a4f19;
     --sidebar-accent-foreground: #ffffff;
-    --sidebar-border: #1c5a52;
-    --sidebar-ring: #bb8f32;
-    --sidebar: #0f443e;
+    --sidebar-border: #2e7a2d;
+    --sidebar-ring: #85fc83;
+    --sidebar: #216320;
 
     /* Accent set (decorative + chart series). Text on its -bg and on card passes WCAG AA (light). */
     --accent-teal: #0f6b5e;
@@ -189,29 +190,30 @@
     --status-in-progress-bg: #f6efe0;
     --status-on-hold: #9a4a00;
     --status-on-hold-bg: #fdebd7;
-    --status-closed: #0a5e3d;
-    --status-closed-bg: #dff1e8;
+    --status-closed: #216320;
+    --status-closed-bg: #e1ffe0;
     --status-rejected: #b42318;
+    --primary-soft: #b9ffb8;
     --status-rejected-bg: #fde7e5;
     --status-cancelled: #3f4542;
     --status-cancelled-bg: #e2e5e3;
 
     /*
       Landing page (Welcome) only. Dark ground derived from brand primary
-      #0A5E3D / primary-strong #0F443E, gold from brand accent #BB8F32.
+      #216320 / primary-strong #1A4F19, gold from brand accent #BB8F32.
       Same values in light and dark appearance: the landing is always dark.
       Contrast on --landing-bg: fg 14.9:1, muted 8.4:1, gold 7.6:1.
     */
-    --landing-bg: #04231a;
-    --landing-surface: #08301f;
-    --landing-line: #1d4a3b;
+    --landing-bg: #06210a;
+    --landing-surface: #0b2e0d;
+    --landing-line: #1f4d1f;
     --landing-fg: #eef4f1;
-    --landing-muted: #a8bdb4;
+    --landing-muted: #a9c4a8;
     --landing-gold: #d4a94a;
     --landing-gold-hover: #e0b878;
-    --landing-gold-fg: #04231a;
+    --landing-gold-fg: #06210a;
     --landing-ring: #e0b878;
-    --landing-glow: #0a5e3d;
+    --landing-glow: #149612;
 }
 
 /*
@@ -231,37 +233,38 @@
     --card-foreground: #e7eae9;
     --popover: #101c17;
     --popover-foreground: #e7eae9;
-    --primary: #3fb98a;
-    --primary-foreground: #04150e;
+    --primary: #85fc83;
+    --primary-foreground: #082608;
     --secondary: #17261f;
     --secondary-foreground: #e7eae9;
     --muted: #17261f;
     --muted-foreground: #a3adaa;
-    --accent: #1c3027;
+    --accent: #173a18;
     --accent-foreground: #e7eae9;
     --destructive: #f0786d;
     --destructive-foreground: #1a0705;
     --border: #25362f;
     --input: #2d4037;
-    --ring: #3fb98a;
-    --chart-1: #3fb98a;
+    --ring: #85fc83;
+    --chart-1: #85fc83;
     --chart-2: #d4a94a;
-    --chart-3: #5bb0a6;
+    --chart-3: #149612;
     --chart-4: #c08a62;
     --chart-5: #6aa8c4;
 
     --brand-accent: #d4a94a;
     --brand-accent-strong: #e0b878;
 
-    --sidebar-background: #0a1f1b;
+    --sidebar-background: #0b210b;
     --sidebar-foreground: #d7e3df;
     --sidebar-primary: #d4a94a;
     --sidebar-primary-foreground: #07110b;
-    --sidebar-accent: #12332d;
+    --sidebar-accent: #143a14;
     --sidebar-accent-foreground: #ffffff;
-    --sidebar-border: #1a3b34;
+    --sidebar-border: #1d451d;
     --sidebar-ring: #d4a94a;
-    --sidebar: #0a1f1b;
+    --sidebar: #0b210b;
+    --primary-soft: #1f5a20;
 
     /* Accent set (decorative + chart series). Text on its -bg and on card passes WCAG AA (dark). */
     --accent-teal: #5fd1bf;
@@ -283,8 +286,8 @@
     --status-in-progress-bg: #3a2d17;
     --status-on-hold: #f0a867;
     --status-on-hold-bg: #3a2410;
-    --status-closed: #6fd3a7;
-    --status-closed-bg: #0f3326;
+    --status-closed: #85fc83;
+    --status-closed-bg: #0f330f;
     --status-rejected: #f59a92;
     --status-rejected-bg: #3d1511;
     --status-cancelled: #aab1ae;

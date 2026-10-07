@@ -4,14 +4,14 @@
     <meta charset="utf-8">
     <title>Laporan Kerusakan Aset</title>
     <style>
-        /* dompdf has no CSS variables: hex values mirror UINSSC tokens (primary #0a5e3d, deep #0f443e, foreground #07110b, muted #565c59, border #d5dad7). */
+        /* dompdf has no CSS variables: hex values mirror UINSSC tokens (primary #216320, deep #1a4f19, foreground #07110b, muted #565c59, border #d5dad7). */
         @page { margin: 28px 30px 40px 30px; }
         body { font-family: 'DejaVu Sans', sans-serif; font-size: 9px; color: #07110b; }
         table { width: 100%; border-collapse: collapse; }
-        .kop { margin-bottom: 8px; border-bottom: 2px solid #0a5e3d; }
+        .kop { margin-bottom: 8px; border-bottom: 2px solid #216320; }
         .kop td { padding-bottom: 6px; vertical-align: middle; }
-        .univ { font-size: 10px; font-weight: bold; color: #0f443e; }
-        .title { margin-top: 2px; font-size: 15px; font-weight: bold; color: #0a5e3d; }
+        .univ { font-size: 10px; font-weight: bold; color: #1a4f19; }
+        .title { margin-top: 2px; font-size: 15px; font-weight: bold; color: #216320; }
         .meta { margin: 6px 0; color: #565c59; }
         .summary { table-layout: fixed; }
         .summary td { padding: 4px 8px; border: 1px solid #d5dad7; text-align: center; }
@@ -19,7 +19,7 @@
         .data { margin-top: 10px; table-layout: fixed; }
         .data thead { display: table-header-group; }
         .data tr { page-break-inside: avoid; }
-        .data th { padding: 5px; background: #0a5e3d; color: #ffffff; text-align: left; }
+        .data th { padding: 5px; background: #216320; color: #ffffff; text-align: left; }
         .data td { padding: 4px 5px; border-bottom: 1px solid #e6e8e7; vertical-align: top; word-wrap: break-word; }
         .empty { padding: 16px; text-align: center; color: #565c59; }
     </style>
