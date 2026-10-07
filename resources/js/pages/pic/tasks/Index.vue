@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import EmptyState from '@/components/EmptyState.vue';
-import HoldBadge from '@/components/HoldBadge.vue';
 import OverdueBadge from '@/components/OverdueBadge.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import Pagination from '@/components/Pagination.vue';
@@ -127,11 +126,6 @@ defineOptions({
                         >
                         <span class="flex flex-wrap items-center gap-2">
                             <OverdueBadge v-if="task.is_overdue" />
-                            <HoldBadge
-                                v-if="
-                                    task.status === 'On_Hold' && task.is_overdue
-                                "
-                            />
                             <StatusBadge
                                 :status="task.status"
                                 :label="task.status_label"

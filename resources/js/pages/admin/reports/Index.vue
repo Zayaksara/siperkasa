@@ -3,7 +3,6 @@ import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { FileSpreadsheet, FileText, Loader2 } from '@lucide/vue';
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
-import HoldBadge from '@/components/HoldBadge.vue';
 import InputError from '@/components/InputError.vue';
 import OverdueBadge from '@/components/OverdueBadge.vue';
 import PageHeader from '@/components/PageHeader.vue';
@@ -393,11 +392,6 @@ function reset() {
                             >
                             <span class="flex flex-wrap items-center gap-2">
                                 <OverdueBadge v-if="r.is_overdue" />
-                                <HoldBadge
-                                    v-if="
-                                        r.status === 'On_Hold' && r.is_overdue
-                                    "
-                                />
                                 <StatusBadge
                                     :status="r.status"
                                     :label="r.status_label"
@@ -482,12 +476,6 @@ function reset() {
                                     <StatusBadge
                                         :status="r.status"
                                         :label="r.status_label"
-                                    />
-                                    <HoldBadge
-                                        v-if="
-                                            r.status === 'On_Hold' &&
-                                            r.is_overdue
-                                        "
                                     />
                                 </span>
                             </td>

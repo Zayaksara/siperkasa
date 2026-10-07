@@ -3,7 +3,6 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import CategoryCombobox from '@/components/CategoryCombobox.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
-import HoldBadge from '@/components/HoldBadge.vue';
 import InputError from '@/components/InputError.vue';
 import OverdueBadge from '@/components/OverdueBadge.vue';
 import PageHeader from '@/components/PageHeader.vue';
@@ -211,9 +210,6 @@ const details = computed<[string, string][]>(() => [
     <div class="mx-auto flex w-full max-w-4xl flex-col gap-6 p-4">
         <PageHeader :title="report.title" :description="report.ticket_number">
             <StatusBadge :status="report.status" :label="report.status_label" />
-            <HoldBadge
-                v-if="report.status === 'On_Hold' && report.is_overdue"
-            />
             <OverdueBadge v-if="report.is_overdue" />
         </PageHeader>
 

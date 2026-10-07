@@ -3,7 +3,6 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { Pencil } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
-import HoldBadge from '@/components/HoldBadge.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import OverdueBadge from '@/components/OverdueBadge.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
@@ -107,9 +106,6 @@ const details = computed<[string, string][]>(() => [
     <div class="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4">
         <PageHeader :title="report.title" :description="report.ticket_number">
             <StatusBadge :status="report.status" />
-            <HoldBadge
-                v-if="report.status === 'On_Hold' && report.is_overdue"
-            />
             <OverdueBadge v-if="report.is_overdue" />
         </PageHeader>
 

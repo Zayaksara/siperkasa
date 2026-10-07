@@ -2,7 +2,6 @@
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, onMounted, ref, watch } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
-import HoldBadge from '@/components/HoldBadge.vue';
 import InputError from '@/components/InputError.vue';
 import OverdueBadge from '@/components/OverdueBadge.vue';
 import PageHeader from '@/components/PageHeader.vue';
@@ -182,9 +181,6 @@ const hasActions = computed(
     <div class="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 pb-24">
         <PageHeader :title="report.title" :description="report.ticket_number">
             <StatusBadge :status="report.status" :label="report.status_label" />
-            <HoldBadge
-                v-if="report.status === 'On_Hold' && report.is_overdue"
-            />
             <OverdueBadge v-if="report.is_overdue" />
         </PageHeader>
 

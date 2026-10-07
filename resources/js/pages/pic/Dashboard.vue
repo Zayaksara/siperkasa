@@ -9,7 +9,6 @@ import {
     Wrench,
 } from '@lucide/vue';
 import EmptyState from '@/components/EmptyState.vue';
-import HoldBadge from '@/components/HoldBadge.vue';
 import OverdueBadge from '@/components/OverdueBadge.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import StatCard from '@/components/StatCard.vue';
@@ -118,11 +117,6 @@ defineOptions({
                         </span>
                         <span class="flex shrink-0 flex-wrap justify-end gap-1">
                             <OverdueBadge v-if="task.is_overdue" />
-                            <HoldBadge
-                                v-if="
-                                    task.is_overdue && task.status === 'On_Hold'
-                                "
-                            />
                             <StatusBadge :status="task.status" />
                         </span>
                     </Link>
