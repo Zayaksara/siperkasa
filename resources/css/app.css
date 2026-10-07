@@ -139,6 +139,7 @@
     --popover-foreground: #07110b;
     --primary: #216320;
     --primary-foreground: #ffffff;
+    --primary-soft: #b9ffb8;
     --secondary: #e1ffe0;
     --secondary-foreground: #216320;
     --muted: #f5f7f6;
@@ -193,33 +194,34 @@
     --status-closed: #216320;
     --status-closed-bg: #e1ffe0;
     --status-rejected: #b42318;
-    --primary-soft: #b9ffb8;
     --status-rejected-bg: #fde7e5;
     --status-cancelled: #3f4542;
     --status-cancelled-bg: #e2e5e3;
 
     /*
-      Landing page (Welcome) only. Dark ground derived from brand primary
-      #216320 / primary-strong #1A4F19, gold from brand accent #BB8F32.
-      Same values in light and dark appearance: the landing is always dark.
-      Contrast on --landing-bg: fg 14.9:1, muted 8.4:1, gold 7.6:1.
+      Landing page (Welcome) and login only. Always bright ground: brand tint
+      #E1FFE0, text near-black green, gold deepened to brand brown #8A5E3C.
+      Same values in light and dark appearance.
+      Contrast on --landing-bg: fg 17.9:1, muted 8.8:1, gold 5.2:1,
+      ring 6.8:1; --landing-gold-fg (white) on gold 5.6:1.
+      Gold #BB8F32 fails as text on this ground; never use it for text here.
     */
-    --landing-bg: #06210a;
-    --landing-surface: #0b2e0d;
-    --landing-line: #1f4d1f;
-    --landing-fg: #eef4f1;
-    --landing-muted: #a9c4a8;
-    --landing-gold: #d4a94a;
-    --landing-gold-hover: #e0b878;
-    --landing-gold-fg: #06210a;
-    --landing-ring: #e0b878;
-    --landing-glow: #149612;
+    --landing-bg: #e1ffe0;
+    --landing-surface: #ffffff;
+    --landing-line: #a6e3a4;
+    --landing-fg: #07110b;
+    --landing-muted: #3b4a3c;
+    --landing-gold: #8a5e3c;
+    --landing-gold-hover: #74502f;
+    --landing-gold-fg: #ffffff;
+    --landing-ring: #216320;
+    --landing-glow: #85fc83;
 }
 
 /*
   Product mockups on the landing always render in the app's light theme,
   even when the visitor uses dark appearance, so the UI reads as paper on
-  the dark ground. `.landing-paper` shares the :root declaration above, so
+  the bright ground. `.landing-paper` shares the :root declaration above, so
   the light values are defined once.
 */
 .landing-paper {
@@ -235,6 +237,7 @@
     --popover-foreground: #e7eae9;
     --primary: #85fc83;
     --primary-foreground: #082608;
+    --primary-soft: #1f5a20;
     --secondary: #17261f;
     --secondary-foreground: #e7eae9;
     --muted: #17261f;
@@ -264,7 +267,6 @@
     --sidebar-border: #1d451d;
     --sidebar-ring: #d4a94a;
     --sidebar: #0b210b;
-    --primary-soft: #1f5a20;
 
     /* Accent set (decorative + chart series). Text on its -bg and on card passes WCAG AA (dark). */
     --accent-teal: #5fd1bf;

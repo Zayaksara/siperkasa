@@ -87,7 +87,7 @@ useMotion(
                     data-reveal
                 >
                     <span
-                        class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-landing-glow text-landing-gold"
+                        class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-landing-glow text-landing-ring"
                         aria-hidden="true"
                     >
                         <component :is="item.icon" class="size-6" />
@@ -123,7 +123,7 @@ useMotion(
                     data-reveal
                 >
                     <span
-                        class="flex size-11 items-center justify-center rounded-xl bg-landing-glow text-landing-gold"
+                        class="flex size-11 items-center justify-center rounded-xl bg-landing-glow text-landing-ring"
                         aria-hidden="true"
                     >
                         <component :is="cat.icon" class="size-5" />

@@ -62,7 +62,7 @@ const focusRing =
                 @click="scrollToSection($event, 'beranda')"
             >
                 <span
-                    class="flex size-9 shrink-0 items-center justify-center rounded-full bg-landing-fg"
+                    class="flex size-9 shrink-0 items-center justify-center rounded-full bg-landing-surface ring-1 ring-landing-line"
                 >
                     <BrandLogo :size="20" />
                 </span>

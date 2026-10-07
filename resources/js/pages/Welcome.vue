@@ -18,7 +18,7 @@ const authed = computed(() => Boolean(page.props.auth?.user));
 <template>
     <Head title="Lapor Kerusakan Aset Kampus" />
     <div
-        class="min-h-screen overflow-x-clip bg-landing-bg font-sans text-landing-fg antialiased [color-scheme:dark]"
+        class="min-h-screen overflow-x-clip bg-landing-bg font-sans text-landing-fg antialiased [color-scheme:light]"
     >
         <a
             href="#konten"

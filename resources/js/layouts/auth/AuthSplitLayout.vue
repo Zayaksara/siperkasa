@@ -107,7 +107,7 @@ useMotion(
 <template>
     <div
         ref="root"
-        class="min-h-svh overflow-x-clip bg-landing-bg font-sans text-landing-fg antialiased [color-scheme:dark] lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
+        class="min-h-svh overflow-x-clip bg-landing-bg font-sans text-landing-fg antialiased [color-scheme:light] lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
     >
         <!-- Brand panel: desktop only. Same journey as the landing hero. -->
         <aside
@@ -118,7 +118,7 @@ useMotion(
                 class="auth-brand-in flex min-h-11 items-center gap-3 self-start rounded-md focus-visible:ring-2 focus-visible:ring-landing-ring focus-visible:ring-offset-2 focus-visible:ring-offset-landing-bg focus-visible:outline-none"
             >
                 <span
-                    class="flex size-11 items-center justify-center rounded-full bg-landing-fg"
+                    class="flex size-11 items-center justify-center rounded-full bg-landing-surface ring-1 ring-landing-line"
                 >
                     <BrandLogo :size="24" />
                 </span>
@@ -210,7 +210,7 @@ useMotion(
                     aria-label="SiPerkasa, ke beranda"
                 >
                     <span
-                        class="flex size-9 items-center justify-center rounded-full bg-landing-fg"
+                        class="flex size-9 items-center justify-center rounded-full bg-landing-surface ring-1 ring-landing-line"
                     >
                         <BrandLogo :size="20" />
                     </span>
@@ -232,7 +232,7 @@ useMotion(
                 class="flex flex-1 justify-center px-4 pt-6 pb-10 sm:px-6 sm:pt-12 lg:items-center lg:pt-0"
             >
                 <div
-                    class="auth-card landing-paper w-full max-w-md self-start rounded-[22px] bg-card p-6 text-card-foreground shadow-[0_40px_80px_-24px_var(--color-landing-bg)] ring-1 ring-landing-line sm:p-8 lg:self-center"
+                    class="auth-card landing-paper w-full max-w-md self-start rounded-[22px] bg-card p-6 text-card-foreground shadow-[0_32px_64px_-28px_color-mix(in_oklab,var(--color-landing-ring)_45%,transparent)] ring-1 ring-landing-line sm:p-8 lg:self-center"
                 >
                     <div class="auth-head mb-8">
                         <h1
