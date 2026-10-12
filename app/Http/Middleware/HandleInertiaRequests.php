@@ -41,6 +41,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'canManageSecurity' => fn () => $request->user()?->managesSecurityLocally() ?? false,
             'unreadNotificationsCount' => fn () => $request->user()?->unreadNotifications()->count() ?? 0,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

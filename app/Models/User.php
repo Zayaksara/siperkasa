@@ -79,6 +79,14 @@ class User extends Authenticatable implements PasskeyUser
         return $this->portal_synced_at !== null;
     }
 
+    /**
+     * False when the account's credentials live in the campus portal (portal account without a local password).
+     */
+    public function managesSecurityLocally(): bool
+    {
+        return ! ($this->isPortalAccount() && blank($this->password));
+    }
+
     public function hasRole(UserRole ...$roles): bool
     {
         return in_array($this->role, $roles, true);

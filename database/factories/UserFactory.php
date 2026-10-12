@@ -37,6 +37,14 @@ class UserFactory extends Factory
             'two_factor_secret' => null,
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
+            'phone' => null,
+            'portal_role' => null,
+            'faculty' => null,
+            'study_program_code' => null,
+            'study_program' => null,
+            'degree_level' => null,
+            'entry_year' => null,
+            'portal_synced_at' => null,
         ];
     }
 

@@ -3,13 +3,13 @@
 use App\Models\User;
 
 test('profile page is displayed', function () {
-    $this->actingAs(User::factory()->create())
+    $this->actingAs(User::factory()->create(['role' => 'admin']))
         ->get(route('profile.edit'))
         ->assertOk();
 });
 
 test('email can be updated and the name stays unchanged', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'admin']);
     $originalName = $user->name;
 
     $this->actingAs($user)
@@ -22,7 +22,7 @@ test('email can be updated and the name stays unchanged', function () {
 });
 
 test('email is optional', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'admin']);
 
     $this->actingAs($user)
         ->patch(route('profile.update'), ['email' => null])
@@ -32,20 +32,20 @@ test('email is optional', function () {
 });
 
 test('nim_nip and role can not be changed from the profile', function () {
-    $user = User::factory()->create(['nim_nip' => '111']);
+    $user = User::factory()->create(['nim_nip' => '111', 'role' => 'admin']);
 
     $this->actingAs($user)->patch(route('profile.update'), [
         'email' => $user->email,
         'nim_nip' => '999',
-        'role' => 'admin',
+        'role' => 'pic',
     ]);
 
     expect($user->refresh()->nim_nip)->toBe('111');
-    expect($user->role->value)->toBe('user');
+    expect($user->role->value)->toBe('admin');
 });
 
 test('there is no self-service account deletion', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'admin']);
 
     $this->actingAs($user)
         ->delete('/settings/profile', ['password' => 'password'])

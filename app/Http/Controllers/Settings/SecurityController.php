@@ -16,8 +16,12 @@ class SecurityController extends Controller
     /**
      * Show the user's security settings page.
      */
-    public function edit(TwoFactorAuthenticationRequest $request): Response
+    public function edit(TwoFactorAuthenticationRequest $request): Response|RedirectResponse
     {
+        if (! $request->user()->managesSecurityLocally()) {
+            return to_route('profile.edit');
+        }
+
         $props = [
             'canManageTwoFactor' => Features::canManageTwoFactorAuthentication(),
             'canManagePasskeys' => Features::canManagePasskeys(),
