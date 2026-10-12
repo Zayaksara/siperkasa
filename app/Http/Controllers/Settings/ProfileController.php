@@ -18,11 +18,9 @@ class ProfileController extends Controller
         return Inertia::render('settings/Profile', [
             'canEditEmail' => $user->hasRole(UserRole::Admin),
             'portalProfile' => $user->isPortalAccount() ? [
-                'portal_role' => $user->portal_role,
                 'faculty' => $user->faculty,
                 'study_program' => $user->study_program,
                 'degree_level' => $user->degree_level,
-                'entry_year' => $user->entry_year,
                 'phone' => $user->phone,
             ] : null,
         ]);

@@ -6,6 +6,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import InputError from '@/components/InputError.vue';
 import OverdueBadge from '@/components/OverdueBadge.vue';
 import PageHeader from '@/components/PageHeader.vue';
+import ReporterPhone from '@/components/ReporterPhone.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import Timeline from '@/components/Timeline.vue';
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,9 @@ const props = defineProps<{
         building: string | null;
         reporter: string | null;
         reporter_nim_nip: string | null;
+        reporter_faculty: string | null;
+        reporter_study_program: string | null;
+        reporter_phone?: string | null;
         pic: string | null;
         admin: string | null;
         asset: { asset_code: string; name: string } | null;
@@ -180,6 +184,12 @@ const details = computed<[string, string][]>(() => [
             ? `${props.report.reporter} (${props.report.reporter_nim_nip ?? '-'})`
             : '-',
     ],
+    [
+        'Fakultas · Program studi',
+        [props.report.reporter_faculty, props.report.reporter_study_program]
+            .filter(Boolean)
+            .join(' · ') || '-',
+    ],
     ['Kategori', props.report.category ?? '-'],
     ['Lokasi', `${props.report.building ?? '-'}, ${props.report.room ?? '-'}`],
     [
@@ -217,6 +227,10 @@ const details = computed<[string, string][]>(() => [
             <div v-for="[label, value] in details" :key="label">
                 <dt class="text-sm text-muted-foreground">{{ label }}</dt>
                 <dd class="font-medium break-words">{{ value }}</dd>
+            </div>
+            <div v-if="report.reporter_phone">
+                <dt class="text-sm text-muted-foreground">No. HP pelapor</dt>
+                <dd><ReporterPhone :phone="report.reporter_phone" /></dd>
             </div>
         </dl>
 

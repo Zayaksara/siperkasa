@@ -53,9 +53,9 @@ test('profile page exposes edit flag and portal profile', function () {
             ->component('settings/Profile')
             ->where('canEditEmail', false)
             ->where('portalProfile.faculty', 'Fakultas Contoh')
-            ->where('portalProfile.entry_year', 2022)
             ->where('portalProfile.phone', '081200000000')
-            ->where('portalProfile.portal_role', 'Mahasiswa'),
+            ->missing('portalProfile.portal_role')
+            ->missing('portalProfile.entry_year'),
         );
 });
 

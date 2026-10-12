@@ -10,11 +10,9 @@ import { Label } from '@/components/ui/label';
 import { edit } from '@/routes/profile';
 
 type PortalProfile = {
-    portal_role: string | null;
     faculty: string | null;
     study_program: string | null;
     degree_level: string | null;
-    entry_year: number | null;
     phone: string | null;
 };
 
@@ -52,13 +50,11 @@ const portalRows = computed(() => {
         return [];
     }
 
-    const program = [p.study_program, p.degree_level].filter(Boolean).join(' ');
+    const program = [p.degree_level, p.study_program].filter(Boolean).join(' ');
+    const studyProgram = [program, p.faculty].filter(Boolean).join(' · ');
 
     return [
-        { id: 'portal_role', label: 'Jenis akun', value: p.portal_role },
-        { id: 'faculty', label: 'Fakultas', value: p.faculty },
-        { id: 'study_program', label: 'Program studi', value: program },
-        { id: 'entry_year', label: 'Angkatan', value: p.entry_year },
+        { id: 'study_program', label: 'Program studi', value: studyProgram },
         { id: 'phone', label: 'No. HP', value: p.phone },
     ].filter((row) => row.value !== null && row.value !== '');
 });

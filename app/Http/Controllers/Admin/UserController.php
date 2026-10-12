@@ -42,6 +42,7 @@ class UserController extends Controller
                 'nim_nip' => $user->nim_nip,
                 'name' => $user->name,
                 'email' => $user->email,
+                'study_program' => $user->study_program,
                 'role' => $user->role->value,
                 'role_label' => $user->role->label(),
                 'is_active' => $user->is_active,

@@ -34,14 +34,18 @@ final class ReportPresenter
     }
 
     /** @return array<string, mixed> */
-    public static function detail(Report $report): array
+    /** The reporter's phone is admin-only; PIC and owner payloads never carry the key. */
+    public static function detail(Report $report, bool $withPhone = false): array
     {
         $report->loadMissing(['category', 'room.building', 'asset.category', 'user', 'admin', 'assignedPic', 'attachments', 'statusLogs.actor']);
 
         return [
             ...self::summary($report),
             'description' => $report->description,
+            ...($withPhone ? ['reporter_phone' => $report->user?->phone] : []),
             'reporter_nim_nip' => $report->user?->nim_nip,
+            'reporter_faculty' => $report->user?->faculty,
+            'reporter_study_program' => $report->user?->study_program,
             'category_id' => $report->category_id,
             'room_id' => $report->room_id,
             'asset' => $report->asset ? [

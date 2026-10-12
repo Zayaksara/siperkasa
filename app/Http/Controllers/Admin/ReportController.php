@@ -49,6 +49,7 @@ class ReportController extends Controller
             'options' => [
                 'categories' => Category::orderBy('name')->get(['id', 'name']),
                 'buildings' => Building::orderBy('code')->get(['id', 'name']),
+                'faculties' => User::query()->whereNotNull('faculty')->distinct()->orderBy('faculty')->pluck('faculty'),
                 'pics' => User::withTrashed()->where('role', UserRole::Pic)->orderBy('name')->get(['id', 'name', 'deleted_at'])
                     ->map(fn (User $pic) => ['id' => $pic->id, 'name' => $pic->trashed() ? "{$pic->name} (terhapus)" : $pic->name]),
                 'statuses' => collect(ReportStatus::cases())->map(fn (ReportStatus $s) => ['value' => $s->value, 'label' => $s->label()]),
@@ -73,7 +74,7 @@ class ReportController extends Controller
         $suggested = $report->category?->default_pic_id;
 
         return Inertia::render('admin/reports/Show', [
-            'report' => ReportPresenter::detail($report),
+            'report' => ReportPresenter::detail($report, withPhone: true),
             'can' => [
                 'approve' => Gate::allows('validate', $report),
                 'reject' => Gate::allows('reject', $report),

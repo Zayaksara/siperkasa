@@ -23,6 +23,7 @@ final class ReportFilter
             'status' => ['nullable', Rule::enum(ReportStatus::class)],
             'category_id' => ['nullable', 'integer'],
             'building_id' => ['nullable', 'integer'],
+            'faculty' => ['nullable', 'string', 'max:150'],
             'pic_id' => ['nullable', 'integer'],
             'priority' => ['nullable', Rule::enum(Priority::class)],
             'from' => ['nullable', 'date'],
@@ -39,6 +40,7 @@ final class ReportFilter
             'status' => 'status',
             'category_id' => 'kategori',
             'building_id' => 'gedung',
+            'faculty' => 'fakultas',
             'pic_id' => 'PIC',
             'priority' => 'prioritas',
             'from' => 'tanggal mulai',
@@ -65,6 +67,7 @@ final class ReportFilter
             ->when($v['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
             ->when($v['category_id'] ?? null, fn ($q, $id) => $q->where('category_id', $id))
             ->when($v['building_id'] ?? null, fn ($q, $id) => $q->whereHas('room', fn ($room) => $room->where('building_id', $id)))
+            ->when($v['faculty'] ?? null, fn ($q, $faculty) => $q->whereHas('user', fn ($user) => $user->where('faculty', $faculty)))
             ->when($v['pic_id'] ?? null, fn ($q, $id) => $q->where('assigned_pic_id', $id))
             ->when($v['priority'] ?? null, fn ($q, $priority) => $q->whereRaw('COALESCE(admin_priority, user_priority) = ?', [$priority]))
             ->when($v['from'] ?? null, fn ($q, $date) => $q->where('created_at', '>=', Date::parse($date)->startOfDay()))

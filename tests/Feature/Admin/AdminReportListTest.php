@@ -140,3 +140,47 @@ test('a report created at 23:30 on the to date is included', function () {
     $this->actingAs($this->admin)->get(route('admin.reports.index', ['from' => '2026-10-05', 'to' => '2026-10-05']))
         ->assertInertia(fn ($page) => $page->has('reports.data', 1)->where('reports.data.0.id', $in->id));
 });
+
+test('faculty filter narrows the list and options list distinct non-null faculties', function () {
+    $fti = User::factory()->create(['faculty' => 'Fakultas Teknik']);
+    $feb = User::factory()->create(['faculty' => 'Fakultas Ekonomi']);
+    User::factory()->create(['faculty' => 'Fakultas Teknik']);
+    $target = Report::factory()->for($fti)->create();
+    Report::factory()->for($feb)->create();
+    Report::factory()->create();
+
+    $this->actingAs($this->admin)->get(route('admin.reports.index', ['faculty' => 'Fakultas Teknik']))
+        ->assertInertia(fn ($page) => $page
+            ->has('reports.data', 1)
+            ->where('reports.data.0.id', $target->id)
+            ->where('options.faculties', ['Fakultas Ekonomi', 'Fakultas Teknik']));
+});
+
+test('admin and assigned pic see reporter faculty and program; only admin gets the phone', function () {
+    $pic = User::factory()->pic()->create();
+    $reporter = User::factory()->create([
+        'faculty' => 'Fakultas Teknik', 'study_program' => 'Teknik Informatika', 'phone' => '081200000000',
+    ]);
+    $report = Report::factory()->assigned($pic)->for($reporter)->create();
+
+    $this->actingAs($this->admin)->get(route('admin.reports.show', $report))
+        ->assertInertia(fn ($page) => $page
+            ->where('report.reporter_faculty', 'Fakultas Teknik')
+            ->where('report.reporter_study_program', 'Teknik Informatika')
+            ->where('report.reporter_phone', '081200000000'));
+
+    $this->actingAs($pic)->get(route('pic.tasks.show', $report))
+        ->assertInertia(fn ($page) => $page
+            ->where('report.reporter_faculty', 'Fakultas Teknik')
+            ->where('report.reporter_study_program', 'Teknik Informatika')
+            ->missing('report.reporter_phone'));
+
+    $this->actingAs($pic)->get(route('pic.tasks.show', $report))->assertDontSee('081200000000', false);
+});
+
+test('admin users list exposes the study program', function () {
+    User::factory()->create(['name' => 'Budi Santoso', 'study_program' => 'Teknik Informatika']);
+
+    $this->actingAs($this->admin)->get(route('admin.users.index', ['q' => 'Budi']))
+        ->assertInertia(fn ($page) => $page->where('users.data.0.study_program', 'Teknik Informatika'));
+});

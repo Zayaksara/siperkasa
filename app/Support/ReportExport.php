@@ -18,14 +18,14 @@ use OpenSpout\Common\Entity\Row;
 final class ReportExport
 {
     public const HEADERS = [
-        'Tiket', 'Tanggal lapor', 'Pelapor', 'NIM/NIP', 'Judul', 'Kategori', 'Gedung', 'Ruang', 'Kode aset',
+        'Tiket', 'Tanggal lapor', 'Pelapor', 'NIM/NIP', 'Fakultas pelapor', 'Prodi pelapor', 'Judul', 'Kategori', 'Gedung', 'Ruang', 'Kode aset',
         'Urgensi pelapor', 'Prioritas admin', 'Status', 'PIC', 'SLA', 'Terlambat', 'Tanggal selesai',
         'Tindakan perbaikan', 'Biaya', 'Vendor',
     ];
 
     /** Relations read by row(); keeps the export free of N+1 queries. */
     public const RELATIONS = [
-        'user:id,name,nim_nip,deleted_at',
+        'user:id,name,nim_nip,faculty,study_program,deleted_at',
         'category:id,name',
         'room.building:id,name',
         'asset:id,asset_code',
@@ -52,6 +52,8 @@ final class ReportExport
             $report->created_at?->format('Y-m-d H:i'),
             self::person($report->user),
             $report->user?->nim_nip,
+            $report->user?->faculty,
+            $report->user?->study_program,
             $report->title,
             $report->category?->name,
             $report->room?->building?->name,
@@ -109,6 +111,9 @@ final class ReportExport
         }
         if (! empty($values['building_id'])) {
             $parts[] = 'Gedung: '.(Building::find((int) $values['building_id'])?->name ?? $values['building_id']);
+        }
+        if (! empty($values['faculty'])) {
+            $parts[] = 'Fakultas: '.$values['faculty'];
         }
         if (! empty($values['pic_id'])) {
             $parts[] = 'PIC: '.(User::withTrashed()->find((int) $values['pic_id'])?->name ?? $values['pic_id']);

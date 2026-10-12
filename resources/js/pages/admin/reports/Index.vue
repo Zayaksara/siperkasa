@@ -58,6 +58,7 @@ const props = defineProps<{
     options: {
         categories: Option[];
         buildings: Option[];
+        faculties: string[];
         pics: Option[];
         statuses: Choice[];
         priorities: Choice[];
@@ -76,6 +77,7 @@ const f = reactive({
     status: String(props.filters.status ?? ''),
     category_id: String(props.filters.category_id ?? ''),
     building_id: String(props.filters.building_id ?? ''),
+    faculty: String(props.filters.faculty ?? ''),
     pic_id: String(props.filters.pic_id ?? ''),
     priority: String(props.filters.priority ?? ''),
     from: String(props.filters.from ?? ''),
@@ -92,6 +94,7 @@ function syncFromProps() {
         status: String(props.filters.status ?? ''),
         category_id: String(props.filters.category_id ?? ''),
         building_id: String(props.filters.building_id ?? ''),
+        faculty: String(props.filters.faculty ?? ''),
         pic_id: String(props.filters.pic_id ?? ''),
         priority: String(props.filters.priority ?? ''),
         from: String(props.filters.from ?? ''),
@@ -155,6 +158,7 @@ function reset() {
         status: '',
         category_id: '',
         building_id: '',
+        faculty: '',
         pic_id: '',
         priority: '',
         from: '',
@@ -301,6 +305,20 @@ function reset() {
                     </option>
                 </NativeSelect>
                 <InputError :message="errors.building_id" />
+            </div>
+            <div class="grid gap-1">
+                <Label for="f-faculty">Fakultas pelapor</Label>
+                <NativeSelect id="f-faculty" v-model="f.faculty">
+                    <option value="">Semua fakultas</option>
+                    <option
+                        v-for="fac in options.faculties"
+                        :key="fac"
+                        :value="fac"
+                    >
+                        {{ fac }}
+                    </option>
+                </NativeSelect>
+                <InputError :message="errors.faculty" />
             </div>
             <div class="grid gap-1">
                 <Label for="f-pic">PIC</Label>

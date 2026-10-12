@@ -44,6 +44,7 @@ type Row = {
     nim_nip: string;
     name: string;
     email: string | null;
+    study_program: string | null;
     role: string;
     role_label: string;
     is_active: boolean;
@@ -281,6 +282,12 @@ function submitImport() {
                             class="ml-1 rounded bg-status-cancelled-bg px-2 py-0.5 text-xs font-semibold text-status-cancelled"
                             >Nonaktif</span
                         >
+                    </p>
+                    <p
+                        v-if="row.study_program"
+                        class="truncate text-sm text-muted-foreground"
+                    >
+                        {{ row.study_program }}
                     </p>
                     <p class="text-sm text-muted-foreground">
                         {{ row.nim_nip }} · {{ row.role_label }} ·

@@ -41,6 +41,8 @@ const props = defineProps<{
         building: string | null;
         reporter: string | null;
         reporter_nim_nip: string | null;
+        reporter_faculty: string | null;
+        reporter_study_program: string | null;
         asset: { asset_code: string; name: string } | null;
         hold_reason: string | null;
         repair_action: string | null;
@@ -152,6 +154,12 @@ const details = computed<[string, string][]>(() => [
         props.report.reporter
             ? `${props.report.reporter} (${props.report.reporter_nim_nip ?? '-'})`
             : 'Pengguna dihapus',
+    ],
+    [
+        'Fakultas · Program studi',
+        [props.report.reporter_faculty, props.report.reporter_study_program]
+            .filter(Boolean)
+            .join(' · ') || '-',
     ],
     ['Kategori', props.report.category ?? '-'],
     ['Lokasi', `${props.report.building ?? '-'}, ${props.report.room ?? '-'}`],

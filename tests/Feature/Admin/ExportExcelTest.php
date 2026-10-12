@@ -44,6 +44,7 @@ test('the workbook has the agreed columns and one row per matching report', func
         'title' => 'Proyektor mati',
         'sla_date' => now()->subDay(),
     ]);
+    $report->user->update(['faculty' => 'Fakultas Teknik', 'study_program' => 'Teknik Informatika']);
     Report::factory()->count(2)->create();
 
     $response = $this->actingAs($this->admin)
@@ -55,21 +56,25 @@ test('the workbook has the agreed columns and one row per matching report', func
 
     $rows = workbook($response)['rows'];
 
-    expect($rows[0])->toHaveCount(19)
+    expect($rows[0])->toHaveCount(21)
         ->and($rows[0][0])->toBe('Tiket')
-        ->and($rows[0][14])->toBe('Terlambat');
+        ->and($rows[0][4])->toBe('Fakultas pelapor')
+        ->and($rows[0][5])->toBe('Prodi pelapor')
+        ->and($rows[0][16])->toBe('Terlambat');
     expect($rows)->toHaveCount(2);
     expect($rows[1][0])->toBe($report->ticket_number)
         ->and($rows[1][2])->toBe($report->user->name)
         ->and($rows[1][3])->toBe($report->user->nim_nip)
-        ->and($rows[1][4])->toBe('Proyektor mati')
-        ->and($rows[1][5])->toBe('Elektronik')
-        ->and($rows[1][8])->toBe($asset->asset_code)
-        ->and($rows[1][11])->toBe('Selesai')
-        ->and($rows[1][12])->toBe('Pak Teknisi')
-        ->and($rows[1][14])->toBe('Tidak')
-        ->and((float) $rows[1][17])->toBe(350000.0)
-        ->and($rows[1][18])->toBe('CV Teknik Jaya');
+        ->and($rows[1][4])->toBe('Fakultas Teknik')
+        ->and($rows[1][5])->toBe('Teknik Informatika')
+        ->and($rows[1][6])->toBe('Proyektor mati')
+        ->and($rows[1][7])->toBe('Elektronik')
+        ->and($rows[1][10])->toBe($asset->asset_code)
+        ->and($rows[1][13])->toBe('Selesai')
+        ->and($rows[1][14])->toBe('Pak Teknisi')
+        ->and($rows[1][16])->toBe('Tidak')
+        ->and((float) $rows[1][19])->toBe(350000.0)
+        ->and($rows[1][20])->toBe('CV Teknik Jaya');
 });
 
 test('the export applies the same filters as the list', function () {
@@ -78,7 +83,7 @@ test('the export applies the same filters as the list', function () {
 
     $rows = workbook($this->actingAs($this->admin)->get(route('admin.reports.export.excel', ['overdue' => 1])))['rows'];
 
-    expect($rows)->toHaveCount(2)->and($rows[1][14])->toBe('Ya');
+    expect($rows)->toHaveCount(2)->and($rows[1][16])->toBe('Ya');
 });
 
 test('the date filter includes the whole last day', function () {
@@ -114,7 +119,7 @@ test('values that look like formulas are exported as exact text, never a formula
     Report::factory()->create(['title' => '- ganti kabel']);
 
     $book = workbook($this->actingAs($this->admin)->get(route('admin.reports.export.excel')));
-    $titles = collect($book['rows'])->skip(1)->pluck(4)->all();
+    $titles = collect($book['rows'])->skip(1)->pluck(6)->all();
 
     // exact text, no visible apostrophe (the reader itself maps a leading "=" to a formula, so the XML is the proof)
     expect($titles)->toHaveCount(4)
@@ -132,7 +137,7 @@ test('a trashed reporter and PIC do not break the export', function () {
     $rows = workbook($this->actingAs($this->admin)->get(route('admin.reports.export.excel')))['rows'];
 
     expect($rows[1][2])->toBe("{$reporter->name} (terhapus)")
-        ->and($rows[1][12])->toBe('PIC Lama (terhapus)');
+        ->and($rows[1][14])->toBe('PIC Lama (terhapus)');
 });
 
 test('a report without PIC, asset or admin priority exports empty cells', function () {
@@ -140,9 +145,9 @@ test('a report without PIC, asset or admin priority exports empty cells', functi
 
     $rows = workbook($this->actingAs($this->admin)->get(route('admin.reports.export.excel')))['rows'];
 
-    expect($rows[1][8])->toBe('')
-        ->and($rows[1][12])->toBe('')
-        ->and($rows[1][14])->toBe('Tidak');
+    expect($rows[1][10])->toBe('')
+        ->and($rows[1][14])->toBe('')
+        ->and($rows[1][16])->toBe('Tidak');
 });
 
 test('invalid filters are validation errors', function () {
