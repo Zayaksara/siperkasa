@@ -141,3 +141,56 @@ test('blank base url sends no http and stays guest', function () {
     $this->assertGuest();
     Http::assertNothingSent();
 });
+
+test('new nim login hits bridge once: login, profil, logout', function () {
+    fakeBridge();
+
+    loginAs();
+
+    $this->assertAuthenticated();
+    Http::assertSentCount(3);
+});
+
+test('login page exposes portalLogin false when bridge is off', function () {
+    config(['services.bridge.base_url' => '']);
+
+    $this->get(route('login'))->assertInertia(fn ($page) => $page
+        ->component('auth/Login')
+        ->where('portalLogin', false));
+});
+
+test('login page exposes portalLogin true when bridge is on', function () {
+    $this->get(route('login'))->assertInertia(fn ($page) => $page
+        ->component('auth/Login')
+        ->where('portalLogin', true));
+});
+
+test('login is throttled per ip across different nims', function () {
+    config(['services.bridge.base_url' => '']);
+
+    foreach (range(1, 20) as $i) {
+        loginAs('nim-'.$i, 'x')->assertSessionHasErrors('nim_nip');
+    }
+
+    loginAs('nim-21', 'x')->assertStatus(429);
+});
+
+test('existing role-user with blank email gets free profile email', function () {
+    $user = User::factory()->create(['nim_nip' => BRIDGE_NIM, 'password' => null, 'email' => null]);
+    fakeBridge();
+
+    loginAs();
+
+    expect($user->fresh()->email)->toBe('budi@kampus.test');
+});
+
+test('existing role-user with blank email stays null when profile email is taken', function () {
+    User::factory()->create(['email' => 'budi@kampus.test']);
+    $user = User::factory()->create(['nim_nip' => BRIDGE_NIM, 'password' => null, 'email' => null]);
+    fakeBridge();
+
+    loginAs();
+
+    $this->assertAuthenticatedAs($user);
+    expect($user->fresh()->email)->toBeNull();
+});

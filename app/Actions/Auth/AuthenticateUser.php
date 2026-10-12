@@ -12,12 +12,27 @@ use Illuminate\Validation\ValidationException;
 
 class AuthenticateUser
 {
+    private const MEMO_KEY = 'siperkasa.authenticated_user';
+
     public function __construct(private readonly BridgeClient $bridge) {}
 
     /**
      * Local password first; role-user accounts without a match fall back to the campus Bridge API.
      */
     public function handle(Request $request): ?User
+    {
+        // Fortify invokes the callback twice per login (2FA check + attempt); resolve once per request.
+        if ($request->attributes->has(self::MEMO_KEY)) {
+            return $request->attributes->get(self::MEMO_KEY);
+        }
+
+        $user = $this->resolve($request);
+        $request->attributes->set(self::MEMO_KEY, $user);
+
+        return $user;
+    }
+
+    private function resolve(Request $request): ?User
     {
         $nimNip = trim((string) $request->input('nim_nip'));
         $password = (string) $request->input('password');
