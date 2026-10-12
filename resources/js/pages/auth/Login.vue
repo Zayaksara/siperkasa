@@ -69,10 +69,15 @@ const formShell = useTemplateRef<HTMLElement>('formShell');
                     placeholder="Masukkan NIM atau NIP"
                     :aria-invalid="errors.nim_nip ? true : undefined"
                     :aria-describedby="
-                        errors.nim_nip ? 'nim_nip-error' : undefined
+                        errors.nim_nip
+                            ? 'nim_nip-hint nim_nip-error'
+                            : 'nim_nip-hint'
                     "
                     class="h-11 rounded-xl bg-background px-3.5 md:text-[15px]"
                 />
+                <p id="nim_nip-hint" class="text-sm text-muted-foreground">
+                    Mahasiswa & dosen: pakai NIM/NIP dan password portal kampus.
+                </p>
                 <InputError id="nim_nip-error" :message="errors.nim_nip" />
             </div>
 
