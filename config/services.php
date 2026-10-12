@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'bridge' => [
+        // Campus portal Bridge API v2 (eCampuz). Blank = Bridge login off.
+        'base_url' => env('BRIDGE_API_BASE_URL'),
+        'timeout' => (int) env('BRIDGE_API_TIMEOUT', 10),
+    ],
+
 ];
