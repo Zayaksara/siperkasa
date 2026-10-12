@@ -20,7 +20,7 @@ final class BridgeClient
     }
 
     /**
-     * @return array{username: string, name: string, email: ?string}|null null when credentials are rejected
+     * @return array{username: string, name: string, email: ?string, portal_role: ?string, phone: ?string, faculty: ?string, study_program_code: ?string, study_program: ?string, degree_level: ?string, entry_year: ?int, profile_loaded: bool}|null null when credentials are rejected
      *
      * @throws BridgeUnavailableException when the Bridge cannot be reached or errors (5xx)
      */
@@ -55,8 +55,18 @@ final class BridgeClient
 
         return [
             'username' => $username,
-            'name' => $this->firstFilled($profile, ['nama', 'nama_lengkap', 'name']) ?? $username,
+            'name' => $this->firstFilled($profile, ['nama', 'nama_lengkap', 'name'])
+                ?? $this->text($login->json('data.nama'))
+                ?? $username,
             'email' => $this->email($profile),
+            'portal_role' => $this->text($login->json('data.role')),
+            'phone' => $this->phone($profile['no_hp'] ?? null),
+            'faculty' => $this->text($profile['fakultas_nama'] ?? null),
+            'study_program_code' => $this->text($profile['program_studi_kode'] ?? null),
+            'study_program' => $this->text($profile['program_studi_nama'] ?? null),
+            'degree_level' => $this->text($profile['jenjang'] ?? null),
+            'entry_year' => $this->entryYear($profile['tahun_masuk'] ?? null),
+            'profile_loaded' => $profile !== [],
         ];
     }
 
@@ -118,7 +128,7 @@ final class BridgeClient
      */
     private function email(array $profile): ?string
     {
-        foreach (['email', 'email_kampus'] as $key) {
+        foreach (['email_kampus', 'email'] as $key) {
             $value = $profile[$key] ?? null;
 
             if (is_string($value) && filter_var($value, FILTER_VALIDATE_EMAIL)) {
@@ -127,5 +137,38 @@ final class BridgeClient
         }
 
         return null;
+    }
+
+    private function text(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        return $value === '' ? null : $value;
+    }
+
+    private function phone(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+        $plus = str_starts_with($value, '+') ? '+' : '';
+        $digits = preg_replace('/\D+/', '', $value) ?? '';
+
+        return strlen($digits) >= 8 ? $plus.$digits : null;
+    }
+
+    private function entryYear(mixed $value): ?int
+    {
+        if (is_string($value) && ctype_digit(trim($value))) {
+            $value = (int) trim($value);
+        }
+
+        return is_int($value) && $value >= 1950 && $value <= 2100 ? $value : null;
     }
 }

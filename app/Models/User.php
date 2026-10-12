@@ -21,6 +21,14 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $nim_nip
  * @property string $name
  * @property string|null $email
+ * @property string|null $phone
+ * @property string|null $portal_role
+ * @property string|null $faculty
+ * @property string|null $study_program_code
+ * @property string|null $study_program
+ * @property string|null $degree_level
+ * @property int|null $entry_year
+ * @property Carbon|null $portal_synced_at
  * @property Carbon|null $email_verified_at
  * @property string|null $password
  * @property string|null $two_factor_secret
@@ -34,7 +42,11 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $deleted_at
  * @property-read int $active_tasks
  */
-#[Fillable(['nim_nip', 'name', 'email', 'password', 'role', 'is_active'])]
+#[Fillable([
+    'nim_nip', 'name', 'email', 'password', 'role', 'is_active',
+    'phone', 'portal_role', 'faculty', 'study_program_code', 'study_program',
+    'degree_level', 'entry_year', 'portal_synced_at',
+])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
@@ -54,7 +66,17 @@ class User extends Authenticatable implements PasskeyUser
             'two_factor_confirmed_at' => 'datetime',
             'role' => UserRole::class,
             'is_active' => 'boolean',
+            'portal_synced_at' => 'datetime',
+            'entry_year' => 'integer',
         ];
+    }
+
+    /**
+     * True once the account has logged in through the campus portal (Bridge).
+     */
+    public function isPortalAccount(): bool
+    {
+        return $this->portal_synced_at !== null;
     }
 
     public function hasRole(UserRole ...$roles): bool

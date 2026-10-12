@@ -3,6 +3,7 @@
 use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 
 const BRIDGE_NIM = '2101010001';
 const BRIDGE_PASSWORD = 'rahasia-portal';
@@ -193,4 +194,126 @@ test('existing role-user with blank email stays null when profile email is taken
 
     $this->assertAuthenticatedAs($user);
     expect($user->fresh()->email)->toBeNull();
+});
+
+function portalProfile(array $override = []): array
+{
+    return array_merge([
+        'nim' => BRIDGE_NIM,
+        'nama' => 'Budi Portal',
+        'no_hp' => '0812-0000-0000',
+        'email' => 'budi@pribadi.test',
+        'email_kampus' => 'budi@kampus.test',
+        'fakultas_nama' => 'Fakultas Teknik',
+        'program_studi_kode' => 'TI01',
+        'program_studi_nama' => 'Teknik Informatika',
+        'jenjang' => 'S1',
+        'tahun_masuk' => 2021,
+    ], $override);
+}
+
+function fakePortalLogin(array $profile): void
+{
+    Http::fake([
+        'bridge.test/api/v2/portal/login' => Http::response(['data' => ['token' => 'tok', 'role' => 'mahasiswa']]),
+        'bridge.test/api/v2/profil' => Http::response(['data' => $profile]),
+        'bridge.test/api/v2/logout' => Http::response([]),
+    ]);
+}
+
+test('new portal user gets all profile fields stored', function () {
+    fakePortalLogin(portalProfile());
+
+    loginAs();
+
+    $user = User::where('nim_nip', BRIDGE_NIM)->firstOrFail();
+    expect($user->email)->toBe('budi@kampus.test')
+        ->and($user->phone)->toBe('081200000000')
+        ->and($user->portal_role)->toBe('mahasiswa')
+        ->and($user->faculty)->toBe('Fakultas Teknik')
+        ->and($user->study_program_code)->toBe('TI01')
+        ->and($user->study_program)->toBe('Teknik Informatika')
+        ->and($user->degree_level)->toBe('S1')
+        ->and($user->entry_year)->toBe(2021)
+        ->and($user->portal_synced_at)->not->toBeNull()
+        ->and($user->isPortalAccount())->toBeTrue();
+});
+
+test('locally created user is not a portal account', function () {
+    expect(User::factory()->create()->isPortalAccount())->toBeFalse();
+});
+
+test('existing user is re-synced and changed prodi overwrites', function () {
+    $user = User::factory()->create([
+        'nim_nip' => BRIDGE_NIM, 'password' => null, 'email' => 'lama@kampus.test',
+        'faculty' => 'Fakultas Lama', 'study_program' => 'Prodi Lama', 'study_program_code' => 'OLD',
+        'degree_level' => 'D3', 'entry_year' => 2019, 'phone' => '081311111111',
+    ]);
+    fakePortalLogin(portalProfile());
+
+    loginAs();
+
+    $fresh = $user->fresh();
+    expect($fresh->faculty)->toBe('Fakultas Teknik')
+        ->and($fresh->study_program)->toBe('Teknik Informatika')
+        ->and($fresh->study_program_code)->toBe('TI01')
+        ->and($fresh->degree_level)->toBe('S1')
+        ->and($fresh->entry_year)->toBe(2021)
+        ->and($fresh->phone)->toBe('081200000000')
+        ->and($fresh->email)->toBe('budi@kampus.test')
+        ->and($fresh->portal_synced_at)->not->toBeNull();
+});
+
+test('profile outage keeps previous academic fields and phone', function () {
+    $user = User::factory()->create([
+        'nim_nip' => BRIDGE_NIM, 'password' => null, 'name' => 'Nama Asli', 'email' => 'lama@kampus.test',
+        'faculty' => 'Fakultas Lama', 'study_program' => 'Prodi Lama', 'study_program_code' => 'OLD',
+        'degree_level' => 'D3', 'entry_year' => 2019, 'phone' => '081311111111',
+    ]);
+    Http::fake([
+        'bridge.test/api/v2/portal/login' => Http::response(['data' => ['token' => 'tok', 'role' => 'mahasiswa']]),
+        'bridge.test/api/v2/profil' => Http::response('x', 500),
+        'bridge.test/api/v2/logout' => Http::response([]),
+    ]);
+
+    loginAs();
+
+    $fresh = $user->fresh();
+    expect($fresh->name)->toBe('Nama Asli')
+        ->and($fresh->email)->toBe('lama@kampus.test')
+        ->and($fresh->faculty)->toBe('Fakultas Lama')
+        ->and($fresh->study_program)->toBe('Prodi Lama')
+        ->and($fresh->study_program_code)->toBe('OLD')
+        ->and($fresh->degree_level)->toBe('D3')
+        ->and($fresh->entry_year)->toBe(2019)
+        ->and($fresh->phone)->toBe('081311111111')
+        ->and($fresh->portal_synced_at)->not->toBeNull();
+});
+
+test('portal email overwrites current when free', function () {
+    $user = User::factory()->create(['nim_nip' => BRIDGE_NIM, 'password' => null, 'email' => 'lama@kampus.test']);
+    fakePortalLogin(portalProfile());
+
+    loginAs();
+
+    expect($user->fresh()->email)->toBe('budi@kampus.test');
+});
+
+test('portal email held by another user keeps current email', function () {
+    User::factory()->create(['email' => 'budi@kampus.test']);
+    $user = User::factory()->create(['nim_nip' => BRIDGE_NIM, 'password' => null, 'email' => 'lama@kampus.test']);
+    fakePortalLogin(portalProfile());
+
+    loginAs();
+
+    expect($user->fresh()->email)->toBe('lama@kampus.test');
+});
+
+test('forbidden portal fields are never stored', function () {
+    foreach ([
+        'tempat_lahir', 'tanggal_lahir', 'alamat', 'nama_bapak', 'nama_ibu', 'ip_kumulatif',
+        'jenis_kelamin', 'dosen_wali', 'dosen_wali_username', 'foto', 'status', 'semester_lulus', 'tanggal_lulus',
+    ] as $column) {
+        expect(Schema::hasColumn('users', $column))->toBeFalse();
+    }
 });

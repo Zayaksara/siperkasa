@@ -83,7 +83,7 @@ class AuthenticateUser
     }
 
     /**
-     * @param  array{username: string, name: string, email: ?string}  $profile
+     * @param  array<string, mixed>  $profile
      */
     private function createFromBridge(string $nimNip, array $profile): User
     {
@@ -95,13 +95,15 @@ class AuthenticateUser
             'is_active' => true,
             'password' => null,
         ]);
+        $user->fill($this->portalAttributes($profile));
+        $user->portal_synced_at = now();
         $user->save();
 
         return $user;
     }
 
     /**
-     * @param  array{username: string, name: string, email: ?string}  $profile
+     * @param  array<string, mixed>  $profile
      */
     private function syncExisting(User $user, array $profile): User
     {
@@ -110,15 +112,36 @@ class AuthenticateUser
             $user->name = $profile['name'];
         }
 
-        if (blank($user->email)) {
-            $user->email = $this->freeEmail($profile['email'], $user);
+        // Portal is the email source; keep the current one when the portal's is taken or missing.
+        $email = $this->freeEmail($profile['email'], $user);
+        if ($email !== null) {
+            $user->email = $email;
         }
 
-        if ($user->isDirty()) {
-            $user->save();
-        }
+        $user->fill($this->portalAttributes($profile));
+        $user->portal_synced_at = now();
+        $user->save();
 
         return $user;
+    }
+
+    /**
+     * Portal-owned columns; when the profile endpoint failed, nothing is overwritten (no nulling).
+     *
+     * @param  array<string, mixed>  $profile
+     * @return array<string, mixed>
+     */
+    private function portalAttributes(array $profile): array
+    {
+        $attributes = array_filter(['portal_role' => $profile['portal_role']], fn ($value) => $value !== null);
+
+        if ($profile['profile_loaded']) {
+            foreach (['phone', 'faculty', 'study_program_code', 'study_program', 'degree_level', 'entry_year'] as $key) {
+                $attributes[$key] = $profile[$key];
+            }
+        }
+
+        return $attributes;
     }
 
     private function freeEmail(?string $email, ?User $except = null): ?string
