@@ -39,7 +39,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $request->user()?->only(['id', 'nim_nip', 'name', 'email', 'role', 'is_active']),
             ],
             'canManageSecurity' => fn () => $request->user()?->managesSecurityLocally() ?? false,
             'unreadNotificationsCount' => fn () => $request->user()?->unreadNotifications()->count() ?? 0,

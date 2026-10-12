@@ -140,3 +140,27 @@ test('portal account is blocked before password confirmation on 2fa and passkey 
     $this->get('/user/two-factor-recovery-codes')->assertForbidden();
     $this->get('/user/passkeys/options')->assertForbidden();
 });
+
+test('shared auth user omits portal profile columns on every page', function () {
+    $user = portalUser();
+
+    foreach (['profile.edit', 'user.dashboard'] as $routeName) {
+        $this->actingAs($user)->get(route($routeName))
+            ->assertInertia(function (Assert $page) use ($user) {
+                $page->where('auth.user.id', $user->id)->where('auth.user.nim_nip', $user->nim_nip);
+                foreach (['phone', 'portal_role', 'faculty', 'study_program_code', 'study_program', 'degree_level', 'entry_year', 'portal_synced_at', 'password', 'remember_token'] as $key) {
+                    $page->missing("auth.user.$key");
+                }
+            });
+    }
+});
+
+test('portal columns are hidden from model serialization', function () {
+    expect(array_keys(portalUser()->toArray()))
+        ->not->toContain('phone', 'faculty', 'portal_role', 'study_program', 'portal_synced_at');
+});
+
+test('profile page still receives portal profile rows', function () {
+    $this->actingAs(portalUser())->get(route('profile.edit'))
+        ->assertInertia(fn (Assert $page) => $page->has('portalProfile', 4));
+});

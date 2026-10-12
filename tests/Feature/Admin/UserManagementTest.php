@@ -183,3 +183,11 @@ test('user list exposes is_portal', function () {
     $this->actingAs($this->admin)->get(route('admin.users.index', ['q' => 'Aaa Portal']))
         ->assertInertia(fn ($page) => $page->where('users.data.0.is_portal', true));
 });
+
+test('a portal account with padded stored name saves unchanged without errors', function () {
+    $portal = User::factory()->create(['portal_synced_at' => now(), 'name' => ' Budi ', 'email' => null]);
+
+    $this->actingAs($this->admin)->put(route('admin.users.update', $portal), [
+        'nim_nip' => $portal->nim_nip, 'name' => 'Budi', 'email' => '', 'role' => 'user',
+    ])->assertSessionHasNoErrors();
+});

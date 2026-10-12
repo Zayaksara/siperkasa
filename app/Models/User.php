@@ -47,7 +47,11 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
     'phone', 'portal_role', 'faculty', 'study_program_code', 'study_program',
     'degree_level', 'entry_year', 'portal_synced_at',
 ])]
-#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
+#[Hidden([
+    'password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token',
+    'phone', 'portal_role', 'faculty', 'study_program_code', 'study_program',
+    'degree_level', 'entry_year', 'portal_synced_at',
+])]
 class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<UserFactory> */

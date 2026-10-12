@@ -23,7 +23,7 @@ final class ReportFilter
             'status' => ['nullable', Rule::enum(ReportStatus::class)],
             'category_id' => ['nullable', 'integer'],
             'building_id' => ['nullable', 'integer'],
-            'faculty' => ['nullable', 'string', 'max:150'],
+            'faculty' => ['nullable', 'string', 'max:255'],
             'pic_id' => ['nullable', 'integer'],
             'priority' => ['nullable', Rule::enum(Priority::class)],
             'from' => ['nullable', 'date'],

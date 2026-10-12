@@ -8,9 +8,6 @@ export type User = {
     role: Role;
     is_active: boolean;
     avatar?: string;
-    two_factor_enabled?: boolean;
-    created_at: string;
-    updated_at: string;
     [key: string]: unknown;
 };
 

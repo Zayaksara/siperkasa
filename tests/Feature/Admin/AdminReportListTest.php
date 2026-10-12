@@ -185,3 +185,8 @@ test('admin users list exposes the study program', function () {
     $this->actingAs($this->admin)->get(route('admin.users.index', ['q' => 'Budi']))
         ->assertInertia(fn ($page) => $page->where('users.data.0.study_program', 'Teknik Informatika'));
 });
+
+test('faculty filter accepts values up to 255 characters', function () {
+    $this->actingAs($this->admin)->get(route('admin.reports.index', ['faculty' => str_repeat('a', 200)]))
+        ->assertSessionHasNoErrors()->assertOk();
+});

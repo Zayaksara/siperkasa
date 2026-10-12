@@ -65,11 +65,11 @@ class SaveUserRequest extends FormRequest
 
         $message = 'Data akun portal mengikuti portal kampus.';
 
-        if ((string) $this->input('name') !== $user->name) {
+        if (trim((string) $this->input('name')) !== trim((string) $user->name)) {
             $validator->errors()->add('name', $message);
         }
 
-        if ((string) $this->input('email') !== (string) $user->email) {
+        if (trim((string) $this->input('email')) !== trim((string) $user->email)) {
             $validator->errors()->add('email', $message);
         }
 
