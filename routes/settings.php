@@ -13,7 +13,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     Route::get('settings/security', [SecurityController::class, 'edit'])
-        ->middleware(RequirePassword::class)
+        ->middleware([EnsureSecurityManagedLocally::class.':redirect', RequirePassword::class])
         ->name('security.edit');
 
     Route::put('settings/password', [SecurityController::class, 'update'])

@@ -132,11 +132,12 @@ const portalRows = computed(() => {
         </Form>
 
         <div
-            v-if="!canEditEmail"
+            v-if="!canEditEmail || !canManageSecurity"
             class="space-y-2 rounded-lg border bg-muted p-4 text-sm text-foreground"
-            data-test="profile-lock-note"
         >
-            <p>{{ lockNote }}</p>
+            <p v-if="!canEditEmail" data-test="profile-lock-note">
+                {{ lockNote }}
+            </p>
             <p v-if="!canManageSecurity" data-test="security-managed-note">
                 Keamanan akun dikelola portal kampus. Ganti password lewat
                 portal kampus.

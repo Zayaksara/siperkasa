@@ -22,9 +22,15 @@ class EnsureSecurityManagedLocally
         'passkeys/confirm/*',
     ];
 
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next, ?string $mode = null): Response
     {
         $user = $request->user();
+
+        if ($mode === 'redirect') {
+            return $user !== null && ! $user->managesSecurityLocally()
+                ? redirect()->route('profile.edit')
+                : $next($request);
+        }
 
         if ($user !== null && ! $user->managesSecurityLocally() && $request->is(self::PATHS)) {
             abort(403, 'Keamanan akun dikelola portal kampus.');

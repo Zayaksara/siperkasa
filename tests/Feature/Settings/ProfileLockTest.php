@@ -100,13 +100,18 @@ test('portal account with local password keeps security', function () {
 
 test('portal account is redirected from security page', function () {
     $this->actingAs(portalUser())
-        ->withSession(['auth.password_confirmed_at' => time()])
         ->get(route('security.edit'))
         ->assertRedirect(route('profile.edit'));
 });
 
+test('local account without confirmation still goes to password confirm', function () {
+    $this->actingAs(User::factory()->create())
+        ->get(route('security.edit'))
+        ->assertRedirect(route('password.confirm'));
+});
+
 test('portal account cannot use password, 2fa or passkey routes', function () {
-    $this->actingAs(portalUser())->withSession(['auth.password_confirmed_at' => time()]);
+    $this->actingAs(portalUser());
 
     $this->put(route('user-password.update'), [
         'password' => 'new-password-123', 'password_confirmation' => 'new-password-123',
@@ -126,4 +131,12 @@ test('local accounts keep password update', function () {
             'password' => 'new-password-123',
             'password_confirmation' => 'new-password-123',
         ])->assertSessionHasNoErrors();
+});
+
+test('portal account is blocked before password confirmation on 2fa and passkey routes', function () {
+    $this->actingAs(portalUser());
+
+    $this->delete('/user/two-factor-authentication')->assertForbidden();
+    $this->get('/user/two-factor-recovery-codes')->assertForbidden();
+    $this->get('/user/passkeys/options')->assertForbidden();
 });
