@@ -45,7 +45,7 @@ final class BridgeClient
 
         $token = $login->json('data.token') ?? $login->json('token');
 
-        if (blank($token)) {
+        if (! is_string($token) || $token === '') {
             return null;
         }
 

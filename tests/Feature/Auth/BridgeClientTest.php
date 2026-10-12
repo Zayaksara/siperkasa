@@ -71,6 +71,12 @@ test('login without token returns null', function () {
     expect((new BridgeClient)->authenticate('u', 'p'))->toBeNull();
 });
 
+test('non-string token returns null', function () {
+    Http::fake(['bridge.test/api/v2/portal/login' => Http::response(['data' => ['token' => ['x']]], 200)]);
+
+    expect((new BridgeClient)->authenticate('u', 'p'))->toBeNull();
+});
+
 test('server error throws unavailable', function () {
     Http::fake(['bridge.test/api/v2/portal/login' => Http::response('boom', 500)]);
 

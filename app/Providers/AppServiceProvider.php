@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Models\User;
+use App\Actions\Auth\AuthenticateUser;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Events\DiagnosingHealth;
@@ -11,11 +11,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
-use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Fortify;
 use RuntimeException;
 
@@ -39,23 +37,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->configureTrustedProxies();
 
-        Fortify::authenticateUsing(function (Request $request) {
-            $user = User::where('nim_nip', trim((string) $request->input('nim_nip')))->first();
-
-            // blank() guards passkey-only accounts: Hash::check() throws on an empty hash.
-            if (! $user || blank($user->password)
-                || ! Hash::check((string) $request->input('password'), $user->password)) {
-                return null;
-            }
-
-            if (! $user->is_active) {
-                throw ValidationException::withMessages([
-                    'nim_nip' => 'Akun Anda nonaktif. Hubungi admin.',
-                ]);
-            }
-
-            return $user;
-        });
+        Fortify::authenticateUsing(fn (Request $request) => app(AuthenticateUser::class)->handle($request));
     }
 
     /**
