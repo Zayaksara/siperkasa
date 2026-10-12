@@ -56,15 +56,15 @@ final class BridgeClient
         return [
             'username' => $username,
             'name' => $this->firstFilled($profile, ['nama', 'nama_lengkap', 'name'])
-                ?? $this->text($login->json('data.nama'))
+                ?? $this->text($login->json('data.nama'), 255)
                 ?? $username,
             'email' => $this->email($profile),
-            'portal_role' => $this->text($login->json('data.role')),
+            'portal_role' => $this->text($login->json('data.role'), 50),
             'phone' => $this->phone($profile['no_hp'] ?? null),
-            'faculty' => $this->text($profile['fakultas_nama'] ?? null),
-            'study_program_code' => $this->text($profile['program_studi_kode'] ?? null),
-            'study_program' => $this->text($profile['program_studi_nama'] ?? null),
-            'degree_level' => $this->text($profile['jenjang'] ?? null),
+            'faculty' => $this->text($profile['fakultas_nama'] ?? null, 255),
+            'study_program_code' => $this->text($profile['program_studi_kode'] ?? null, 20),
+            'study_program' => $this->text($profile['program_studi_nama'] ?? null, 255),
+            'degree_level' => $this->text($profile['jenjang'] ?? null, 20),
             'entry_year' => $this->entryYear($profile['tahun_masuk'] ?? null),
             'profile_loaded' => $profile !== [],
         ];
@@ -115,8 +115,10 @@ final class BridgeClient
     private function firstFilled(array $profile, array $keys): ?string
     {
         foreach ($keys as $key) {
-            if (filled($profile[$key] ?? null) && is_string($profile[$key])) {
-                return $profile[$key];
+            $value = $this->text($profile[$key] ?? null, 255);
+
+            if ($value !== null) {
+                return $value;
             }
         }
 
@@ -131,7 +133,7 @@ final class BridgeClient
         foreach (['email_kampus', 'email'] as $key) {
             $value = $profile[$key] ?? null;
 
-            if (is_string($value) && filter_var($value, FILTER_VALIDATE_EMAIL)) {
+            if (is_string($value) && mb_strlen($value) <= 255 && filter_var($value, FILTER_VALIDATE_EMAIL)) {
                 return $value;
             }
         }
@@ -139,7 +141,10 @@ final class BridgeClient
         return null;
     }
 
-    private function text(mixed $value): ?string
+    /**
+     * Trimmed string, or null when blank or longer than the target column (avoids "data too long" on save).
+     */
+    private function text(mixed $value, int $max): ?string
     {
         if (! is_string($value)) {
             return null;
@@ -147,7 +152,7 @@ final class BridgeClient
 
         $value = trim($value);
 
-        return $value === '' ? null : $value;
+        return $value === '' || mb_strlen($value) > $max ? null : $value;
     }
 
     private function phone(mixed $value): ?string
@@ -160,7 +165,9 @@ final class BridgeClient
         $plus = str_starts_with($value, '+') ? '+' : '';
         $digits = preg_replace('/\D+/', '', $value) ?? '';
 
-        return strlen($digits) >= 8 ? $plus.$digits : null;
+        $phone = $plus.$digits;
+
+        return strlen($digits) >= 8 && strlen($phone) <= 30 ? $phone : null;
     }
 
     private function entryYear(mixed $value): ?int

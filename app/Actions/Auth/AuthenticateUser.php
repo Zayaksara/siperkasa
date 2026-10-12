@@ -126,7 +126,8 @@ class AuthenticateUser
     }
 
     /**
-     * Portal-owned columns; when the profile endpoint failed, nothing is overwritten (no nulling).
+     * Portal-owned columns. portal_role comes from the login response and is applied whenever present;
+     * the profile-derived columns are overwritten only when the profile loaded (outage never nulls them).
      *
      * @param  array<string, mixed>  $profile
      * @return array<string, mixed>

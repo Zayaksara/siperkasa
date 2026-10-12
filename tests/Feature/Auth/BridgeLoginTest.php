@@ -317,3 +317,55 @@ test('forbidden portal fields are never stored', function () {
         expect(Schema::hasColumn('users', $column))->toBeFalse();
     }
 });
+
+test('overlong portal values do not break login', function () {
+    fakePortalLogin(portalProfile([
+        'no_hp' => str_repeat('8', 40),
+        'program_studi_kode' => str_repeat('A', 30),
+    ]));
+
+    $response = loginAs();
+
+    $user = User::where('nim_nip', BRIDGE_NIM)->firstOrFail();
+    $this->assertAuthenticatedAs($user);
+    $response->assertRedirect(route('dashboard', absolute: false));
+    expect($user->phone)->toBeNull()
+        ->and($user->study_program_code)->toBeNull()
+        ->and($user->faculty)->toBe('Fakultas Teknik');
+});
+
+test('profile outage still sets portal role from login data', function () {
+    $user = User::factory()->create(['nim_nip' => BRIDGE_NIM, 'password' => null, 'portal_role' => null, 'faculty' => 'Fakultas Lama']);
+    Http::fake([
+        'bridge.test/api/v2/portal/login' => Http::response(['data' => ['token' => 'tok', 'role' => 'mahasiswa']]),
+        'bridge.test/api/v2/profil' => Http::response('x', 500),
+        'bridge.test/api/v2/logout' => Http::response([]),
+    ]);
+
+    loginAs();
+
+    expect($user->fresh()->portal_role)->toBe('mahasiswa')
+        ->and($user->fresh()->faculty)->toBe('Fakultas Lama');
+});
+
+test('loaded dosen-style partial profile sets role and nulls academic fields', function () {
+    $user = User::factory()->create([
+        'nim_nip' => BRIDGE_NIM, 'password' => null, 'faculty' => 'Fakultas Lama',
+        'study_program' => 'Prodi Lama', 'entry_year' => 2019, 'phone' => '081311111111',
+    ]);
+    Http::fake([
+        'bridge.test/api/v2/portal/login' => Http::response(['data' => ['token' => 'tok', 'role' => 'dosen']]),
+        'bridge.test/api/v2/profil' => Http::response(['data' => ['nama' => 'Dosen Portal']]),
+        'bridge.test/api/v2/logout' => Http::response([]),
+    ]);
+
+    loginAs();
+
+    $fresh = $user->fresh();
+    expect($fresh->portal_role)->toBe('dosen')
+        ->and($fresh->name)->toBe('Dosen Portal')
+        ->and($fresh->faculty)->toBeNull()
+        ->and($fresh->study_program)->toBeNull()
+        ->and($fresh->entry_year)->toBeNull()
+        ->and($fresh->phone)->toBeNull();
+});

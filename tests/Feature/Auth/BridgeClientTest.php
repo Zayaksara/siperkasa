@@ -232,19 +232,19 @@ test('blank academic strings become null', function () {
 
 test('forbidden profile fields never appear in the result', function () {
     $forbidden = [
-        'tempat_lahir' => 'Kota Dummy',
-        'tanggal_lahir' => '2000-01-01',
-        'alamat' => 'Jl. Dummy 1',
-        'nama_bapak' => 'Bapak Dummy',
-        'nama_ibu' => 'Ibu Dummy',
-        'ip_kumulatif' => '3.50',
-        'jenis_kelamin' => 'L',
-        'dosen_wali' => 'Dosen Dummy',
-        'dosen_wali_username' => 'dosen01',
-        'foto' => 'https://bridge.test/foto.jpg',
-        'status' => 'aktif',
-        'semester_lulus' => '20241',
-        'tanggal_lulus' => '2025-01-01',
+        'tempat_lahir' => 'FORBIDDEN-TEMPAT',
+        'tanggal_lahir' => 'FORBIDDEN-LAHIR',
+        'alamat' => 'FORBIDDEN-ALAMAT',
+        'nama_bapak' => 'FORBIDDEN-BAPAK',
+        'nama_ibu' => 'FORBIDDEN-IBU',
+        'ip_kumulatif' => 'FORBIDDEN-IPK',
+        'jenis_kelamin' => 'FORBIDDEN-JK',
+        'dosen_wali' => 'FORBIDDEN-WALI',
+        'dosen_wali_username' => 'FORBIDDEN-WALI-USER',
+        'foto' => 'FORBIDDEN-FOTO',
+        'status' => 'FORBIDDEN-STATUS',
+        'semester_lulus' => 'FORBIDDEN-SEMESTER',
+        'tanggal_lulus' => 'FORBIDDEN-LULUS',
     ];
     fakePortal(['nama' => 'Budi', ...$forbidden]);
 
@@ -258,4 +258,34 @@ test('forbidden profile fields never appear in the result', function () {
         expect($result)->not->toHaveKey($key)
             ->and(json_encode($result))->not->toContain($value);
     }
+});
+
+test('overlong values become null instead of breaking the save', function (string $key, string $field, string $value) {
+    fakePortal(['nama' => 'X', $key => $value]);
+
+    expect((new BridgeClient)->authenticate('u', 'p')[$field])->toBeNull();
+})->with([
+    'phone' => ['no_hp', 'phone', str_repeat('8', 31)],
+    'study_program_code' => ['program_studi_kode', 'study_program_code', str_repeat('A', 21)],
+    'degree_level' => ['jenjang', 'degree_level', str_repeat('A', 21)],
+    'faculty' => ['fakultas_nama', 'faculty', str_repeat('A', 256)],
+    'study_program' => ['program_studi_nama', 'study_program', str_repeat('A', 256)],
+]);
+
+test('values exactly at column length are kept', function () {
+    fakePortal(['nama' => 'X', 'no_hp' => str_repeat('8', 30), 'program_studi_kode' => str_repeat('A', 20)]);
+
+    expect((new BridgeClient)->authenticate('u', 'p'))->toMatchArray([
+        'phone' => str_repeat('8', 30),
+        'study_program_code' => str_repeat('A', 20),
+    ]);
+});
+
+test('overlong portal role and name fall back', function () {
+    fakePortal(['nama' => str_repeat('N', 256)], ['role' => str_repeat('r', 51), 'nama' => 'Login Nama']);
+
+    $result = (new BridgeClient)->authenticate('u', 'p');
+
+    expect($result['portal_role'])->toBeNull()
+        ->and($result['name'])->toBe('Login Nama');
 });
