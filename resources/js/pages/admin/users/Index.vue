@@ -51,6 +51,7 @@ type Row = {
     deleted: boolean;
     is_self: boolean;
     is_super_admin: boolean;
+    is_portal: boolean;
 };
 type ImportResult = {
     created: number;
@@ -93,6 +94,11 @@ function applyFilters() {
 
 const formOpen = ref(false);
 const editing = ref<Row | null>(null);
+const portalEditing = computed(() => editing.value?.is_portal === true);
+// A portal account may only be moved back to Pelapor; it is locked once it is one.
+const roleLocked = computed(
+    () => portalEditing.value && editing.value?.role === 'user',
+);
 const form = useForm({
     nim_nip: '',
     name: '',
@@ -273,6 +279,11 @@ function submitImport() {
                     <p class="truncate font-medium">
                         {{ row.name }}
                         <span
+                            v-if="row.is_portal"
+                            class="ml-1 rounded bg-secondary px-2 py-0.5 text-xs font-semibold text-secondary-foreground"
+                            >Portal</span
+                        >
+                        <span
                             v-if="row.deleted"
                             class="ml-1 rounded bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive"
                             >Terhapus</span
@@ -316,7 +327,12 @@ function submitImport() {
                             variant="outline"
                             size="icon"
                             class="size-11"
-                            :aria-label="`Ganti password ${row.name}`"
+                            :disabled="row.is_portal"
+                            :aria-label="
+                                row.is_portal
+                                    ? `Password ${row.name} dikelola portal kampus`
+                                    : `Ganti password ${row.name}`
+                            "
                             @click="pwUser = row"
                             ><KeyRound class="size-4"
                         /></Button>
@@ -409,6 +425,7 @@ function submitImport() {
                         v-model="form.name"
                         class="h-11"
                         required
+                        :disabled="portalEditing"
                     />
                     <InputError :message="form.errors.name" />
                 </div>
@@ -419,12 +436,18 @@ function submitImport() {
                         v-model="form.email"
                         type="email"
                         class="h-11"
+                        :disabled="portalEditing"
                     />
                     <InputError :message="form.errors.email" />
                 </div>
                 <div class="grid gap-2">
                     <Label for="u-role">Peran</Label>
-                    <NativeSelect id="u-role" v-model="form.role">
+                    <NativeSelect
+                        id="u-role"
+                        v-model="form.role"
+                        :disabled="roleLocked"
+                        aria-describedby="u-role-help"
+                    >
                         <option
                             v-for="r in roles"
                             :key="r.value"
@@ -433,6 +456,15 @@ function submitImport() {
                             {{ r.label }}
                         </option>
                     </NativeSelect>
+                    <p
+                        v-if="portalEditing"
+                        id="u-role-help"
+                        class="text-sm text-muted-foreground"
+                    >
+                        Akun portal kampus tetap berperan Pelapor. Nama, email,
+                        dan password mengikuti portal. Untuk PIC atau admin,
+                        buat akun lokal terpisah.
+                    </p>
                     <InputError :message="form.errors.role" />
                 </div>
                 <div v-if="!editing" class="grid gap-2">

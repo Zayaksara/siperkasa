@@ -145,6 +145,7 @@ test('faculty filter narrows the list and options list distinct non-null faculti
     $fti = User::factory()->create(['faculty' => 'Fakultas Teknik']);
     $feb = User::factory()->create(['faculty' => 'Fakultas Ekonomi']);
     User::factory()->create(['faculty' => 'Fakultas Teknik']);
+    User::factory()->pic()->create(['faculty' => 'Fakultas Hukum']);
     $target = Report::factory()->for($fti)->create();
     Report::factory()->for($feb)->create();
     Report::factory()->create();

@@ -67,6 +67,13 @@ final class ImportUsers
                 continue;
             }
 
+            if ($existing?->isPortalAccount()) {
+                $result['failed']++;
+                $result['errors'][] = ['line' => $line, 'message' => 'Akun portal kampus tidak diubah lewat impor.'];
+
+                continue;
+            }
+
             if ($existing) {
                 if ($existing->is($actor) && $data['role'] !== UserRole::Admin->value) {
                     $result['failed']++;

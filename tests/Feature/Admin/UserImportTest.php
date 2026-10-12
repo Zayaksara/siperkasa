@@ -129,3 +129,19 @@ test('demoting a pic through import clears the default pic of their categories',
 
     expect($category->fresh()->default_pic_id)->toBeNull();
 });
+
+test('import skips portal accounts without changing them', function () {
+    $portal = User::factory()->create([
+        'nim_nip' => '3001', 'name' => 'Portal Asli', 'email' => 'asli@example.com', 'portal_synced_at' => now(),
+    ]);
+    $hash = $portal->password;
+
+    $this->actingAs($this->admin)->post(route('admin.users.import'), ['file' => usersCsv([
+        ['3001', 'Nama Lain', 'lain@example.com', 'admin', 'abc12345'],
+    ])])->assertSessionHas('import_result', fn ($r) => $r['updated'] === 0 && $r['failed'] === 1
+        && $r['errors'][0]['message'] === 'Akun portal kampus tidak diubah lewat impor.');
+
+    $fresh = $portal->fresh();
+    expect($fresh->role)->toBe(UserRole::User)->and($fresh->name)->toBe('Portal Asli')
+        ->and($fresh->email)->toBe('asli@example.com')->and($fresh->password)->toBe($hash);
+});

@@ -119,3 +119,67 @@ test('deactivating a pic clears the default pic of their categories', function (
     expect($category->fresh()->default_pic_id)->toBeNull()
         ->and($other->fresh()->default_pic_id)->not->toBeNull();
 });
+
+test('a portal account cannot be promoted to pic or admin', function () {
+    $portal = User::factory()->create(['portal_synced_at' => now()]);
+
+    foreach (['pic', 'admin'] as $role) {
+        $this->actingAs($this->admin)->put(route('admin.users.update', $portal), [
+            'nim_nip' => $portal->nim_nip, 'name' => $portal->name, 'email' => $portal->email, 'role' => $role,
+        ])->assertSessionHasErrors(['role' => 'Akun portal kampus tidak bisa dijadikan PIC atau admin. Buat akun lokal terpisah.']);
+    }
+
+    expect($portal->fresh()->role)->toBe(UserRole::User);
+});
+
+test('a portal account rejects name, email and password changes from the admin form', function () {
+    $portal = User::factory()->create(['portal_synced_at' => now(), 'email' => 'p@example.com']);
+
+    $this->actingAs($this->admin)->put(route('admin.users.update', $portal), [
+        'nim_nip' => $portal->nim_nip, 'name' => 'Nama Lain', 'email' => 'p@example.com', 'role' => 'user',
+    ])->assertSessionHasErrors(['name' => 'Data akun portal mengikuti portal kampus.']);
+
+    $this->actingAs($this->admin)->put(route('admin.users.update', $portal), [
+        'nim_nip' => $portal->nim_nip, 'name' => $portal->name, 'email' => 'lain@example.com', 'role' => 'user',
+    ])->assertSessionHasErrors(['email' => 'Data akun portal mengikuti portal kampus.']);
+
+    $this->actingAs($this->admin)->put(route('admin.users.update', $portal), [
+        'nim_nip' => $portal->nim_nip, 'name' => $portal->name, 'email' => 'p@example.com', 'role' => 'user', 'password' => 'rahasia123',
+    ])->assertSessionHasErrors(['password' => 'Password akun portal dikelola portal kampus.']);
+
+    expect($portal->fresh()->name)->toBe($portal->name)->and($portal->fresh()->email)->toBe('p@example.com');
+});
+
+test('an unchanged portal account saves, can be toggled, and a promoted one can be demoted', function () {
+    $portal = User::factory()->create(['portal_synced_at' => now(), 'email' => 'p@example.com']);
+
+    $this->actingAs($this->admin)->put(route('admin.users.update', $portal), [
+        'nim_nip' => $portal->nim_nip, 'name' => $portal->name, 'email' => 'p@example.com', 'role' => 'user',
+    ])->assertSessionHasNoErrors();
+
+    $this->actingAs($this->admin)->patch(route('admin.users.active', $portal), ['is_active' => false])->assertSessionHasNoErrors();
+    expect($portal->fresh()->is_active)->toBeFalse();
+
+    $promoted = User::factory()->pic()->create(['portal_synced_at' => now(), 'email' => 'q@example.com']);
+    $this->actingAs($this->admin)->put(route('admin.users.update', $promoted), [
+        'nim_nip' => $promoted->nim_nip, 'name' => $promoted->name, 'email' => 'q@example.com', 'role' => 'user',
+    ])->assertSessionHasNoErrors();
+    expect($promoted->fresh()->role)->toBe(UserRole::User);
+});
+
+test('admin cannot set a password on a portal account', function () {
+    $portal = User::factory()->create(['portal_synced_at' => now()]);
+    $hash = $portal->password;
+
+    $this->actingAs($this->admin)->put(route('admin.users.password', $portal), ['password' => 'rahasia123'])
+        ->assertSessionHasErrors(['password' => 'Password akun portal dikelola portal kampus.']);
+
+    expect($portal->fresh()->password)->toBe($hash);
+});
+
+test('user list exposes is_portal', function () {
+    User::factory()->create(['portal_synced_at' => now(), 'name' => 'Aaa Portal']);
+
+    $this->actingAs($this->admin)->get(route('admin.users.index', ['q' => 'Aaa Portal']))
+        ->assertInertia(fn ($page) => $page->where('users.data.0.is_portal', true));
+});

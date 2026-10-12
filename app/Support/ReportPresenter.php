@@ -33,8 +33,11 @@ final class ReportPresenter
         ];
     }
 
-    /** @return array<string, mixed> */
-    /** The reporter's phone is admin-only; PIC and owner payloads never carry the key. */
+    /**
+     * The reporter's phone is admin-only; PIC and owner payloads never carry the key.
+     *
+     * @return array<string, mixed>
+     */
     public static function detail(Report $report, bool $withPhone = false): array
     {
         $report->loadMissing(['category', 'room.building', 'asset.category', 'user', 'admin', 'assignedPic', 'attachments', 'statusLogs.actor']);

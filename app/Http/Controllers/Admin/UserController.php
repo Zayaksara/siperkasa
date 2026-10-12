@@ -49,6 +49,7 @@ class UserController extends Controller
                 'deleted' => $user->trashed(),
                 'is_self' => $user->is($request->user()),
                 'is_super_admin' => $user->isSuperAdmin(),
+                'is_portal' => $user->isPortalAccount(),
             ]);
 
         return Inertia::render('admin/users/Index', [
@@ -151,6 +152,10 @@ class UserController extends Controller
     public function password(Request $request, User $user): RedirectResponse
     {
         Gate::authorize('update', $user);
+
+        if ($user->isPortalAccount()) {
+            return back()->withErrors(['password' => 'Password akun portal dikelola portal kampus.']);
+        }
 
         $data = $request->validate(['password' => ['required', 'string', 'min:8', 'max:255']]);
 
