@@ -59,7 +59,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->respond(function (Response $response, Throwable $e, Request $request) {
             if (! $request->expectsJson()
                 && ! app()->environment(['local', 'testing'])
-                && in_array($response->getStatusCode(), [403, 404, 500, 503], true)) {
+                && in_array($response->getStatusCode(), [403, 404, 419, 429, 500, 503], true)) {
                 return Inertia::render('Error', ['status' => $response->getStatusCode()])
                     ->toResponse($request)
                     ->setStatusCode($response->getStatusCode());

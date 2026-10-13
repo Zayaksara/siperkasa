@@ -103,3 +103,11 @@ Route::middleware(['auth', 'active'])->group(function () {
 });
 
 require __DIR__.'/settings.php';
+
+if (app()->environment('local')) {
+    Route::get('_error/{status}', function (int $status) {
+        abort_unless(in_array($status, [403, 404, 419, 429, 500, 503], true), 404);
+
+        return inertia('Error', ['status' => $status]);
+    })->whereNumber('status')->name('error.preview');
+}
