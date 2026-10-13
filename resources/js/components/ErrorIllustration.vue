@@ -40,7 +40,7 @@ const html = ref('');
 const root = useTemplateRef<HTMLElement>('root');
 
 let kit: MotionConditions | undefined;
-const kitReady = ref(false);
+const kitRun = ref(0);
 
 onMounted(async () => {
     // Any other code falls back to the 500 picture.
@@ -54,10 +54,9 @@ onMounted(async () => {
 
 useMotion(root, (conditions) => {
     kit = conditions;
-    kitReady.value = true;
+    kitRun.value += 1;
     return () => {
         kit = undefined;
-        kitReady.value = false;
     };
 });
 
@@ -65,7 +64,7 @@ useMotion(root, (conditions) => {
 // context.add keeps the tweens inside the matchMedia context, so they are
 // reverted on unmount or when reduced motion turns on.
 watch(
-    [html, kitReady],
+    [html, kitRun],
     () => {
         if (!kit || !html.value || !root.value) return;
         const { gsap, context } = kit;

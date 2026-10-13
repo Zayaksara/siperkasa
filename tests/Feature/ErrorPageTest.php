@@ -84,3 +84,23 @@ test('503 blade fallback renders without Vite', function () {
         ->toContain('Butuh bantuan? Hubungi PUSTIKOM UIN Siber Syekh Nurjati Cirebon.')
         ->not->toContain('/build/');
 });
+
+test('419 on an Inertia request redirects back with a toast instead of the Error page', function () {
+    Route::post('/_throwaway/inertia-419', fn () => abort(419));
+
+    asProduction(function () {
+        $this->post('/_throwaway/inertia-419', [], ['X-Inertia' => 'true'])
+            ->assertRedirect()
+            ->assertInertiaFlash('toast', ['type' => 'error', 'message' => 'Sesi telah berakhir. Silakan coba lagi.']);
+    });
+});
+
+test('419 on a plain web request still renders the Error page', function () {
+    Route::get('/_throwaway/plain-419', fn () => abort(419));
+
+    asProduction(function () {
+        $this->get('/_throwaway/plain-419')
+            ->assertStatus(419)
+            ->assertInertia(fn ($page) => $page->component('Error')->where('status', 419));
+    });
+});

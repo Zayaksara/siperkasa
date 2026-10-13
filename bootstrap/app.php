@@ -57,6 +57,16 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->respond(function (Response $response, Throwable $e, Request $request) {
+            // An expired session on an Inertia visit must not swap the page for the
+            // Error page at a POST URL (e.g. /logout). Flash a toast and go back.
+            if ($response->getStatusCode() === 419
+                && ! $request->expectsJson()
+                && $request->header('X-Inertia')) {
+                Inertia::flash('toast', ['type' => 'error', 'message' => 'Sesi telah berakhir. Silakan coba lagi.']);
+
+                return back();
+            }
+
             if (! $request->expectsJson()
                 && ! app()->environment(['local', 'testing'])
                 && in_array($response->getStatusCode(), [403, 404, 419, 429, 500, 503], true)) {

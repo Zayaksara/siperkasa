@@ -103,18 +103,27 @@ useMotion(
     root,
     ({ gsap }) => {
         const q = gsap.utils.selector(root.value);
-        const slide = {
-            autoAlpha: 0,
+        const head = q('.er-head');
+        const left = q('.er-left');
+        const right = q('.er-right');
+        // Apply the start state synchronously (set renders at once) so the
+        // pending-hide attribute can be lifted with no visible frame.
+        gsap.set([head, left, right], { autoAlpha: 0 });
+        gsap.set(left, { x: -motion.rise });
+        gsap.set(right, { x: motion.rise });
+        const end = {
+            autoAlpha: 1,
+            x: 0,
             duration: 0.45,
             clearProps: 'transform,opacity,visibility',
         };
-        gsap.from(q('.er-head'), {
-            autoAlpha: 0,
+        gsap.to(head, {
+            autoAlpha: 1,
             duration: 0.3,
             clearProps: 'opacity,visibility',
         });
-        gsap.from(q('.er-left'), { ...slide, x: -motion.rise });
-        gsap.from(q('.er-right'), { ...slide, x: motion.rise, delay: 0.08 });
+        gsap.to(left, end);
+        gsap.to(right, { ...end, delay: 0.08 });
     },
     { hideUntilReady: true },
 );
@@ -126,7 +135,7 @@ useMotion(
         ref="root"
         class="flex min-h-svh flex-col bg-landing-bg text-landing-fg"
     >
-        <header class="er-head px-6 py-5 sm:px-10 lg:px-16">
+        <header data-reveal class="er-head px-6 py-5 sm:px-10 lg:px-16">
             <Link
                 :href="homeHref"
                 class="inline-flex min-h-11 items-center rounded-sm text-lg font-bold tracking-[-0.01em] text-landing-ring focus-visible:ring-2 focus-visible:ring-landing-ring focus-visible:ring-offset-2 focus-visible:ring-offset-landing-bg focus-visible:outline-none"
@@ -140,10 +149,12 @@ useMotion(
         >
             <ErrorIllustration
                 :status="status"
+                data-reveal
                 class="er-left mx-auto max-w-60 sm:max-w-80 lg:max-w-[520px]"
             />
 
             <section
+                data-reveal
                 class="er-right mx-auto flex w-full max-w-md flex-col items-center text-center"
                 aria-labelledby="err-title"
             >

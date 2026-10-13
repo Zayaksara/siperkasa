@@ -220,14 +220,16 @@ php artisan backup:list
    - Dilakukan oleh: ____________________
 6. Setelah selesai, hapus file zip hasil unduhan, folder `hasil-backup`, dan database uji (di komputer dan di server). Isinya data pribadi dan hash password.
 
-Untuk restore produksi yang sebenarnya, urutan sama, tetapi aktifkan mode perawatan dulu (`php artisan down`) dan impor ke database produksi setelah memastikan backup yang dipakai benar.
+Untuk restore produksi yang sebenarnya, urutan sama, tetapi aktifkan mode perawatan dulu (`php artisan down --render="errors::503" --retry=60`) dan impor ke database produksi setelah memastikan backup yang dipakai benar.
 
 ## 8. Update aplikasi
 
 ```bash
 cd /home/<user>/siperkasa
-php artisan down --secret=kata-rahasia-anda
+php artisan down --render="errors::503" --retry=60 --secret=kata-rahasia-anda
 ```
+
+`--render` menyajikan halaman 503 statis walau `vendor` atau `public/build` sedang diganti, karena halaman itu dirender sekali saat `down` dan disajikan sebelum framework dimuat.
 
 Selama mode perawatan, buka `https://siperkasa.example.ac.id/kata-rahasia-anda` sekali agar Anda tetap bisa mengakses situs. Lalu:
 
