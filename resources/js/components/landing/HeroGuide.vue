@@ -1,54 +1,79 @@
 <script setup lang="ts">
+import { ChevronDown, Pause, Play } from '@lucide/vue';
+import { onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue';
+import tutorialPoster from '@/assets/videos/siperkasa-tutorial-poster.jpg';
+import tutorialVideo from '@/assets/videos/siperkasa-tutorial.mp4';
 import {
-    Armchair,
-    Building2,
-    Camera,
-    Ellipsis,
-    MapPin,
-    Monitor,
-    PenLine,
-    Plug,
-    Speaker,
-    Wifi,
-} from '@lucide/vue';
-import { useTemplateRef } from 'vue';
-import { motion, useMotion } from '@/lib/motion';
+    motion,
+    prefersReducedMotion,
+    REDUCED_MOTION,
+    useMotion,
+} from '@/lib/motion';
 
 /**
- * Hero guide: what to prepare before reporting, and what can be reported.
- * Deliberately a picture, not a form: no inputs, buttons, links or hover
- * states, so visitors never mistake it for the real report form.
+ * Hero guide: looping tutorial video of the reporter flow.
+ * Not a form: no inputs, only a pause/play control (WCAG 2.2.2) and a
+ * disclosure with the same steps as text.
  */
 const props = withDefaults(defineProps<{ delay?: number }>(), { delay: 0 });
 
-const prepare = [
-    {
-        icon: Camera,
-        title: 'Foto kerusakan',
-        text: 'Satu foto yang jelas, langsung dari HP.',
-    },
-    {
-        icon: MapPin,
-        title: 'Lokasi',
-        text: 'Nama gedung dan ruangannya.',
-    },
-    {
-        icon: PenLine,
-        title: 'Keterangan singkat',
-        text: 'Apa yang rusak dan sejak kapan.',
-    },
-];
-
-const categories = [
-    { icon: Plug, label: 'Elektronik' },
-    { icon: Monitor, label: 'Komputer' },
-    { icon: Wifi, label: 'Jaringan' },
-    { icon: Speaker, label: 'Audio & Studio' },
-    { icon: Armchair, label: 'Furnitur' },
-    { icon: Building2, label: 'Bangunan & Sarana' },
-];
-
 const root = useTemplateRef<HTMLElement>('root');
+const video = useTemplateRef<HTMLVideoElement>('video');
+const playing = ref(false);
+
+let pausedByUser = false;
+let observer: IntersectionObserver | undefined;
+let reducedMotion: MediaQueryList | undefined;
+
+function start(): void {
+    video.value?.play().catch(() => {
+        // Autoplay blocked: the play button stays available.
+    });
+}
+
+function toggle(): void {
+    const el = video.value;
+    if (!el) return;
+    if (el.paused) {
+        pausedByUser = false;
+        start();
+    } else {
+        pausedByUser = true;
+        el.pause();
+    }
+}
+
+function onReducedMotionChange(event: MediaQueryListEvent): void {
+    if (event.matches) video.value?.pause();
+}
+
+// Only the observer starts playback: once a quarter of the video is on screen,
+// and never again after the visitor paused it.
+onMounted(() => {
+    const el = video.value;
+    if (!el) return;
+
+    reducedMotion = window.matchMedia(REDUCED_MOTION);
+    reducedMotion.addEventListener('change', onReducedMotionChange);
+
+    observer = new IntersectionObserver(
+        ([entry]) => {
+            if (!entry) return;
+            if (!entry.isIntersecting) {
+                el.pause();
+            } else if (!pausedByUser && !prefersReducedMotion()) {
+                start();
+            }
+        },
+        { threshold: 0.25 },
+    );
+    observer.observe(el);
+});
+
+onBeforeUnmount(() => {
+    observer?.disconnect();
+    reducedMotion?.removeEventListener('change', onReducedMotionChange);
+});
 
 useMotion(
     root,
@@ -69,79 +94,79 @@ useMotion(
 <template>
     <div
         ref="root"
-        class="grid gap-10 rounded-3xl border border-landing-line bg-landing-surface p-6 sm:p-8 lg:grid-cols-[1.25fr_1fr] lg:gap-12 lg:p-10"
+        class="rounded-3xl border border-landing-line bg-landing-surface p-3 sm:p-4"
     >
-        <section aria-labelledby="hg-prepare-title">
-            <h2
-                id="hg-prepare-title"
-                class="hg-in text-xl font-semibold tracking-[-0.01em] text-landing-fg sm:text-2xl"
-                data-reveal
-            >
-                Siapkan sebelum melapor
-            </h2>
-            <ol class="mt-6 grid gap-5">
-                <li
-                    v-for="(item, i) in prepare"
-                    :key="item.title"
-                    class="hg-in flex items-start gap-4"
-                    data-reveal
+        <section aria-labelledby="hg-title">
+            <div class="hg-in px-2 pt-2 pb-4 sm:px-3" data-reveal>
+                <h2
+                    id="hg-title"
+                    class="text-xl font-semibold tracking-[-0.01em] text-landing-fg sm:text-2xl"
                 >
-                    <span
-                        class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-landing-glow text-landing-ring"
-                        aria-hidden="true"
-                    >
-                        <component :is="item.icon" class="size-6" />
-                    </span>
-                    <div>
-                        <p class="text-base font-semibold text-landing-fg">
-                            <span class="text-landing-gold">{{ i + 1 }}.</span>
-                            {{ item.title }}
-                        </p>
-                        <p
-                            class="mt-1 text-[15px] leading-relaxed text-landing-muted"
-                        >
-                            {{ item.text }}
-                        </p>
-                    </div>
-                </li>
-            </ol>
-        </section>
+                    Cara melapor di SiPerkasa
+                </h2>
+                <p class="mt-2 text-[15px] leading-relaxed text-landing-muted">
+                    Tonton alurnya dalam satu menit: dari melapor sampai
+                    perbaikan selesai.
+                </p>
+            </div>
 
-        <section aria-labelledby="hg-categories-title">
-            <h2
-                id="hg-categories-title"
-                class="hg-in text-xl font-semibold tracking-[-0.01em] text-landing-fg sm:text-2xl"
-                data-reveal
-            >
-                Yang bisa dilaporkan
-            </h2>
-            <ul class="mt-6 grid grid-cols-3 gap-x-3 gap-y-5">
-                <li
-                    v-for="cat in categories"
-                    :key="cat.label"
-                    class="hg-in flex flex-col items-center gap-2 text-center"
-                    data-reveal
+            <div class="hg-in relative" data-reveal>
+                <video
+                    ref="video"
+                    :src="tutorialVideo"
+                    :poster="tutorialPoster"
+                    muted
+                    loop
+                    playsinline
+                    preload="metadata"
+                    disablepictureinpicture
+                    aria-label="Video tutorial cara melapor di SiPerkasa. Langkahnya bisa dibaca di bawah video."
+                    class="aspect-video w-full rounded-2xl bg-landing-glow object-cover"
+                    @play="playing = true"
+                    @pause="playing = false"
+                />
+                <button
+                    type="button"
+                    class="absolute right-3 bottom-3 flex size-11 items-center justify-center rounded-full border border-landing-line bg-landing-surface/90 text-landing-fg focus-visible:ring-2 focus-visible:ring-landing-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                    :aria-label="playing ? 'Jeda video' : 'Putar video'"
+                    @click="toggle"
                 >
-                    <span
-                        class="flex size-11 items-center justify-center rounded-xl bg-landing-glow text-landing-ring"
+                    <Pause v-if="playing" class="size-5" aria-hidden="true" />
+                    <Play v-else class="size-5" aria-hidden="true" />
+                </button>
+            </div>
+
+            <details class="hg-in group px-2 pt-3 pb-2 sm:px-3" data-reveal>
+                <summary
+                    class="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-lg font-medium text-landing-fg focus-visible:ring-2 focus-visible:ring-landing-ring focus-visible:ring-offset-2 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
+                >
+                    Baca langkahnya
+                    <ChevronDown
+                        class="size-5 text-landing-gold transition-transform group-open:rotate-180 motion-reduce:transition-none"
                         aria-hidden="true"
-                    >
-                        <component :is="cat.icon" class="size-5" />
-                    </span>
-                    <span
-                        class="text-[13px] leading-tight text-landing-fg sm:text-sm"
-                    >
-                        {{ cat.label }}
-                    </span>
-                </li>
-            </ul>
-            <p
-                class="hg-in mt-6 flex items-center gap-2 text-[15px] text-landing-muted"
-                data-reveal
-            >
-                <Ellipsis class="size-5 text-landing-gold" aria-hidden="true" />
-                dan kerusakan fasilitas kampus lainnya.
-            </p>
+                    />
+                </summary>
+                <ol
+                    class="mt-2 grid list-decimal gap-2 pl-5 text-[15px] leading-relaxed text-landing-muted marker:text-landing-gold"
+                >
+                    <li>Masuk dengan NIM atau NIP akun kampus.</li>
+                    <li>
+                        Tulis apa yang rusak, pilih kategori, gedung, dan
+                        ruangnya.
+                    </li>
+                    <li>Lampirkan foto kerusakan dari HP.</li>
+                    <li>Kirim, lalu simpan nomor tiketnya.</li>
+                    <li>
+                        Pantau statusnya: Menunggu (Admin Sarpras memeriksa),
+                        Ditugaskan (PIC ditunjuk), Dikerjakan, sampai Selesai.
+                        Setiap perubahan masuk ke notifikasi.
+                    </li>
+                </ol>
+                <p class="mt-3 text-[15px] text-landing-fg">
+                    Nemu fasilitas rusak? Lapor di SiPerkasa, pantau sampai
+                    beres.
+                </p>
+            </details>
         </section>
     </div>
 </template>
