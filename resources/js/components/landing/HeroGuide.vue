@@ -92,12 +92,9 @@ useMotion(
 </script>
 
 <template>
-    <div
-        ref="root"
-        class="rounded-3xl border border-landing-line bg-landing-surface p-3 sm:p-4"
-    >
+    <div ref="root">
         <section aria-labelledby="hg-title">
-            <div class="hg-in px-2 pt-2 pb-4 sm:px-3" data-reveal>
+            <div class="hg-in pb-5" data-reveal>
                 <h2
                     id="hg-title"
                     class="text-xl font-semibold tracking-[-0.01em] text-landing-fg sm:text-2xl"
@@ -110,7 +107,10 @@ useMotion(
                 </p>
             </div>
 
-            <div class="hg-in relative" data-reveal>
+            <div
+                class="hg-in relative overflow-hidden rounded-3xl border border-landing-line"
+                data-reveal
+            >
                 <video
                     ref="video"
                     :src="tutorialVideo"
@@ -121,7 +121,7 @@ useMotion(
                     preload="metadata"
                     disablepictureinpicture
                     aria-label="Video tutorial cara melapor di SiPerkasa. Langkahnya bisa dibaca di bawah video."
-                    class="aspect-video w-full rounded-2xl bg-landing-glow object-cover"
+                    class="block aspect-video w-full bg-landing-glow object-cover"
                     @play="playing = true"
                     @pause="playing = false"
                 />
@@ -136,7 +136,7 @@ useMotion(
                 </button>
             </div>
 
-            <details class="hg-in group px-2 pt-3 pb-2 sm:px-3" data-reveal>
+            <details class="hg-in group pt-3" data-reveal>
                 <summary
                     class="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-lg font-medium text-landing-fg focus-visible:ring-2 focus-visible:ring-landing-ring focus-visible:ring-offset-2 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
                 >
