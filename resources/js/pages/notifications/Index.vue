@@ -25,10 +25,7 @@ defineOptions({
     <Head title="Notifikasi" />
 
     <div class="mx-auto flex w-full max-w-2xl flex-col gap-4 p-4">
-        <PageHeader
-            title="Notifikasi"
-            description="Pembaruan tentang laporan Anda."
-        >
+        <PageHeader title="Notifikasi" description="Pembaruan laporan terbaru.">
             <Button
                 variant="outline"
                 class="h-11"
