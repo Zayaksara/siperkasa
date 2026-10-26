@@ -37,13 +37,44 @@ const userNav: NavItem[] = [
 ];
 
 const adminNav: NavItem[] = [
-    { title: 'Beranda', href: adminDashboard(), icon: Home },
-    { title: 'Laporan', href: adminReportsIndex(), icon: ClipboardList },
-    { title: 'Pengguna', href: usersIndex(), icon: Users },
-    { title: 'Aset', href: assetsIndex(), icon: Boxes },
-    { title: 'Kategori', href: categoriesIndex(), icon: Tags },
-    { title: 'Gedung & Ruang', href: buildingsIndex(), icon: Building2 },
-    { title: 'Impor Aset', href: assetImportsIndex(), icon: Upload },
+    {
+        title: 'Beranda',
+        href: adminDashboard(),
+        icon: Home,
+        group: 'Operasional',
+    },
+    {
+        title: 'Laporan',
+        href: adminReportsIndex(),
+        icon: ClipboardList,
+        group: 'Operasional',
+    },
+    {
+        title: 'Notifikasi',
+        href: notificationsIndex(),
+        icon: Bell,
+        group: 'Operasional',
+    },
+    { title: 'Aset', href: assetsIndex(), icon: Boxes, group: 'Data Master' },
+    {
+        title: 'Impor Aset',
+        href: assetImportsIndex(),
+        icon: Upload,
+        group: 'Data Master',
+    },
+    {
+        title: 'Kategori',
+        href: categoriesIndex(),
+        icon: Tags,
+        group: 'Data Master',
+    },
+    {
+        title: 'Gedung & Ruang',
+        href: buildingsIndex(),
+        icon: Building2,
+        group: 'Data Master',
+    },
+    { title: 'Pengguna', href: usersIndex(), icon: Users, group: 'Akses' },
 ];
 
 const picNav: NavItem[] = [
