@@ -22,7 +22,7 @@ SiPerkasa mengumpulkan seluruh proses penanganan kerusakan fasilitas dalam satu 
 - **Foto sebelum dan sesudah.** Pelapor melampirkan 1 sampai 3 foto kerusakan. Teknisi melampirkan foto hasil perbaikan saat menutup laporan.
 - **Prioritas dan target selesai.** Admin Sarpras menetapkan prioritas, dan target selesai mengikuti prioritas itu.
 - **Riwayat status.** Setiap perubahan status tercatat bersama waktu, pelaku, dan catatannya.
-- **Notifikasi di aplikasi.** Pelapor dan teknisi mendapat kabar saat laporan dibuat, ditugaskan, atau berubah status.
+- **Notifikasi di aplikasi.** Admin Sarpras mendapat kabar saat ada laporan baru, teknisi saat menerima tugas, dan pelapor setiap kali status laporannya berubah.
 - **Rekap dan ekspor.** Admin melihat ringkasan laporan di dashboard dan mengekspor datanya ke Excel atau PDF.
 - **Data master.** Admin mengelola aset, kategori, serta gedung dan ruang.
 - **Impor aset dan pengguna.** Data aset (BMN) dan pengguna dapat diimpor dari berkas.
