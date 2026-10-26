@@ -33,9 +33,15 @@ const groups = computed(() => {
 </script>
 
 <template>
-    <SidebarGroup v-for="group in groups" :key="group.label" class="px-2 py-0">
-        <SidebarGroupLabel>{{ group.label }}</SidebarGroupLabel>
-        <SidebarMenu>
+    <SidebarGroup
+        v-for="(group, index) in groups"
+        :key="group.label"
+        class="px-2 py-0"
+    >
+        <SidebarGroupLabel :id="`nav-group-${index}`">{{
+            group.label
+        }}</SidebarGroupLabel>
+        <SidebarMenu :aria-labelledby="`nav-group-${index}`">
             <SidebarMenuItem v-for="item in group.items" :key="item.title">
                 <SidebarMenuButton
                     as-child
