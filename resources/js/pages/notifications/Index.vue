@@ -24,7 +24,7 @@ defineOptions({
 <template>
     <Head title="Notifikasi" />
 
-    <div class="mx-auto flex w-full max-w-2xl flex-col gap-4 p-4">
+    <div class="flex flex-col gap-4 p-4">
         <PageHeader title="Notifikasi" description="Pembaruan laporan terbaru.">
             <Button
                 variant="outline"
@@ -54,28 +54,33 @@ defineOptions({
                         :class="item.read ? '' : 'bg-primary'"
                         aria-hidden="true"
                     />
-                    <span class="flex min-w-0 flex-col items-start">
-                        <StatusBadge
-                            v-if="item.status"
-                            :status="item.status"
-                            class="mb-1"
-                        />
+                    <span
+                        class="flex min-w-0 flex-1 flex-col items-start gap-1 sm:flex-row sm:items-start sm:gap-3"
+                    >
+                        <span class="flex min-w-0 flex-1 flex-col items-start">
+                            <StatusBadge
+                                v-if="item.status"
+                                :status="item.status"
+                                class="mb-1"
+                            />
 
-                        <span
-                            class="block text-sm"
-                            :class="
-                                item.read
-                                    ? 'text-muted-foreground'
-                                    : 'font-semibold'
-                            "
-                        >
-                            <span v-if="!item.read" class="sr-only"
-                                >Belum dibaca: </span
-                            >{{ item.message }}
+                            <span
+                                class="block text-sm"
+                                :class="
+                                    item.read
+                                        ? 'text-muted-foreground'
+                                        : 'font-semibold'
+                                "
+                            >
+                                <span v-if="!item.read" class="sr-only"
+                                    >Belum dibaca: </span
+                                >{{ item.message }}
+                            </span>
                         </span>
-                        <span class="block text-xs text-muted-foreground">{{
-                            formatDateTime(item.created_at)
-                        }}</span>
+                        <span
+                            class="block text-xs text-muted-foreground sm:ml-auto sm:shrink-0 sm:text-right"
+                            >{{ formatDateTime(item.created_at) }}</span
+                        >
                     </span>
                 </button>
             </li>
