@@ -18,13 +18,25 @@ const props = defineProps<{
 const { currentItem } = useCurrentUrl();
 
 const activeItem = computed(() => currentItem(props.items));
+
+// Items without a group share the default "Menu" label; first-seen order is kept.
+const groups = computed(() => {
+    const byLabel = new Map<string, NavItem[]>();
+
+    for (const item of props.items) {
+        const label = item.group ?? 'Menu';
+        byLabel.set(label, [...(byLabel.get(label) ?? []), item]);
+    }
+
+    return [...byLabel].map(([label, items]) => ({ label, items }));
+});
 </script>
 
 <template>
-    <SidebarGroup class="px-2 py-0">
-        <SidebarGroupLabel>Menu</SidebarGroupLabel>
+    <SidebarGroup v-for="group in groups" :key="group.label" class="px-2 py-0">
+        <SidebarGroupLabel>{{ group.label }}</SidebarGroupLabel>
         <SidebarMenu>
-            <SidebarMenuItem v-for="item in items" :key="item.title">
+            <SidebarMenuItem v-for="item in group.items" :key="item.title">
                 <SidebarMenuButton
                     as-child
                     :is-active="item === activeItem"
