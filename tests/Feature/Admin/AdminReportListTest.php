@@ -190,3 +190,15 @@ test('faculty filter accepts values up to 255 characters', function () {
     $this->actingAs($this->admin)->get(route('admin.reports.index', ['faculty' => str_repeat('a', 200)]))
         ->assertSessionHasNoErrors()->assertOk();
 });
+
+test('pending filter returns only pending', function () {
+    Report::factory()->count(2)->create();
+    Report::factory()->closed()->create();
+    Report::factory()->assigned()->create();
+
+    $this->actingAs($this->admin)->get(route('admin.reports.index', ['status' => 'Pending']))
+        ->assertInertia(fn ($page) => $page
+            ->has('reports.data', 2)
+            ->where('reports.data.0.status', 'Pending')
+            ->where('reports.data.1.status', 'Pending'));
+});

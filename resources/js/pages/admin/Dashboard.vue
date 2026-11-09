@@ -159,7 +159,7 @@ type Hotspot = {
 const hotspots = computed<Hotspot[]>(() => [
     {
         id: 'category',
-        title: 'Kategori dengan laporan terbanyak',
+        title: '5 kategori dengan laporan terbanyak',
         description:
             'Kategori alat yang paling sering rusak. Klik untuk melihat laporannya.',
         color: '--accent-teal',
@@ -175,7 +175,7 @@ const hotspots = computed<Hotspot[]>(() => [
     },
     {
         id: 'building',
-        title: 'Gedung dengan laporan terbanyak',
+        title: '5 gedung dengan laporan terbanyak',
         description:
             'Gedung yang perlu perhatian lebih. Klik untuk melihat laporannya.',
         color: '--accent-sky',

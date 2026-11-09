@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { FileSpreadsheet, FileText, Loader2 } from '@lucide/vue';
+import { FileSpreadsheet, FileText, Loader2, X } from '@lucide/vue';
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import InputError from '@/components/InputError.vue';
@@ -150,6 +150,11 @@ function apply() {
             .map(([key, value]) => [key, value === true ? 1 : value]),
     );
     router.get(index.url(), query, { preserveState: true, replace: true });
+}
+
+function removeOverdue() {
+    f.overdue = false;
+    apply();
 }
 
 function reset() {
@@ -357,16 +362,35 @@ function reset() {
                 />
                 <InputError :message="errors.to" />
             </div>
-            <Label for="f-overdue" class="flex min-h-11 items-center gap-3">
+            <Label for="f-pending" class="flex min-h-11 items-center gap-3">
                 <Checkbox
-                    id="f-overdue"
-                    :model-value="f.overdue"
+                    id="f-pending"
+                    :model-value="f.status === 'Pending'"
                     class="size-5"
-                    @update:model-value="f.overdue = $event === true"
+                    @update:model-value="
+                        f.status = $event === true ? 'Pending' : ''
+                    "
                 />
-                <span>Hanya yang terlambat</span>
+                <span>Hanya yang menunggu</span>
             </Label>
-            <div class="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-4">
+            <div
+                class="flex flex-wrap items-center gap-2 sm:col-span-2 lg:col-span-4"
+            >
+                <span
+                    v-if="f.overdue"
+                    class="inline-flex items-center gap-1 rounded-full bg-status-rejected-bg pl-2.5 text-xs font-semibold whitespace-nowrap text-status-rejected"
+                    data-test="overdue-chip"
+                >
+                    Hanya terlambat
+                    <button
+                        type="button"
+                        class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        aria-label="Hapus filter terlambat"
+                        @click="removeOverdue"
+                    >
+                        <X class="size-4" />
+                    </button>
+                </span>
                 <Button type="submit" class="h-11">Terapkan filter</Button>
                 <Button
                     type="button"
