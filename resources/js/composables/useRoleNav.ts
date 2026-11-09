@@ -5,6 +5,7 @@ import {
     Building2,
     ClipboardList,
     FilePlus,
+    Gauge,
     Home,
     ListChecks,
     Tags,
@@ -12,7 +13,7 @@ import {
     Users,
 } from '@lucide/vue';
 import { computed } from 'vue';
-import { dashboard as adminDashboard } from '@/routes/admin';
+import { dashboard as adminDashboard, picPerformance } from '@/routes/admin';
 import { index as assetImportsIndex } from '@/routes/admin/asset-imports';
 import { index as assetsIndex } from '@/routes/admin/assets';
 import { index as buildingsIndex } from '@/routes/admin/buildings';
@@ -47,6 +48,12 @@ const adminNav: NavItem[] = [
         title: 'Laporan',
         href: adminReportsIndex(),
         icon: ClipboardList,
+        group: 'Operasional',
+    },
+    {
+        title: 'Kinerja PIC',
+        href: picPerformance(),
+        icon: Gauge,
         group: 'Operasional',
     },
     {

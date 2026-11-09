@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
     CircleCheck,
     ClipboardList,
@@ -20,7 +20,7 @@ import { Label } from '@/components/ui/label';
 import { rankColor } from '@/lib/chartColors';
 import { formatDateRange, formatHours } from '@/lib/format';
 import { motion, useMotion } from '@/lib/motion';
-import { dashboard } from '@/routes/admin';
+import { dashboard, picPerformance } from '@/routes/admin';
 import { index as reportsIndex } from '@/routes/admin/reports';
 
 const props = defineProps<{
@@ -508,6 +508,12 @@ useMotion(
                 <p class="mb-3 text-sm text-muted-foreground">
                     {{ spot.description }}
                 </p>
+                <Link
+                    v-if="spot.id === 'load'"
+                    :href="picPerformance.url()"
+                    class="mb-3 inline-flex min-h-11 items-center text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    >Lihat kinerja PIC</Link
+                >
                 <EmptyState
                     v-if="
                         spot.items.length === 0 ||
