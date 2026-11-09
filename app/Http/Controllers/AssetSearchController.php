@@ -19,7 +19,7 @@ class AssetSearchController extends Controller
 
         $assets = Asset::query()
             ->with('category')
-            ->where(fn ($query) => $query->where('asset_code', 'like', "{$like}%")->orWhere('name', 'like', "%{$like}%"))
+            ->where(fn ($query) => $query->where('asset_code', 'like', "{$like}%")->orWhere('name', 'like', "%{$like}%")->orWhere('brand', 'like', "%{$like}%"))
             ->orderBy('name')
             ->limit(20)
             ->get()

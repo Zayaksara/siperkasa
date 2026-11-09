@@ -70,7 +70,7 @@ function apply() {
             <Input
                 v-model="q"
                 class="h-11 md:col-span-2"
-                placeholder="Cari kode atau nama aset"
+                placeholder="Cari kode, nama, atau merek aset"
                 aria-label="Cari aset"
             />
             <NativeSelect v-model="category" aria-label="Kategori">

@@ -41,3 +41,19 @@ test('asset detail shows the raw BMN data and offers no edit routes', function (
 test('non-admins can not browse assets', function () {
     $this->actingAs(User::factory()->pic()->create())->get(route('admin.assets.index'))->assertForbidden();
 });
+
+test('admin searches assets by brand', function () {
+    Asset::factory()->create(['name' => 'Proyektor A', 'brand' => 'Epson']);
+    Asset::factory()->create(['name' => 'Printer B', 'brand' => 'Canon']);
+    Asset::factory()->create(['name' => 'Meja Rapat', 'brand' => null]);
+
+    $admin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)->get(route('admin.assets.index', ['q' => 'eps']))
+        ->assertInertia(fn ($page) => $page
+            ->has('assets.data', 1)
+            ->where('assets.data.0.brand', 'Epson'));
+
+    $this->actingAs($admin)->get(route('admin.assets.index', ['q' => 'Meja']))
+        ->assertInertia(fn ($page) => $page->has('assets.data', 1));
+});
