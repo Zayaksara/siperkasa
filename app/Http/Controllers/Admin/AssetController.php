@@ -27,7 +27,7 @@ class AssetController extends Controller
             ->with('category')
             ->when($filters['q'] ?? null, function ($query, string $q) {
                 $like = addcslashes($q, '%_\\');
-                $query->where(fn ($inner) => $inner->where('asset_code', 'like', "{$like}%")->orWhere('name', 'like', "%{$like}%"));
+                $query->where(fn ($inner) => $inner->where('asset_code', 'like', "{$like}%")->orWhere('name', 'like', "%{$like}%")->orWhere('brand', 'like', "%{$like}%"));
             })
             ->when($filters['category_id'] ?? null, fn ($query, $id) => $query->where('category_id', $id))
             ->when($filters['golongan'] ?? null, fn ($query, $golongan) => $query->where('golongan', $golongan))

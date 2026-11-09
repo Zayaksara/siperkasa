@@ -38,3 +38,14 @@ test('short queries and wildcard characters return nothing harmful', function ()
     $this->actingAs($user)->getJson(route('assets.search', ['q' => 'a']))->assertJsonCount(0, 'data');
     $this->actingAs($user)->getJson(route('assets.search', ['q' => '%%']))->assertJsonCount(0, 'data');
 });
+
+test('matches brand', function () {
+    Asset::factory()->create(['name' => 'Proyektor A', 'brand' => 'Epson']);
+    Asset::factory()->create(['name' => 'Printer B', 'brand' => 'Canon']);
+
+    $this->actingAs(User::factory()->create())
+        ->getJson(route('assets.search', ['q' => 'eps']))
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.brand', 'Epson');
+});

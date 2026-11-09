@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { Pencil, Plus, Trash2 } from '@lucide/vue';
+import { Pencil, Plus, Search, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import EmptyState from '@/components/EmptyState.vue';
@@ -20,11 +20,24 @@ import { destroy, index, show, store, update } from '@/routes/admin/buildings';
 
 type Row = { id: number; code: string; name: string; rooms_count: number };
 
-defineProps<{ buildings: Row[] }>();
+const props = defineProps<{
+    buildings: Row[];
+    filters: { q?: string };
+}>();
 
 defineOptions({
     layout: { breadcrumbs: [{ title: 'Gedung & Ruang', href: index() }] },
 });
+
+const q = ref(props.filters.q ?? '');
+
+function search() {
+    router.get(
+        index.url(),
+        { q: q.value || undefined },
+        { preserveState: true, replace: true },
+    );
+}
 
 const open = ref(false);
 const editing = ref<Row | null>(null);
@@ -78,7 +91,27 @@ function remove() {
             >
         </PageHeader>
 
-        <EmptyState v-if="buildings.length === 0" title="Belum ada gedung" />
+        <form role="search" class="flex gap-2" @submit.prevent="search">
+            <Input
+                v-model="q"
+                class="h-11 flex-1"
+                placeholder="Cari kode atau nama gedung"
+                aria-label="Cari gedung"
+            />
+            <Button type="submit" variant="outline" class="h-11"
+                ><Search class="size-4" /> Cari</Button
+            >
+        </form>
+
+        <EmptyState
+            v-if="buildings.length === 0 && filters.q"
+            title="Gedung tidak ditemukan"
+            description="Ubah kata kunci atau hapus pencarian."
+        />
+        <EmptyState
+            v-else-if="buildings.length === 0"
+            title="Belum ada gedung"
+        />
 
         <ul v-else class="divide-y rounded-xl border">
             <li

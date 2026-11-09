@@ -6,18 +6,30 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SaveBuildingRequest;
 use App\Models\Building;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class BuildingController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
         Gate::authorize('viewAny', Building::class);
 
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:100'],
+        ]);
+        $q = $filters['q'] ?? '';
+        $like = addcslashes($q, '%_\\');
+
         return Inertia::render('admin/buildings/Index', [
-            'buildings' => Building::query()->withCount('rooms')->orderBy('code')->get(['id', 'code', 'name']),
+            'buildings' => Building::query()
+                ->withCount('rooms')
+                ->when($q !== '', fn ($query) => $query->where(fn ($inner) => $inner->where('code', 'like', "{$like}%")->orWhere('name', 'like', "%{$like}%")))
+                ->orderBy('code')
+                ->get(['id', 'code', 'name']),
+            'filters' => $q !== '' ? ['q' => $q] : [],
         ]);
     }
 

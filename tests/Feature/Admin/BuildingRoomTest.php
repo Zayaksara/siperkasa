@@ -60,3 +60,22 @@ test('admin manages rooms and codes are unique per building only', function () {
 test('non-admins are forbidden', function () {
     $this->actingAs(User::factory()->create())->get(route('admin.buildings.index'))->assertForbidden();
 });
+
+test('filters buildings by code or name', function () {
+    Building::factory()->create(['code' => 'GKB', 'name' => 'Gedung Kuliah Bersama']);
+    Building::factory()->create(['code' => 'REK', 'name' => 'Rektorat']);
+
+    $this->actingAs($this->admin)->get(route('admin.buildings.index', ['q' => 'kuliah']))
+        ->assertInertia(fn ($page) => $page
+            ->has('buildings', 1)
+            ->where('buildings.0.code', 'GKB')
+            ->where('filters.q', 'kuliah'));
+
+    $this->actingAs($this->admin)->get(route('admin.buildings.index', ['q' => 'rek']))
+        ->assertInertia(fn ($page) => $page
+            ->has('buildings', 1)
+            ->where('buildings.0.code', 'REK'));
+
+    $this->actingAs($this->admin)->get(route('admin.buildings.index', ['q' => '%']))
+        ->assertInertia(fn ($page) => $page->has('buildings', 0));
+});
