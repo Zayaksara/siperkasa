@@ -247,3 +247,25 @@ test('weekly buckets start on Monday whatever the Carbon locale', function () {
         Carbon::setLocale($previous);
     }
 });
+
+test('limits category and building stats to top five', function () {
+    $categories = Category::factory()->count(6)->create();
+    $buildings = Building::factory()->count(6)->create();
+    $rooms = $buildings->map(fn (Building $building) => Room::factory()->for($building)->create());
+
+    foreach ($categories as $i => $category) {
+        Report::factory()->count($i + 1)->create([
+            'category_id' => $category->id,
+            'room_id' => $rooms[$i]->id,
+        ]);
+    }
+
+    $this->actingAs($this->admin)->get(route('admin.dashboard'))
+        ->assertInertia(fn ($page) => $page
+            ->has('stats.by_category', 5)
+            ->has('stats.by_building', 5)
+            ->where('stats.by_category.0.id', $categories->last()->id)
+            ->where('stats.by_category.0.total', 6)
+            ->where('stats.by_building.0.id', $rooms->last()->building_id)
+            ->where('stats.by_building.0.total', 6));
+});

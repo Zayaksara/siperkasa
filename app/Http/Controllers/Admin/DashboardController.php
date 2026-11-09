@@ -30,7 +30,7 @@ class DashboardController extends Controller
             throw ValidationException::withMessages(['to' => 'Rentang tanggal maksimal 1 tahun.']);
         }
 
-        $key = "dashboard.admin.v2.{$from->toDateString()}.{$to->toDateString()}";
+        $key = "dashboard.admin.v3.{$from->toDateString()}.{$to->toDateString()}";
 
         return Inertia::render('admin/Dashboard', [
             'stats' => Cache::remember($key, now()->addMinutes(5), fn () => $stats->forAdmin($from, $to)),

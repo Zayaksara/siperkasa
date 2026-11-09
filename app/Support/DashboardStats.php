@@ -74,13 +74,13 @@ final class DashboardStats
             'by_category' => collect($range()
                 ->join('categories', 'categories.id', '=', 'reports.category_id')
                 ->selectRaw('categories.id, categories.name, COUNT(*) as total')
-                ->groupBy('categories.id', 'categories.name')->orderByDesc('total')->limit(10)->get())
+                ->groupBy('categories.id', 'categories.name')->orderByDesc('total')->limit(5)->get())
                 ->map(fn ($row) => ['id' => (int) $row['id'], 'name' => (string) $row['name'], 'total' => (int) $row['total']])->all(),
             'by_building' => collect($range()
                 ->join('rooms', 'rooms.id', '=', 'reports.room_id')
                 ->join('buildings', 'buildings.id', '=', 'rooms.building_id')
                 ->selectRaw('buildings.id, buildings.name, COUNT(*) as total')
-                ->groupBy('buildings.id', 'buildings.name')->orderByDesc('total')->limit(10)->get())
+                ->groupBy('buildings.id', 'buildings.name')->orderByDesc('total')->limit(5)->get())
                 ->map(fn ($row) => ['id' => (int) $row['id'], 'name' => (string) $row['name'], 'total' => (int) $row['total']])->all(),
             ...$this->trend($from, $to),
             'avg_completion_hours' => $avgHours('closed_at', ReportStatus::Closed),
