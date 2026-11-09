@@ -16,6 +16,8 @@ const props = withDefaults(
         colors?: string[];
         /** One colour per bar (single series only). */
         distributed?: boolean;
+        /** Stack the series into one bar per category. */
+        stacked?: boolean;
         /** Word after the value in tooltips, e.g. "laporan". */
         unit?: string;
         xTitle?: string;
@@ -66,6 +68,7 @@ const dataSignature = () =>
         props.categories,
         props.height,
         props.colors,
+        props.stacked,
     ]);
 
 /** Dense axis: daily trends have 8-31 points; fewer markers and straight segments keep them light. */
@@ -80,6 +83,20 @@ function resolveColors(style = getComputedStyle(document.documentElement)) {
 
 const token = (style: CSSStyleDeclaration, name: string) =>
     style.getPropertyValue(name.startsWith('--') ? name : `--${name}`).trim();
+
+/** Horizontal bars get 15% headroom for their value labels; stacked bars size to the longest total. */
+function axisMax() {
+    if (!props.horizontal) return undefined;
+    const longest = props.stacked
+        ? Math.max(
+              1,
+              ...props.categories.map((_, i) =>
+                  props.series.reduce((sum, s) => sum + (s.data[i] ?? 0), 0),
+              ),
+          )
+        : Math.max(1, ...props.series.flatMap((s) => s.data));
+    return Math.ceil(longest * (props.stacked ? 1.05 : 1.15));
+}
 
 function buildOptions(): ApexCharts.ApexOptions {
     const root = document.documentElement;
@@ -100,6 +117,7 @@ function buildOptions(): ApexCharts.ApexOptions {
             fontFamily: font,
             foreColor: muted,
             background: 'transparent',
+            stacked: props.stacked ?? false,
             toolbar: { show: false },
             zoom: { enabled: false },
             // Short, decelerating morph: bars/lines grow together instead of
@@ -134,7 +152,7 @@ function buildOptions(): ApexCharts.ApexOptions {
             },
         },
         dataLabels: {
-            enabled: props.type === 'bar',
+            enabled: props.type === 'bar' && !props.stacked,
             style: { fontSize: '12px', fontWeight: 600, colors: [fg] },
             offsetX: props.horizontal ? 14 : 0,
             offsetY: props.horizontal ? 0 : -18,
@@ -153,12 +171,7 @@ function buildOptions(): ApexCharts.ApexOptions {
         },
         xaxis: {
             categories: props.categories,
-            max: props.horizontal
-                ? Math.ceil(
-                      Math.max(1, ...props.series.flatMap((s) => s.data)) *
-                          1.15,
-                  )
-                : undefined,
+            max: axisMax(),
             tickPlacement: 'on',
             // Dense axes on narrow screens: tilt the full d/m labels so none collide.
             labels: {
@@ -263,9 +276,7 @@ function restyle() {
 function updateData() {
     if (!chart || !ready || disposed) return; // render() re-runs this once ready
     builtSignature = dataSignature();
-    const max = props.horizontal
-        ? Math.ceil(Math.max(1, ...props.series.flatMap((s) => s.data)) * 1.15)
-        : undefined;
+    const max = axisMax();
     void chart.updateOptions(
         {
             chart: { height: props.height },

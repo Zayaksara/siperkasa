@@ -107,3 +107,15 @@ it('forbids non admin', function (string $state) {
     $this->actingAs(User::factory()->{$state}()->create())
         ->get(route('admin.pic-performance'))->assertForbidden();
 })->with(['pic', 'reporter']);
+
+it('renders the page with performance props and range', function () {
+    $pic = User::factory()->pic()->create();
+    slaReport($pic, 'inProgress', ['sla_date' => '2026-11-20 12:00:00']);
+
+    performance($this, ['from' => '2026-11-01', 'to' => '2026-11-09'])->assertInertia(fn ($page) => $page
+        ->component('admin/pic-performance/Index')
+        ->has('performance.pics', 1)
+        ->has('performance.summary')
+        ->where('range.from', '2026-11-01')
+        ->where('range.to', '2026-11-09'));
+});
