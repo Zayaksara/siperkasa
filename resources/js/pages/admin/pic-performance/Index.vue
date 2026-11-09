@@ -95,8 +95,9 @@ const overdueLink = (picId: number) =>
 const summary = computed(() => props.performance.summary);
 const pics = computed(() => props.performance.pics);
 
-// Colours: green for done on time and still running, amber for finished late,
-// the app's overdue red (same token as OverdueBadge) for still late.
+// Colours: green for done on time, amber for finished late, the app's overdue
+// red (same token as OverdueBadge) for still late, blue for still running
+// (blue keeps it apart from the greens in both themes).
 const series = [
     {
         key: 'on_time',
@@ -113,7 +114,7 @@ const series = [
         name: 'Masih terlambat',
         color: '--status-rejected',
     },
-    { key: 'on_track', name: 'Berjalan', color: '--chart-3' },
+    { key: 'on_track', name: 'Berjalan', color: '--chart-5' },
 ] as const;
 
 const legendItems = computed(() =>
@@ -353,6 +354,10 @@ useMotion(
                 <p class="mb-3 text-sm text-muted-foreground">
                     Klik judul kolom untuk mengurutkan. Klik jumlah terlambat
                     untuk membuka laporannya.
+                </p>
+                <p class="mb-3 text-sm text-muted-foreground">
+                    Tautan “Masih terlambat” membuka semua laporan PIC ini yang
+                    masih terlambat hari ini, tanpa batas rentang tanggal.
                 </p>
                 <div class="max-w-full overflow-x-auto">
                     <table class="w-full min-w-[44rem] text-sm">
