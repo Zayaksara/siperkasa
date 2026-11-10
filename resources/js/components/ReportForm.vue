@@ -1,3 +1,15 @@
+<script lang="ts">
+import type { RoomOption } from '@/components/RoomCombobox.vue';
+
+export type ReportBuilding = {
+    id: number;
+    code: string;
+    name: string;
+    campus: string;
+    rooms: RoomOption[];
+};
+</script>
+
 <script setup lang="ts">
 import { router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
@@ -7,6 +19,7 @@ import CategoryCombobox from '@/components/CategoryCombobox.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import InputError from '@/components/InputError.vue';
 import PhotoUploader from '@/components/PhotoUploader.vue';
+import RoomCombobox from '@/components/RoomCombobox.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,12 +27,6 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import { index, show, store, update } from '@/routes/reports';
 
-type Building = {
-    id: number;
-    code: string;
-    name: string;
-    rooms: { id: number; code: string; name: string }[];
-};
 type ReportData = {
     id: number;
     title: string;
@@ -34,20 +41,37 @@ type ReportData = {
 const props = defineProps<{
     mode: 'create' | 'edit';
     categories: { id: number; name: string }[];
-    buildings: Building[];
+    buildings: ReportBuilding[];
     priorities: { value: string; label: string }[];
     report?: ReportData;
 }>();
 
 const me = computed(() => usePage().props.auth.user);
 
-const initialBuilding = props.report
-    ? (props.buildings.find((b) =>
-          b.rooms.some((r) => r.id === props.report!.room_id),
-      )?.id ?? '')
-    : '';
+const FALLBACK_CAMPUS = 'Lainnya';
 
-const buildingId = ref<string | number>(initialBuilding);
+const campuses = computed(() =>
+    [...new Set(props.buildings.map((b) => b.campus))].sort((a, b) =>
+        a === FALLBACK_CAMPUS
+            ? 1
+            : b === FALLBACK_CAMPUS
+              ? -1
+              : a.localeCompare(b, 'id'),
+    ),
+);
+
+const initialBuilding = props.report
+    ? props.buildings.find((b) =>
+          b.rooms.some((r) => r.id === props.report!.room_id),
+      )
+    : undefined;
+
+const campus = ref<string>(initialBuilding?.campus ?? '');
+const buildingId = ref<string | number>(initialBuilding?.id ?? '');
+
+const campusBuildings = computed(() =>
+    props.buildings.filter((b) => b.campus === campus.value),
+);
 const rooms = computed(
     () =>
         props.buildings.find((b) => b.id === Number(buildingId.value))?.rooms ??
@@ -75,6 +99,12 @@ watch(
         if (asset?.category_id) form.category_id = asset.category_id;
     },
 );
+
+watch(campus, () => {
+    if (!campusBuildings.value.some((b) => b.id === Number(buildingId.value))) {
+        buildingId.value = '';
+    }
+});
 
 watch(buildingId, () => {
     if (!rooms.value.some((room) => room.id === Number(form.room_id))) {
@@ -175,11 +205,27 @@ function cancel() {
 
         <div class="grid gap-4 sm:grid-cols-2">
             <div class="grid gap-2">
+                <Label for="campus">Kampus</Label>
+                <NativeSelect id="campus" v-model="campus" required>
+                    <option value="" disabled>Pilih kampus</option>
+                    <option v-for="name in campuses" :key="name" :value="name">
+                        {{ name }}
+                    </option>
+                </NativeSelect>
+            </div>
+            <div class="grid gap-2">
                 <Label for="building">Gedung</Label>
-                <NativeSelect id="building" v-model="buildingId" required>
-                    <option value="" disabled>Pilih gedung</option>
+                <NativeSelect
+                    id="building"
+                    v-model="buildingId"
+                    :disabled="campusBuildings.length === 0"
+                    required
+                >
+                    <option value="" disabled>
+                        {{ campus ? 'Pilih gedung' : 'Pilih kampus dulu' }}
+                    </option>
                     <option
-                        v-for="building in buildings"
+                        v-for="building in campusBuildings"
                         :key="building.id"
                         :value="building.id"
                     >
@@ -187,28 +233,22 @@ function cancel() {
                     </option>
                 </NativeSelect>
             </div>
-            <div class="grid gap-2">
-                <Label for="room">Ruang</Label>
-                <NativeSelect
-                    id="room"
-                    v-model="form.room_id"
-                    :disabled="rooms.length === 0"
-                    required
-                    :aria-invalid="!!form.errors.room_id"
-                >
-                    <option value="" disabled>
-                        {{ buildingId ? 'Pilih ruang' : 'Pilih gedung dulu' }}
-                    </option>
-                    <option
-                        v-for="room in rooms"
-                        :key="room.id"
-                        :value="room.id"
-                    >
-                        {{ room.name }}
-                    </option>
-                </NativeSelect>
-                <InputError :message="form.errors.room_id" />
-            </div>
+        </div>
+
+        <div class="grid gap-2">
+            <Label for="room">Ruangan</Label>
+            <RoomCombobox
+                id="room"
+                v-model="form.room_id"
+                :rooms="rooms"
+                :disabled="rooms.length === 0"
+                required
+                :invalid="!!form.errors.room_id"
+                :placeholder="
+                    buildingId ? 'Cari atau pilih ruangan' : 'Pilih gedung dulu'
+                "
+            />
+            <InputError :message="form.errors.room_id" />
         </div>
 
         <div class="grid gap-2" role="group" aria-labelledby="asset-label">

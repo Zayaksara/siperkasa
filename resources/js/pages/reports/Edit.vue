@@ -2,16 +2,12 @@
 import { Head } from '@inertiajs/vue3';
 import PageHeader from '@/components/PageHeader.vue';
 import ReportForm from '@/components/ReportForm.vue';
+import type { ReportBuilding } from '@/components/ReportForm.vue';
 import { index } from '@/routes/reports';
 
 defineProps<{
     categories: { id: number; name: string }[];
-    buildings: {
-        id: number;
-        code: string;
-        name: string;
-        rooms: { id: number; code: string; name: string }[];
-    }[];
+    buildings: ReportBuilding[];
     priorities: { value: string; label: string }[];
     report: {
         id: number;
