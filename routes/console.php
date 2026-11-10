@@ -18,3 +18,4 @@ Schedule::command('backup:monitor')->dailyAt('03:00');
 Schedule::command('notifications:prune --days=180')->dailyAt('02:30');
 Schedule::command('queue:prune-failed --hours=720')->dailyAt('02:45');
 Schedule::command('auth:clear-resets')->daily();
+Schedule::command('sibermap:sync')->dailyAt('04:00')->withoutOverlapping();

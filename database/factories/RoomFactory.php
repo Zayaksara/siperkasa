@@ -18,4 +18,13 @@ class RoomFactory extends Factory
             'floor' => fake()->numberBetween(1, 4),
         ];
     }
+
+    public function synced(): static
+    {
+        return $this->state(fn () => [
+            'sibermap_id' => fake()->unique()->numberBetween(1000, 999999),
+            'floor_name' => 'Lt 1',
+            'synced_at' => now(),
+        ]);
+    }
 }

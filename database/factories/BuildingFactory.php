@@ -15,4 +15,13 @@ class BuildingFactory extends Factory
             'name' => 'Gedung '.fake()->unique()->lastName(),
         ];
     }
+
+    public function synced(): static
+    {
+        return $this->state(fn () => [
+            'sibermap_id' => fake()->unique()->numberBetween(1000, 999999),
+            'campus_name' => 'Kampus '.fake()->numberBetween(1, 5),
+            'synced_at' => now(),
+        ]);
+    }
 }
