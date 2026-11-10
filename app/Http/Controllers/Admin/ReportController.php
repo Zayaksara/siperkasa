@@ -48,7 +48,7 @@ class ReportController extends Controller
             'filters' => $filter->values,
             'options' => [
                 'categories' => Category::orderBy('name')->get(['id', 'name']),
-                'buildings' => Building::orderBy('code')->get(['id', 'name']),
+                'buildings' => Building::orderBy('campus_name')->orderBy('name')->get(['id', 'name', 'campus_name']),
                 'faculties' => User::query()->where('role', UserRole::User)->whereNotNull('faculty')->distinct()->orderBy('faculty')->pluck('faculty'),
                 'pics' => User::withTrashed()->where('role', UserRole::Pic)->orderBy('name')->get(['id', 'name', 'deleted_at'])
                     ->map(fn (User $pic) => ['id' => $pic->id, 'name' => $pic->trashed() ? "{$pic->name} (terhapus)" : $pic->name]),

@@ -144,12 +144,18 @@ class ReportController extends Controller
     {
         return [
             'categories' => Category::orderBy('name')->get(['id', 'name']),
-            'buildings' => Building::query()->with(['rooms' => fn ($query) => $query->orderBy('code')])->orderBy('code')->get()
+            'buildings' => Building::query()->with(['rooms' => fn ($query) => $query->orderBy('floor')->orderBy('name')])->orderBy('campus_name')->orderBy('name')->get()
                 ->map(fn (Building $building) => [
                     'id' => $building->id,
                     'code' => $building->code,
                     'name' => $building->name,
-                    'rooms' => $building->rooms->map(fn ($room) => ['id' => $room->id, 'code' => $room->code, 'name' => $room->name])->values(),
+                    'campus' => $building->campus_name ?? 'Lainnya',
+                    'rooms' => $building->rooms->map(fn ($room) => [
+                        'id' => $room->id,
+                        'code' => $room->code,
+                        'name' => $room->name,
+                        'floor_name' => $room->floor_name,
+                    ])->values(),
                 ]),
             'priorities' => collect(Priority::cases())->map(fn (Priority $priority) => ['value' => $priority->value, 'label' => $priority->label()]),
         ];

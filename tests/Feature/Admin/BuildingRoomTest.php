@@ -3,6 +3,7 @@
 use App\Models\Building;
 use App\Models\Room;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 
 beforeEach(fn () => $this->admin = User::factory()->admin()->create());
 
@@ -78,4 +79,71 @@ test('filters buildings by code or name', function () {
 
     $this->actingAs($this->admin)->get(route('admin.buildings.index', ['q' => '%']))
         ->assertInertia(fn ($page) => $page->has('buildings', 0));
+});
+
+test('synced buildings and rooms can not be updated or deleted', function () {
+    $building = Building::factory()->synced()->create(['name' => 'Rektorat']);
+    $room = Room::factory()->synced()->for($building)->create(['name' => 'Aula']);
+
+    $this->actingAs($this->admin)->put(route('admin.buildings.update', $building), ['code' => $building->code, 'name' => 'Ubah'])->assertForbidden();
+    $this->actingAs($this->admin)->delete(route('admin.buildings.destroy', $building))->assertForbidden();
+    $this->actingAs($this->admin)->put(route('admin.rooms.update', $room), ['code' => $room->code, 'name' => 'Ubah', 'floor' => 1])->assertForbidden();
+    $this->actingAs($this->admin)->delete(route('admin.rooms.destroy', $room))->assertForbidden();
+
+    expect($building->fresh()->name)->toBe('Rektorat')->and($room->fresh()->name)->toBe('Aula');
+});
+
+test('manual buildings and rooms stay editable next to synced ones', function () {
+    $manual = Building::factory()->create(['name' => 'Gedung Manual']);
+    $manualRoom = Room::factory()->for($manual)->create(['name' => 'Ruang Manual']);
+
+    $this->actingAs($this->admin)->put(route('admin.buildings.update', $manual), ['code' => $manual->code, 'name' => 'Gedung Baru'])->assertSessionHasNoErrors();
+    $this->actingAs($this->admin)->put(route('admin.rooms.update', $manualRoom), ['code' => $manualRoom->code, 'name' => 'Ruang Baru', 'floor' => 2])->assertSessionHasNoErrors();
+
+    expect($manual->fresh()->name)->toBe('Gedung Baru')->and($manualRoom->fresh()->name)->toBe('Ruang Baru');
+});
+
+test('buildings can be filtered by campus and match campus name in search', function () {
+    Building::factory()->synced()->create(['code' => 'SM-1', 'name' => 'Rektorat', 'campus_name' => 'Kampus 1']);
+    Building::factory()->create(['code' => 'GA', 'name' => 'Gedung A', 'campus_name' => 'Kampus 2']);
+
+    $this->actingAs($this->admin)->get(route('admin.buildings.index', ['campus' => 'Kampus 1']))
+        ->assertInertia(fn ($page) => $page
+            ->has('buildings', 1)
+            ->where('buildings.0.code', 'SM-1')
+            ->where('buildings.0.campus_name', 'Kampus 1')
+            ->where('filters.campus', 'Kampus 1'));
+
+    $this->actingAs($this->admin)->get(route('admin.buildings.index', ['q' => 'kampus 2']))
+        ->assertInertia(fn ($page) => $page->has('buildings', 1)->where('buildings.0.code', 'GA'));
+});
+
+test('buildings index exposes campuses and the last sync time', function () {
+    Building::factory()->create(['campus_name' => null]);
+    Building::factory()->synced()->create(['campus_name' => 'Kampus 2', 'synced_at' => '2026-11-09 04:00:00']);
+    Building::factory()->synced()->create(['campus_name' => 'Kampus 1', 'synced_at' => '2026-11-08 04:00:00']);
+
+    $this->actingAs($this->admin)->get(route('admin.buildings.index'))
+        ->assertInertia(fn ($page) => $page
+            ->where('campuses', ['Kampus 1', 'Kampus 2'])
+            ->where('lastSyncedAt', Carbon::parse('2026-11-09 04:00:00')->toISOString()));
+});
+
+test('buildings index has no last sync time without synced buildings', function () {
+    Building::factory()->create();
+
+    $this->actingAs($this->admin)->get(route('admin.buildings.index'))
+        ->assertInertia(fn ($page) => $page->where('lastSyncedAt', null)->where('campuses', []));
+});
+
+test('building page exposes sibermap fields and room floor names', function () {
+    $building = Building::factory()->synced()->create(['campus_name' => 'Kampus 3', 'sibermap_id' => 77]);
+    Room::factory()->synced()->for($building)->create(['floor_name' => 'Lt 2 Gedung']);
+
+    $this->actingAs($this->admin)->get(route('admin.buildings.show', $building))
+        ->assertInertia(fn ($page) => $page
+            ->where('building.campus_name', 'Kampus 3')
+            ->where('building.sibermap_id', 77)
+            ->where('rooms.0.floor_name', 'Lt 2 Gedung')
+            ->where('rooms.0.sibermap_id', $building->rooms()->first()->sibermap_id));
 });

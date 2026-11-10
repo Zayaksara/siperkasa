@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\SaveBuildingRequest;
 use App\Models\Building;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -19,17 +20,26 @@ class BuildingController extends Controller
 
         $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:100'],
+            'campus' => ['nullable', 'string', 'max:100'],
         ]);
         $q = $filters['q'] ?? '';
+        $campus = $filters['campus'] ?? '';
         $like = addcslashes($q, '%_\\');
+        $lastSync = Building::query()->max('synced_at');
 
         return Inertia::render('admin/buildings/Index', [
             'buildings' => Building::query()
                 ->withCount('rooms')
-                ->when($q !== '', fn ($query) => $query->where(fn ($inner) => $inner->where('code', 'like', "{$like}%")->orWhere('name', 'like', "%{$like}%")))
+                ->when($q !== '', fn ($query) => $query->where(fn ($inner) => $inner
+                    ->where('code', 'like', "{$like}%")
+                    ->orWhere('name', 'like', "%{$like}%")
+                    ->orWhere('campus_name', 'like', "%{$like}%")))
+                ->when($campus !== '', fn ($query) => $query->where('campus_name', $campus))
                 ->orderBy('code')
-                ->get(['id', 'code', 'name']),
-            'filters' => $q !== '' ? ['q' => $q] : [],
+                ->get(['id', 'code', 'name', 'campus_name', 'sibermap_id']),
+            'campuses' => Building::query()->whereNotNull('campus_name')->distinct()->orderBy('campus_name')->pluck('campus_name'),
+            'lastSyncedAt' => $lastSync ? Carbon::parse($lastSync)->toISOString() : null,
+            'filters' => array_filter(['q' => $q, 'campus' => $campus], fn (string $value) => $value !== ''),
         ]);
     }
 
@@ -38,8 +48,8 @@ class BuildingController extends Controller
         Gate::authorize('view', $building);
 
         return Inertia::render('admin/buildings/Show', [
-            'building' => $building->only(['id', 'code', 'name']),
-            'rooms' => $building->rooms()->orderBy('code')->get(['id', 'code', 'name', 'floor']),
+            'building' => $building->only(['id', 'code', 'name', 'campus_name', 'sibermap_id']),
+            'rooms' => $building->rooms()->orderBy('code')->get(['id', 'code', 'name', 'floor', 'floor_name', 'sibermap_id']),
         ]);
     }
 

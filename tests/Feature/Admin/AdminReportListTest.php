@@ -202,3 +202,14 @@ test('pending filter returns only pending', function () {
             ->where('reports.data.0.status', 'Pending')
             ->where('reports.data.1.status', 'Pending'));
 });
+
+test('admin report filter buildings are ordered by campus then name', function () {
+    $z = Building::factory()->create(['name' => 'Z Gedung', 'campus_name' => 'Kampus 1']);
+    $a = Building::factory()->create(['name' => 'A Gedung', 'campus_name' => 'Kampus 1']);
+
+    $this->actingAs($this->admin)->get(route('admin.reports.index'))
+        ->assertInertia(fn ($page) => $page
+            ->where('options.buildings.0.id', $a->id)
+            ->where('options.buildings.1.id', $z->id)
+            ->where('options.buildings.0.campus_name', 'Kampus 1'));
+});

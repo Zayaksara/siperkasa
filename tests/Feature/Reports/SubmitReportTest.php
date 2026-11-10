@@ -4,7 +4,9 @@ use App\Actions\Reports\SubmitReport;
 use App\Enums\AttachmentType;
 use App\Enums\ReportStatus;
 use App\Models\Asset;
+use App\Models\Building;
 use App\Models\Report;
+use App\Models\Room;
 use App\Models\User;
 use App\Notifications\ReportSubmitted;
 use App\Support\ReportSubmissionLimit;
@@ -344,4 +346,24 @@ test('rate limit uses hourly decay not minute-level decay', function () {
     // After one submission, availableIn should be > 60 seconds (hourly, not minute-level)
     $availableIn = RateLimiter::availableIn($key);
     expect($availableIn)->toBeGreaterThan(60);
+});
+
+test('the create form groups buildings by campus and orders rooms by floor', function () {
+    $second = Building::factory()->synced()->create(['name' => 'B Gedung', 'campus_name' => 'Kampus 2']);
+    $first = Building::factory()->synced()->create(['name' => 'A Gedung', 'campus_name' => 'Kampus 1']);
+    $manual = Building::factory()->create(['name' => 'Gedung Manual', 'campus_name' => null]);
+    Room::factory()->synced()->for($first)->create(['name' => 'Lab', 'floor' => 2, 'floor_name' => 'Lt 2']);
+    Room::factory()->synced()->for($first)->create(['name' => 'Aula', 'floor' => 1, 'floor_name' => 'Lt 1']);
+
+    $this->actingAs($this->reporter)->get(route('reports.create'))
+        ->assertInertia(fn ($page) => $page
+            ->where('buildings.0.id', $manual->id)
+            ->where('buildings.0.campus', 'Lainnya')
+            ->where('buildings.1.id', $first->id)
+            ->where('buildings.1.campus', 'Kampus 1')
+            ->where('buildings.2.id', $second->id)
+            ->where('buildings.2.campus', 'Kampus 2')
+            ->where('buildings.1.rooms.0.name', 'Aula')
+            ->where('buildings.1.rooms.0.floor_name', 'Lt 1')
+            ->where('buildings.1.rooms.1.name', 'Lab'));
 });

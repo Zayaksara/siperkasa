@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\PicPerformanceController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\RoomController;
+use App\Http\Controllers\Admin\SiberMapSyncController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserImportController;
 use App\Http\Controllers\AssetSearchController;
@@ -84,6 +85,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('buildings/{building}/rooms', [RoomController::class, 'store'])->name('buildings.rooms.store');
         Route::put('rooms/{room}', [RoomController::class, 'update'])->name('rooms.update');
         Route::delete('rooms/{room}', [RoomController::class, 'destroy'])->name('rooms.destroy');
+        Route::post('sibermap/sync', SiberMapSyncController::class)->middleware('throttle:3,1')->name('sibermap.sync');
         Route::get('reports', [AdminReportController::class, 'index'])->name('reports.index');
         Route::get('reports/export/excel', [ExportController::class, 'excel'])->middleware('throttle:10,1')->name('reports.export.excel');
         Route::get('reports/export/pdf', [ExportController::class, 'pdf'])->middleware('throttle:10,1')->name('reports.export.pdf');
