@@ -2,6 +2,7 @@
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
+import SiberMapMark from '@/components/admin/SiberMapMark.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import InputError from '@/components/InputError.vue';
@@ -16,6 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { motion, useMotion } from '@/lib/motion';
 import { index } from '@/routes/admin/buildings';
 import { store as storeRoom } from '@/routes/admin/buildings/rooms';
 import {
@@ -23,15 +25,42 @@ import {
     update as updateRoom,
 } from '@/routes/admin/rooms';
 
-type Room = { id: number; code: string; name: string; floor: number | null };
+type Room = {
+    id: number;
+    code: string;
+    name: string;
+    floor: number | null;
+    floor_name: string | null;
+    sibermap_id: number | null;
+};
 
 const props = defineProps<{
-    building: { id: number; code: string; name: string };
+    building: {
+        id: number;
+        code: string;
+        name: string;
+        campus_name: string | null;
+        sibermap_id: number | null;
+    };
     rooms: Room[];
 }>();
 
 defineOptions({
     layout: { breadcrumbs: [{ title: 'Gedung & Ruang', href: index() }] },
+});
+
+const root = ref<HTMLElement | null>(null);
+let entered = false;
+useMotion(root, ({ gsap }) => {
+    if (entered) return;
+    entered = true;
+    gsap.from('[data-row]', {
+        autoAlpha: 0,
+        y: motion.rise / 2,
+        duration: 0.4,
+        stagger: 0.04,
+        clearProps: 'transform,opacity,visibility',
+    });
 });
 
 const open = ref(false);
@@ -77,11 +106,16 @@ function remove() {
 <template>
     <Head :title="`Ruang ${building.name}`" />
 
-    <div class="flex flex-col gap-4 p-4">
+    <div ref="root" class="flex min-w-0 flex-col gap-4 p-4">
         <PageHeader
             :title="`${building.code} · ${building.name}`"
-            description="Daftar ruang di gedung ini."
+            :description="
+                building.campus_name
+                    ? `${building.campus_name} · Daftar ruang di gedung ini.`
+                    : 'Daftar ruang di gedung ini.'
+            "
         >
+            <SiberMapMark v-if="building.sibermap_id !== null" />
             <Button class="h-11" @click="create"
                 ><Plus class="size-4" /> Tambah ruang</Button
             >
@@ -97,17 +131,22 @@ function remove() {
             <li
                 v-for="room in rooms"
                 :key="room.id"
+                data-row
                 class="flex items-center justify-between gap-3 p-3"
             >
                 <div class="min-w-0">
-                    <p class="truncate font-medium">
-                        {{ room.code }} · {{ room.name }}
+                    <p class="flex items-center gap-2 font-medium">
+                        <span class="truncate"
+                            >{{ room.code }} · {{ room.name }}</span
+                        >
+                        <SiberMapMark v-if="room.sibermap_id !== null" />
                     </p>
-                    <p class="text-sm text-muted-foreground">
-                        Lantai {{ room.floor ?? '-' }}
+                    <p class="truncate text-sm text-muted-foreground">
+                        Lantai {{ room.floor_name ?? room.floor ?? '-' }}
                     </p>
                 </div>
-                <div class="flex shrink-0 gap-1">
+                <SiberMapMark v-if="room.sibermap_id !== null" lock />
+                <div v-else class="flex shrink-0 gap-1">
                     <Button
                         variant="outline"
                         size="icon"

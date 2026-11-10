@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { Pencil, Plus, Search, Trash2 } from '@lucide/vue';
+import { Pencil, Plus, RefreshCw, Search, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
+import SiberMapMark from '@/components/admin/SiberMapMark.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import InputError from '@/components/InputError.vue';
@@ -16,13 +17,26 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
+import { formatDateTime } from '@/lib/format';
+import { motion, useMotion } from '@/lib/motion';
 import { destroy, index, show, store, update } from '@/routes/admin/buildings';
+import { sync } from '@/routes/admin/sibermap';
 
-type Row = { id: number; code: string; name: string; rooms_count: number };
+type Row = {
+    id: number;
+    code: string;
+    name: string;
+    campus_name: string | null;
+    sibermap_id: number | null;
+    rooms_count: number;
+};
 
 const props = defineProps<{
     buildings: Row[];
-    filters: { q?: string };
+    campuses: string[];
+    lastSyncedAt: string | null;
+    filters: { q?: string; campus?: string };
 }>();
 
 defineOptions({
@@ -30,14 +44,43 @@ defineOptions({
 });
 
 const q = ref(props.filters.q ?? '');
+const campus = ref(props.filters.campus ?? '');
 
 function search() {
     router.get(
         index.url(),
-        { q: q.value || undefined },
+        { q: q.value || undefined, campus: campus.value || undefined },
         { preserveState: true, replace: true },
     );
 }
+
+const syncing = ref(false);
+
+function runSync() {
+    router.post(
+        sync.url(),
+        {},
+        {
+            preserveScroll: true,
+            onStart: () => (syncing.value = true),
+            onFinish: () => (syncing.value = false),
+        },
+    );
+}
+
+const root = ref<HTMLElement | null>(null);
+let entered = false;
+useMotion(root, ({ gsap }) => {
+    if (entered) return;
+    entered = true;
+    gsap.from('[data-row]', {
+        autoAlpha: 0,
+        y: motion.rise / 2,
+        duration: 0.4,
+        stagger: 0.04,
+        clearProps: 'transform,opacity,visibility',
+    });
+});
 
 const open = ref(false);
 const editing = ref<Row | null>(null);
@@ -81,7 +124,7 @@ function remove() {
 <template>
     <Head title="Gedung & Ruang" />
 
-    <div class="flex flex-col gap-4 p-4">
+    <div ref="root" class="flex min-w-0 flex-col gap-4 p-4">
         <PageHeader
             title="Gedung & Ruang"
             description="Lokasi kerusakan dipilih pelapor dari daftar ini."
@@ -91,22 +134,60 @@ function remove() {
             >
         </PageHeader>
 
-        <form role="search" class="flex gap-2" @submit.prevent="search">
+        <div
+            class="flex flex-col gap-3 rounded-xl border bg-card p-3 sm:flex-row sm:items-center sm:justify-between"
+        >
+            <p class="text-sm text-muted-foreground">
+                {{
+                    lastSyncedAt
+                        ? `Terakhir sinkron: ${formatDateTime(lastSyncedAt)}`
+                        : 'Belum pernah sinkron'
+                }}
+            </p>
+            <Button
+                variant="outline"
+                class="h-11"
+                :disabled="syncing"
+                @click="runSync"
+                ><RefreshCw
+                    class="size-4"
+                    :class="{ 'animate-spin': syncing }"
+                />
+                {{ syncing ? 'Menyinkronkan...' : 'Sinkron SiberMap' }}</Button
+            >
+        </div>
+
+        <form
+            role="search"
+            class="flex flex-col gap-2 sm:flex-row"
+            @submit.prevent="search"
+        >
             <Input
                 v-model="q"
                 class="h-11 flex-1"
                 placeholder="Cari kode atau nama gedung"
                 aria-label="Cari gedung"
             />
+            <NativeSelect
+                v-model="campus"
+                class="h-11 sm:w-56"
+                aria-label="Filter kampus"
+                @change="search"
+            >
+                <option value="">Semua kampus</option>
+                <option v-for="c in campuses" :key="c" :value="c">
+                    {{ c }}
+                </option>
+            </NativeSelect>
             <Button type="submit" variant="outline" class="h-11"
                 ><Search class="size-4" /> Cari</Button
             >
         </form>
 
         <EmptyState
-            v-if="buildings.length === 0 && filters.q"
+            v-if="buildings.length === 0 && (filters.q || filters.campus)"
             title="Gedung tidak ditemukan"
-            description="Ubah kata kunci atau hapus pencarian."
+            description="Ubah kata kunci atau filter kampus."
         />
         <EmptyState
             v-else-if="buildings.length === 0"
@@ -117,20 +198,26 @@ function remove() {
             <li
                 v-for="row in buildings"
                 :key="row.id"
+                data-row
                 class="flex items-center justify-between gap-3 p-3"
             >
                 <Link
                     :href="show.url(row.id)"
                     class="min-w-0 flex-1 rounded focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
-                    <p class="truncate font-medium">
-                        {{ row.code }} · {{ row.name }}
+                    <p class="flex items-center gap-2 font-medium">
+                        <span class="truncate"
+                            >{{ row.code }} · {{ row.name }}</span
+                        >
+                        <SiberMapMark v-if="row.sibermap_id !== null" />
                     </p>
-                    <p class="text-sm text-muted-foreground">
+                    <p class="truncate text-sm text-muted-foreground">
+                        {{ row.campus_name ?? 'Kampus belum diisi' }} ·
                         {{ row.rooms_count }} ruang
                     </p>
                 </Link>
-                <div class="flex shrink-0 gap-1">
+                <SiberMapMark v-if="row.sibermap_id !== null" lock />
+                <div v-else class="flex shrink-0 gap-1">
                     <Button
                         variant="outline"
                         size="icon"
