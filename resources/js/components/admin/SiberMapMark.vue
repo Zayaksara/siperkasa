@@ -18,7 +18,7 @@ withDefaults(defineProps<{ lock?: boolean }>(), { lock: false });
     <Badge
         v-else
         variant="outline"
-        class="border-primary/30 bg-primary-soft text-primary-foreground dark:text-foreground"
+        class="border-primary/30 bg-primary-soft text-foreground"
         >SiberMap</Badge
     >
 </template>
